@@ -840,7 +840,7 @@ if (UNIX AND
     (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR
      (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND
       NOT (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9))))
-  append("-fdiagnostics-color" CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
+  add_flag_if_supported("-fdiagnostics-color" FDIAGNOSTICS_COLOR)
 endif()
 
 # lld doesn't print colored diagnostics when invoked from Ninja
