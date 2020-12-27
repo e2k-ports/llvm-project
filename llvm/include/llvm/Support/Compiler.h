@@ -149,7 +149,11 @@
 #if defined(__cplusplus) && __cplusplus > 201402L && LLVM_HAS_CPP_ATTRIBUTE(nodiscard)
 #define LLVM_NODISCARD [[nodiscard]]
 #elif LLVM_HAS_CPP_ATTRIBUTE(clang::warn_unused_result)
+#if defined(__LCC__) && defined(__e2k__)
+#define LLVM_NODISCARD
+#else
 #define LLVM_NODISCARD [[clang::warn_unused_result]]
+#endif
 // Clang in C++14 mode claims that it has the 'nodiscard' attribute, but also
 // warns in the pedantic mode that 'nodiscard' is a C++17 extension (PR33518).
 // Use the 'nodiscard' attribute in C++14 mode only with GCC.
