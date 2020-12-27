@@ -908,6 +908,9 @@ EOF
     frv:Linux:*:*)
 	echo frv-unknown-linux-gnu
 	exit ;;
+    e2k:Linux:*:*)
+	echo ${UNAME_MACHINE}-unknown-linux-gnu
+	exit ;;
     i*86:Linux:*:*)
 	LIBC=gnu
 	eval $set_cc_for_build
