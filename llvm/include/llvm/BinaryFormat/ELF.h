@@ -698,6 +698,12 @@ enum {
 #include "ELFRelocs/Sparc.def"
 };
 
+// ELF Relocation type for E2K.
+enum {
+#include "ELFRelocs/E2K.def"
+};
+
+
 // AMDGPU specific e_flags.
 enum : unsigned {
   // Processor selection mask for EF_AMDGPU_MACH_* values.
