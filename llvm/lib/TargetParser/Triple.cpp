@@ -84,6 +84,9 @@ StringRef Triple::getArchTypeName(ArchType Kind) {
   case x86_64:         return "x86_64";
   case xcore:          return "xcore";
   case xtensa:         return "xtensa";
+  case e2k:            return "e2k";
+  case e2kv9:          return "e2kv9";
+  case e2kel:          return "e2kel";
   }
 
   llvm_unreachable("Invalid ArchType!");
@@ -175,6 +178,9 @@ StringRef Triple::getArchTypePrefix(ArchType Kind) {
   case dxil:        return "dx";
 
   case xtensa:      return "xtensa";
+  case e2k:
+  case e2kv9:
+  case e2kel:       return "e2k";
   }
 }
 
@@ -196,6 +202,7 @@ StringRef Triple::getVendorTypeName(VendorType Kind) {
   case PC: return "pc";
   case SCEI: return "scei";
   case SUSE: return "suse";
+  case MCST: return "mcst";
   }
 
   llvm_unreachable("Invalid VendorType!");
@@ -378,6 +385,9 @@ Triple::ArchType Triple::getArchTypeForLLVMName(StringRef Name) {
     .Case("loongarch64", loongarch64)
     .Case("dxil", dxil)
     .Case("xtensa", xtensa)
+    .Case("e2k", e2k)
+    .Case("e2kv9", e2kv9)
+    .Case("e2kel", e2kel)
     .Default(UnknownArch);
 }
 
@@ -520,6 +530,9 @@ static Triple::ArchType parseArch(StringRef ArchName) {
     .Case("loongarch64", Triple::loongarch64)
     .Case("dxil", Triple::dxil)
     .Case("xtensa", Triple::xtensa)
+    .Case("e2k", Triple::e2k)
+    .Case("e2kv9", Triple::e2kv9)
+    .Case("e2kel", Triple::e2kel)
     .Default(Triple::UnknownArch);
 
   // Some architectures require special parsing logic just to compute the
@@ -552,6 +565,7 @@ static Triple::VendorType parseVendor(StringRef VendorName) {
     .Case("mesa", Triple::Mesa)
     .Case("suse", Triple::SUSE)
     .Case("oe", Triple::OpenEmbedded)
+    .Case("mcst", Triple::MCST)
     .Default(Triple::UnknownVendor);
 }
 
@@ -855,6 +869,9 @@ static Triple::ObjectFormatType getDefaultFormat(const Triple &T) {
   case Triple::ve:
   case Triple::xcore:
   case Triple::xtensa:
+  case Triple::e2k:
+  case Triple::e2kv9:
+  case Triple::e2kel:
     return Triple::ELF;
 
   case Triple::ppc64:
@@ -1461,6 +1478,9 @@ static unsigned getArchPointerBitWidth(llvm::Triple::ArchType Arch) {
   case llvm::Triple::ve:
   case llvm::Triple::wasm64:
   case llvm::Triple::x86_64:
+  case llvm::Triple::e2k:
+  case llvm::Triple::e2kv9:
+  case llvm::Triple::e2kel:
     return 64;
   }
   llvm_unreachable("Invalid architecture value");
@@ -1489,6 +1509,9 @@ Triple Triple::get32BitArchVariant() const {
   case Triple::msp430:
   case Triple::systemz:
   case Triple::ve:
+  case Triple::e2k:
+  case Triple::e2kv9:
+  case Triple::e2kel:
     T.setArch(UnknownArch);
     break;
 
@@ -1604,6 +1627,9 @@ Triple Triple::get64BitArchVariant() const {
   case Triple::ve:
   case Triple::wasm64:
   case Triple::x86_64:
+  case Triple::e2k:
+  case Triple::e2kv9:
+  case Triple::e2kel:
     // Already 64-bit.
     break;
 
@@ -1679,6 +1705,9 @@ Triple Triple::getBigEndianArchVariant() const {
   case Triple::ve:
   case Triple::csky:
   case Triple::xtensa:
+  case Triple::e2k:
+  case Triple::e2kv9:
+  case Triple::e2kel:
 
   // ARM is intentionally unsupported here, changing the architecture would
   // drop any arch suffixes.
@@ -1789,6 +1818,9 @@ bool Triple::isLittleEndian() const {
   case Triple::x86_64:
   case Triple::xcore:
   case Triple::xtensa:
+  case Triple::e2k:
+  case Triple::e2kv9:
+  case Triple::e2kel:
     return true;
   default:
     return false;
