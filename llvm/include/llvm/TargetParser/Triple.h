@@ -106,7 +106,11 @@ public:
     renderscript32, // 32-bit RenderScript
     renderscript64, // 64-bit RenderScript
     ve,             // NEC SX-Aurora Vector Engine
-    LastArchType = ve
+    // FIXME : define actual e2k targets
+    e2k,            // Elbrus 2000
+    e2ke9,
+    e2kel,
+    LastArchType = e2kel
   };
   enum SubArchType {
     NoSubArch,
@@ -180,7 +184,8 @@ public:
     Mesa,
     SUSE,
     OpenEmbedded,
-    LastVendorType = OpenEmbedded
+    MCST,
+    LastVendorType = MCST
   };
   enum OSType {
     UnknownOS,

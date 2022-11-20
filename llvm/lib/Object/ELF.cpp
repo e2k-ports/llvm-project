@@ -180,6 +180,12 @@ StringRef llvm::object::getELFRelocationTypeName(uint32_t Machine,
       break;
     }
     break;
+  case ELF::EM_MCST_ELBRUS:
+    switch (Type) {
+#include "llvm/BinaryFormat/ELFRelocs/E2K.def"
+    default:
+      break;
+    }
   default:
     break;
   }
@@ -232,6 +238,8 @@ uint32_t llvm::object::getELFRelativeRelocationType(uint32_t Machine) {
     break;
   case ELF::EM_LOONGARCH:
     return ELF::R_LARCH_RELATIVE;
+  case ELF::EM_MCST_ELBRUS:
+    return ELF::R_E2K_RELATIVE;
   default:
     break;
   }
