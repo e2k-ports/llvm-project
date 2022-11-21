@@ -10,7 +10,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "E2KTargetMachine.h"
-#include "LeonPasses.h"
 #include "E2K.h"
 #include "E2KTargetObjectFile.h"
 #include "TargetInfo/E2KTargetInfo.h"
@@ -168,18 +167,6 @@ bool E2KPassConfig::addInstSelector() {
 
 void E2KPassConfig::addPreEmitPass(){
   addPass(createE2KDelaySlotFillerPass());
-
-  if (this->getE2KTargetMachine().getSubtargetImpl()->insertNOPLoad())
-  {
-    addPass(new InsertNOPLoad());
-  }
-  if (this->getE2KTargetMachine().getSubtargetImpl()->detectRoundChange()) {
-    addPass(new DetectRoundChange());
-  }
-  if (this->getE2KTargetMachine().getSubtargetImpl()->fixAllFDIVSQRT())
-  {
-    addPass(new FixAllFDIVSQRT());
-  }
 }
 
 void E2KV8TargetMachine::anchor() { }
