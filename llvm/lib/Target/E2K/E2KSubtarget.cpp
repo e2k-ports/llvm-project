@@ -29,7 +29,6 @@ E2KSubtarget &E2KSubtarget::initializeSubtargetDependencies(StringRef CPU,
                                                                 StringRef FS) {
   UseSoftMulDiv = false;
   IsV9 = false;
-  IsLeon = false;
   V8DeprecatedInsts = false;
   IsVIS = false;
   IsVIS2 = false;
@@ -39,15 +38,6 @@ E2KSubtarget &E2KSubtarget::initializeSubtargetDependencies(StringRef CPU,
   UseSoftFloat = false;
   HasNoFSMULD = false;
   HasNoFMULS = false;
-
-  // Leon features
-  HasLeonCasa = false;
-  HasUmacSmac = false;
-  HasPWRPSR = false;
-  InsertNOPLoad = false;
-  FixAllFDIVSQRT = false;
-  DetectRoundChange = false;
-  HasLeonCycleCounter = false;
 
   // Determine default and user specified characteristics
   std::string CPUName = std::string(CPU);
