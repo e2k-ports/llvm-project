@@ -269,20 +269,6 @@ bool Filler::delayHasHazard(MachineBasicBlock::iterator candidate,
     }
   }
 
-  unsigned Opcode = candidate->getOpcode();
-  // LD and LDD may have NOPs inserted afterwards in the case of some LEON
-  // processors, so we can't use the delay slot if this feature is switched-on.
-  if (Subtarget->insertNOPLoad()
-      &&
-      Opcode >=  E2K::LDDArr && Opcode <= E2K::LDrr)
-    return true;
-
-  // Same as above for FDIV and FSQRT on some LEON processors.
-  if (Subtarget->fixAllFDIVSQRT()
-      &&
-      Opcode >=  E2K::FDIVD && Opcode <= E2K::FSQRTD)
-    return true;
-
 
   return false;
 }
