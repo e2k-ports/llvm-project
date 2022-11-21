@@ -16,7 +16,6 @@ add_public_tablegen_target(E2KCommonTableGen)
 
 add_llvm_target(E2KCodeGen
   DelaySlotFiller.cpp
-  LeonPasses.cpp
   E2KAsmPrinter.cpp
   E2KInstrInfo.cpp
   E2KISelDAGToDAG.cpp

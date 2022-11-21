@@ -1679,12 +1679,10 @@ E2KTargetLowering::E2KTargetLowering(const TargetMachine &TM,
 
   // ATOMICs.
   // Atomics are supported on E2KV9. 32-bit atomics are also
-  // supported by some Leon E2KV8 variants. Otherwise, atomics
+  // supported by some E2KV8 variants. Otherwise, atomics
   // are unsupported.
   if (Subtarget->isV9())
     setMaxAtomicSizeInBitsSupported(64);
-  else if (Subtarget->hasLeonCasa())
-    setMaxAtomicSizeInBitsSupported(32);
   else
     setMaxAtomicSizeInBitsSupported(0);
 
@@ -1893,13 +1891,6 @@ E2KTargetLowering::E2KTargetLowering(const TargetMachine &TM,
     }
   }
 
-  if (Subtarget->fixAllFDIVSQRT()) {
-    // Promote FDIVS and FSQRTS to FDIVD and FSQRTD instructions instead as
-    // the former instructions generate errata on LEON processors.
-    setOperationAction(ISD::FDIV, MVT::f32, Promote);
-    setOperationAction(ISD::FSQRT, MVT::f32, Promote);
-  }
-
   if (Subtarget->hasNoFMULS()) {
     setOperationAction(ISD::FMUL, MVT::f32, Promote);
   }
@@ -1907,9 +1898,6 @@ E2KTargetLowering::E2KTargetLowering(const TargetMachine &TM,
   // Custom combine bitcast between f64 and v2i32
   if (!Subtarget->is64Bit())
     setTargetDAGCombine(ISD::BITCAST);
-
-  if (Subtarget->hasLeonCycleCounter())
-    setOperationAction(ISD::READCYCLECOUNTER, MVT::i64, Custom);
 
   setOperationAction(ISD::INTRINSIC_WO_CHAIN, MVT::Other, Custom);
 
@@ -3514,7 +3502,6 @@ void E2KTargetLowering::ReplaceNodeResults(SDNode *N,
                                   1));
     return;
   case ISD::READCYCLECOUNTER: {
-    assert(Subtarget->hasLeonCycleCounter());
     SDValue Lo = DAG.getCopyFromReg(N->getOperand(0), dl, E2K::ASR23, MVT::i32);
     SDValue Hi = DAG.getCopyFromReg(Lo, dl, E2K::G0, MVT::i32);
     SDValue Ops[] = { Lo, Hi };

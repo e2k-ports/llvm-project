@@ -51,20 +51,10 @@ def HasVIS3 : Predicate<"Subtarget->isVIS3()">,
 // point instructions.
 def HasHardQuad : Predicate<"Subtarget->hasHardQuad()">;
 
-// HasLeonCASA - This is true when the target processor supports the CASA
-// instruction
-def HasLeonCASA : Predicate<"Subtarget->hasLeonCasa()">;
-
-// HasPWRPSR - This is true when the target processor supports partial
-// writes to the PSR register that only affects the ET field.
-def HasPWRPSR : Predicate<"Subtarget->hasPWRPSR()">,
-                AssemblerPredicate<(all_of FeaturePWRPSR)>;
-
 // HasUMAC_SMAC - This is true when the target processor supports the
 // UMAC and SMAC instructions
 def HasUMAC_SMAC : Predicate<"Subtarget->hasUmacSmac()">;
 
-def HasNoFdivSqrtFix : Predicate<"!Subtarget->fixAllFDIVSQRT()">;
 def HasFMULS : Predicate<"!Subtarget->hasNoFMULS()">;
 def HasFSMULD : Predicate<"!Subtarget->hasNoFSMULD()">;
 
@@ -1292,25 +1282,6 @@ def FABSS : F3_3u<2, 0b110100, 0b000001001,
                  IIC_fpu_abs>;
 
 
-// Floating-point Square Root Instructions, p.145
-// FSQRTS generates an erratum on LEON processors, so by disabling this instruction
-// this will be promoted to use FSQRTD with doubles instead.
-let Predicates = [HasNoFdivSqrtFix] in
-def FSQRTS : F3_3u<2, 0b110100, 0b000101001,
-                  (outs FPRegs:$rd), (ins FPRegs:$rs2),
-                  "fsqrts $rs2, $rd",
-                  [(set f32:$rd, (fsqrt f32:$rs2))],
-                  IIC_fpu_sqrts>;
-def FSQRTD : F3_3u<2, 0b110100, 0b000101010,
-                  (outs DFPRegs:$rd), (ins DFPRegs:$rs2),
-                  "fsqrtd $rs2, $rd",
-                  [(set f64:$rd, (fsqrt f64:$rs2))],
-                  IIC_fpu_sqrtd>;
-def FSQRTQ : F3_3u<2, 0b110100, 0b000101011,
-                  (outs QFPRegs:$rd), (ins QFPRegs:$rs2),
-                  "fsqrtq $rs2, $rd",
-                  [(set f128:$rd, (fsqrt f128:$rs2))]>,
-                  Requires<[HasHardQuad]>;
 
 
 
@@ -1380,7 +1351,7 @@ def FDMULQ : F3_3<2, 0b110100, 0b001101110,
                                          (fpextend f64:$rs2)))]>,
                   Requires<[HasHardQuad]>;
 
-// FDIVS generates an erratum on LEON processors, so by disabling this instruction
+// FDIVS generates an erratum on processors, so by disabling this instruction
 // this will be promoted to use FDIVD with doubles instead.
 def FDIVS  : F3_3<2, 0b110100, 0b001001101,
                  (outs FPRegs:$rd), (ins FPRegs:$rs1, FPRegs:$rs2),
@@ -1694,24 +1665,6 @@ let Predicates = [HasV9], Constraints = "$swap = $rd", asi = 0b10000000 in
                      (atomic_cmp_swap_32 iPTR:$rs1, i32:$rs2, i32:$swap))]>;
 
 
-// CASA is supported as an instruction on some LEON3 and all LEON4 processors.
-// This version can be automatically lowered from C code, selecting ASI 10
-let Predicates = [HasLeonCASA], Constraints = "$swap = $rd", asi = 0b00001010 in
-  def CASAasi10: F3_1_asi<3, 0b111100,
-                (outs IntRegs:$rd), (ins IntRegs:$rs1, IntRegs:$rs2,
-                                     IntRegs:$swap),
-                 "casa [$rs1] 10, $rs2, $rd",
-                 [(set i32:$rd,
-                     (atomic_cmp_swap_32 iPTR:$rs1, i32:$rs2, i32:$swap))]>;
-
-// CASA supported on some LEON3 and all LEON4 processors. Same pattern as
-// CASrr, above, but with a different ASI. This version is supported for
-// inline assembly lowering only.
-let Predicates = [HasLeonCASA], Constraints = "$swap = $rd" in
-  def CASArr: F3_1_asi<3, 0b111100,
-                (outs IntRegs:$rd), (ins IntRegs:$rs1, IntRegs:$rs2,
-                                     IntRegs:$swap, i8imm:$asi),
-                 "casa [$rs1] $asi, $rs2, $rd", []>;
 
 // TODO: Add DAG sequence to lower these instructions. Currently, only provided
 // as inline assembler-supported instructions.
@@ -1735,17 +1688,6 @@ let Predicates = [HasUMAC_SMAC], Defs = [Y, ASR18], Uses = [Y, ASR18] in {
                   (outs IntRegs:$rd), (ins IntRegs:$rs1, simm13Op:$simm13, ASRRegs:$asr18),
                    "umac $rs1, $simm13, $rd",
                    [], IIC_smac_umac>;
-}
-
-// The partial write WRPSR instruction has a non-zero destination
-// register value to separate it from the standard instruction.
-let Predicates = [HasPWRPSR], Defs = [PSR], rd=1 in {
-  def PWRPSRrr : F3_1<2, 0b110001,
-     (outs), (ins IntRegs:$rs1, IntRegs:$rs2),
-     "pwr $rs1, $rs2, %psr", []>;
-  def PWRPSRri : F3_2<2, 0b110001,
-     (outs), (ins IntRegs:$rs1, simm13Op:$simm13),
-     "pwr $rs1, $simm13, %psr", []>;
 }
 
 let Defs = [ICC] in {
