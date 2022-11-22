@@ -179,6 +179,7 @@ TargetInfo *getRISCVTargetInfo();
 TargetInfo *getSPARCV9TargetInfo();
 TargetInfo *getX86TargetInfo();
 TargetInfo *getX86_64TargetInfo();
+TargetInfo *getE2KTargetInfo();
 template <class ELFT> TargetInfo *getMipsTargetInfo();
 
 struct ErrorPlace {
