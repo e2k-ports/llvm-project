@@ -21,6 +21,7 @@
 #include "Targets/BPF.h"
 #include "Targets/CSKY.h"
 #include "Targets/DirectX.h"
+#include "Targets/E2K.h"
 #include "Targets/Hexagon.h"
 #include "Targets/Lanai.h"
 #include "Targets/Le64.h"
@@ -686,7 +687,14 @@ TargetInfo *AllocateTarget(const llvm::Triple &Triple,
     default:
       return new LoongArch64TargetInfo(Triple, Opts);
     }
+  case llvm::Triple::e2k:
+    return new LinuxTargetInfo<E2KV8TargetInfo>(Triple, Opts);
+  case llvm::Triple::e2kv9:
+    return new LinuxTargetInfo<E2KV9TargetInfo>(Triple, Opts);
+  case llvm::Triple::e2kel:
+    return new LinuxTargetInfo<E2KV8elTargetInfo>(Triple, Opts);
   }
+
 }
 } // namespace targets
 } // namespace clang
