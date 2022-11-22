@@ -313,7 +313,6 @@ def : Pat<(store (i64 0), ADDRri:$dst), (STXri ADDRri:$dst, (i64 G0))>;
 // We reuse CMPICC SDNodes for compares, but use new BPXCC branch nodes for
 // 64-bit compares. See LowerBR_CC.
 
-let Predicates = [Is64Bit] in {
 
 let Uses = [ICC], cc = 0b10 in
   defm BPX : IPredBranch<"%xcc", [(SPbpxcc bb:$imm19, imm:$cond)]>;
@@ -344,7 +343,6 @@ def FMOVD_XCC : F4_3<0b110101, 0b000010, (outs DFPRegs:$rd),
                       "fmovd$cond %xcc, $rs2, $rd",
                       [(set f64:$rd,
                        (SPselectxcc f64:$rs2, f64:$f, imm:$cond))]>;
-let Predicates = [Is64Bit, HasHardQuad] in
 def FMOVQ_XCC : F4_3<0b110101, 0b000011, (outs QFPRegs:$rd),
                       (ins QFPRegs:$rs2, QFPRegs:$f, CCOp:$cond),
                       "fmovq$cond %xcc, $rs2, $rd",
@@ -419,23 +417,20 @@ multiclass FMOVR<bits<3> rcond, string OpcStr> {
   def Q : F4_4r<0b110101, 0b00111, rcond,
                 (outs FPRegs:$rd), (ins I64Regs:$rs1, FPRegs:$rs2),
                 !strconcat(!strconcat("fmovrq", OpcStr)," $rs1, $rs2, $rd"),
-                []>, Requires<[HasHardQuad]>;
+                []>;
 }
 
-let Predicates = [HasV9] in {
-  defm FMOVRZ   : FMOVR<0b001, "z">;
-  defm FMOVRLEZ : FMOVR<0b010, "lez">;
-  defm FMOVRLZ  : FMOVR<0b011, "lz">;
-  defm FMOVRNZ  : FMOVR<0b101, "nz">;
-  defm FMOVRGZ  : FMOVR<0b110, "gz">;
-  defm FMOVRGEZ : FMOVR<0b111, "gez">;
-}
+defm FMOVRZ   : FMOVR<0b001, "z">;
+defm FMOVRLEZ : FMOVR<0b010, "lez">;
+defm FMOVRLZ  : FMOVR<0b011, "lz">;
+defm FMOVRNZ  : FMOVR<0b101, "nz">;
+defm FMOVRGZ  : FMOVR<0b110, "gz">;
+defm FMOVRGEZ : FMOVR<0b111, "gez">;
+
 
 //===----------------------------------------------------------------------===//
 // 64-bit Floating Point Conversions.
 //===----------------------------------------------------------------------===//
-
-let Predicates = [Is64Bit] in {
 
 def FXTOS : F3_3u<2, 0b110100, 0b010000100,
                  (outs FPRegs:$rd), (ins DFPRegs:$rs2),
@@ -445,7 +440,6 @@ def FXTOD : F3_3u<2, 0b110100, 0b010001000,
                  (outs DFPRegs:$rd), (ins DFPRegs:$rs2),
                  "fxtod $rs2, $rd",
                  [(set DFPRegs:$rd, (SPxtof DFPRegs:$rs2))]>;
-let Predicates = [Is64Bit, HasHardQuad] in
 def FXTOQ : F3_3u<2, 0b110100, 0b010001100,
                  (outs QFPRegs:$rd), (ins DFPRegs:$rs2),
                  "fxtoq $rs2, $rd",
@@ -459,13 +453,10 @@ def FDTOX : F3_3u<2, 0b110100, 0b010000010,
                  (outs DFPRegs:$rd), (ins DFPRegs:$rs2),
                  "fdtox $rs2, $rd",
                  [(set DFPRegs:$rd, (SPftox DFPRegs:$rs2))]>;
-let Predicates = [Is64Bit, HasHardQuad] in
 def FQTOX : F3_3u<2, 0b110100, 0b010000011,
                  (outs DFPRegs:$rd), (ins QFPRegs:$rs2),
                  "fqtox $rs2, $rd",
                  [(set DFPRegs:$rd, (SPftox QFPRegs:$rs2))]>;
-
-} // Predicates = [Is64Bit]
 
 def : Pat<(SPselectxcc i64:$t, i64:$f, imm:$cond),
           (MOVXCCrr $t, $f, imm:$cond)>;
@@ -482,11 +473,9 @@ def : Pat<(SPselectfcc i64:$t, i64:$f, imm:$cond),
 def : Pat<(SPselectfcc (i64 simm11:$t), i64:$f, imm:$cond),
           (MOVFCCri (as_i32imm $t), $f, imm:$cond)>;
 
-} // Predicates = [Is64Bit]
-
 
 // 64 bit SETHI
-let Predicates = [Is64Bit], isCodeGenOnly = 1 in {
+let isCodeGenOnly = 1 in {
 def SETHIXi : F2_1<0b100,
                    (outs IntRegs:$rd), (ins i64imm:$imm22),
                    "sethi $imm22, $rd",
@@ -494,7 +483,7 @@ def SETHIXi : F2_1<0b100,
 }
 
 // ATOMICS.
-let Predicates = [Is64Bit], Constraints = "$swap = $rd", asi = 0b10000000 in {
+let Constraints = "$swap = $rd", asi = 0b10000000 in {
   def CASXrr: F3_1_asi<3, 0b111110,
                 (outs I64Regs:$rd), (ins I64Regs:$rs1, I64Regs:$rs2,
                                      I64Regs:$swap),
@@ -504,7 +493,7 @@ let Predicates = [Is64Bit], Constraints = "$swap = $rd", asi = 0b10000000 in {
 
 } // Predicates = [Is64Bit], Constraints = ...
 
-let Predicates = [Is64Bit] in {
+
 
 // atomic_load_64 addr -> load addr
 def : Pat<(i64 (atomic_load_64 ADDRrr:$src)), (LDXrr ADDRrr:$src)>;
@@ -514,13 +503,11 @@ def : Pat<(i64 (atomic_load_64 ADDRri:$src)), (LDXri ADDRri:$src)>;
 def : Pat<(atomic_store_64 ADDRrr:$dst, i64:$val), (STXrr ADDRrr:$dst, $val)>;
 def : Pat<(atomic_store_64 ADDRri:$dst, i64:$val), (STXri ADDRri:$dst, $val)>;
 
-} // Predicates = [Is64Bit]
 
-let Predicates = [Is64Bit], hasSideEffects = 1, Uses = [ICC], cc = 0b10 in
+let hasSideEffects = 1, Uses = [ICC], cc = 0b10 in
  defm TXCC : TRAP<"%xcc">;
 
 // Global addresses, constant pool entries
-let Predicates = [Is64Bit] in {
 
 def : Pat<(SPhi tglobaladdr:$in), (SETHIi tglobaladdr:$in)>;
 def : Pat<(SPlo tglobaladdr:$in), (ORXri (i64 G0), tglobaladdr:$in)>;
@@ -544,4 +531,3 @@ def : Pat<(add iPTR:$r, (SPlo tglobaladdr:$in)), (ADDXri $r, tglobaladdr:$in)>;
 def : Pat<(add iPTR:$r, (SPlo tconstpool:$in)),  (ADDXri $r, tconstpool:$in)>;
 def : Pat<(add iPTR:$r, (SPlo tblockaddress:$in)),
                         (ADDXri $r, tblockaddress:$in)>;
-}
