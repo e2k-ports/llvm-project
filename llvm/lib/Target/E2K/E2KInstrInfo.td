@@ -26,44 +26,6 @@ def Is32Bit : Predicate<"!Subtarget->is64Bit()">;
 // True when generating 64-bit code. This also implies HasV9.
 def Is64Bit : Predicate<"Subtarget->is64Bit()">;
 
-def UseSoftMulDiv : Predicate<"Subtarget->useSoftMulDiv()">,
-              AssemblerPredicate<(all_of FeatureSoftMulDiv)>;
-
-// HasV9 - This predicate is true when the target processor supports V9
-// instructions.  Note that the machine may be running in 32-bit mode.
-def HasV9   : Predicate<"Subtarget->isV9()">,
-              AssemblerPredicate<(all_of FeatureV9)>;
-
-// HasNoV9 - This predicate is true when the target doesn't have V9
-// instructions.  Use of this is just a hack for the isel not having proper
-// costs for V8 instructions that are more expensive than their V9 ones.
-def HasNoV9 : Predicate<"!Subtarget->isV9()">;
-
-// HasVIS - This is true when the target processor has VIS extensions.
-def HasVIS : Predicate<"Subtarget->isVIS()">,
-             AssemblerPredicate<(all_of FeatureVIS)>;
-def HasVIS2 : Predicate<"Subtarget->isVIS2()">,
-             AssemblerPredicate<(all_of FeatureVIS2)>;
-def HasVIS3 : Predicate<"Subtarget->isVIS3()">,
-             AssemblerPredicate<(all_of FeatureVIS3)>;
-
-// HasHardQuad - This is true when the target processor supports quad floating
-// point instructions.
-def HasHardQuad : Predicate<"Subtarget->hasHardQuad()">;
-
-// HasUMAC_SMAC - This is true when the target processor supports the
-// UMAC and SMAC instructions
-def HasUMAC_SMAC : Predicate<"Subtarget->hasUmacSmac()">;
-
-def HasFMULS : Predicate<"!Subtarget->hasNoFMULS()">;
-def HasFSMULD : Predicate<"!Subtarget->hasNoFSMULD()">;
-
-// UseDeprecatedInsts - This predicate is true when the target processor is a
-// V8, or when it is V9 but the V8 deprecated instructions are efficient enough
-// to use when appropriate.  In either of these cases, the instruction selector
-// will pick deprecated instructions.
-def UseDeprecatedInsts : Predicate<"Subtarget->useDeprecatedV8Instructions()">;
-
 //===----------------------------------------------------------------------===//
 // Instruction Pattern Stuff
 //===----------------------------------------------------------------------===//
@@ -476,7 +438,7 @@ let hasSideEffects = 1, mayStore = 1 in {
   let rd = 0, rs1 = 0, rs2 = 0 in
     def FLUSHW : F3_1<0b10, 0b101011, (outs), (ins),
                       "flushw",
-                      [(flushw)]>, Requires<[HasV9]>;
+                      [(flushw)]>;
   let rd = 8, rs1 = 0, simm13 = 3 in
     def TA3 : F3_2<0b10, 0b111010, (outs), (ins),
                    "ta 3",
@@ -565,17 +527,14 @@ let DecoderMethod = "DecodeLoadIntPair" in
 // Section B.2 - Load Floating-point Instructions, p. 92
 let DecoderMethod = "DecodeLoadFP" in {
   defm LDF   : Load<"ld",  0b100000, load,    FPRegs,  f32, IIC_iu_or_fpu_instr>;
-  def LDFArr : LoadASI<"ld",  0b110000, FPRegs>,
-                Requires<[HasV9]>;
+  def LDFArr : LoadASI<"ld",  0b110000, FPRegs>;
 }
 let DecoderMethod = "DecodeLoadDFP" in {
   defm LDDF   : Load<"ldd", 0b100011, load,    DFPRegs, f64, IIC_ldd>;
-  def LDDFArr : LoadASI<"ldd", 0b110011, DFPRegs>,
-                 Requires<[HasV9]>;
+  def LDDFArr : LoadASI<"ldd", 0b110011, DFPRegs>;
 }
 let DecoderMethod = "DecodeLoadQFP" in
-  defm LDQF  : LoadA<"ldq", 0b100010, 0b110010, load, QFPRegs, f128>,
-               Requires<[HasV9, HasHardQuad]>;
+  defm LDQF  : LoadA<"ldq", 0b100010, 0b110010, load, QFPRegs, f128>;
 
 let DecoderMethod = "DecodeLoadCP" in
   defm LDC   : Load<"ld", 0b110000, load, CoprocRegs, i32>;
@@ -601,9 +560,9 @@ let DecoderMethod = "DecodeLoadFP" in
     }
     let rd = 1 in {
       def LDXFSRrr : F3_1<3, 0b100001, (outs), (ins (MEMrr $rs1, $rs2):$addr),
-                     "ldx [$addr], %fsr", []>, Requires<[HasV9]>;
+                     "ldx [$addr], %fsr", []>;
       def LDXFSRri : F3_2<3, 0b100001, (outs), (ins (MEMri $rs1, $simm13):$addr),
-                     "ldx [$addr], %fsr", []>, Requires<[HasV9]>;
+                     "ldx [$addr], %fsr", []>;
     }
   }
 
@@ -629,17 +588,14 @@ let DecoderMethod = "DecodeStoreIntPair" in
 // Section B.5 - Store Floating-point Instructions, p. 97
 let DecoderMethod = "DecodeStoreFP" in {
   defm STF   : Store<"st",  0b100100, store,         FPRegs,  f32>;
-  def STFArr : StoreASI<"st",  0b110100, FPRegs>,
-               Requires<[HasV9]>;
+  def STFArr : StoreASI<"st",  0b110100, FPRegs>;
 }
 let DecoderMethod = "DecodeStoreDFP" in {
   defm STDF   : Store<"std", 0b100111, store,         DFPRegs, f64, IIC_std>;
-  def STDFArr : StoreASI<"std", 0b110111, DFPRegs>,
-                Requires<[HasV9]>;
+  def STDFArr : StoreASI<"std", 0b110111, DFPRegs>;
 }
 let DecoderMethod = "DecodeStoreQFP" in
-  defm STQF  : StoreA<"stq", 0b100110, 0b110110, store, QFPRegs, f128>,
-               Requires<[HasV9, HasHardQuad]>;
+  defm STQF  : StoreA<"stq", 0b100110, 0b110110, store, QFPRegs, f128>;
 
 let DecoderMethod = "DecodeStoreCP" in
   defm STC   : Store<"st", 0b110100, store, CoprocRegs, i32>;
@@ -679,9 +635,9 @@ let DecoderMethod = "DecodeStoreFP" in {
   }
   let rd = 1, Defs = [FSR] in {
     def STXFSRrr : F3_1<3, 0b100101, (outs (MEMrr $rs1, $rs2):$addr), (ins),
-                   "stx %fsr, [$addr]", []>, Requires<[HasV9]>;
+                   "stx %fsr, [$addr]", []>;
     def STXFSRri : F3_2<3, 0b100101, (outs (MEMri $rs1, $simm13):$addr), (ins),
-                   "stx %fsr, [$addr]", []>, Requires<[HasV9]>;
+                   "stx %fsr, [$addr]", []>;
   }
 }
 
@@ -853,7 +809,7 @@ class BranchPredictAlways<dag ins, string asmstr, list<dag> pattern>
 let cond = 8 in {
   // If we're compiling for v9, prefer BPA rather than BA
   // TODO: Disallow BA emission when FeatureV8Deprecated isn't enabled
-  let Predicates = [HasV9], cc = 0b00 in
+  let cc = 0b00 in
     def BPA : BranchPredictAlways<(ins bprtarget:$imm19),
       "ba %icc, $imm19", [(br bb:$imm19)]>;
 
@@ -913,7 +869,7 @@ let Uses = [ICC] in {
   def BCONDA : BranchSPA<(ins brtarget:$imm22, CCOp:$cond),
                          "b$cond,a $imm22", []>;
 
-  let Predicates = [HasV9], cc = 0b00 in
+  let cc = 0b00 in
     defm BPI : IPredBranch<"%icc", [(SPbpicc bb:$imm19, imm:$cond)]>;
 }
 
@@ -955,7 +911,7 @@ let Uses = [FCC0] in {
 }
 
 // Variants of FBCOND that uses V9 opcode
-let Predicates = [HasV9], Uses = [FCC0], cc = 0,
+let Uses = [FCC0], cc = 0,
     isBranch = 1, isTerminator = 1, hasDelaySlot = 1 in {
   def FBCOND_V9  : F2_3<0b101, 0, 1, (outs),
                     (ins bprtarget:$imm19, CCOp:$cond),
@@ -967,8 +923,7 @@ let Predicates = [HasV9], Uses = [FCC0], cc = 0,
                     [(SPbrfccv9 bb:$imm19, imm:$cond)], IIC_fpu_normal_instr>;
 }
 
-let Predicates = [HasV9] in
-  defm BPF : FPredBranch;
+defm BPF : FPredBranch;
 
 // Section B.22 - Branch on Co-processor Condition Codes Instructions, p. 123
 let isBranch = 1, isTerminator = 1, hasDelaySlot = 1 in {
@@ -1094,7 +1049,7 @@ multiclass TRAP<string regStr> {
                     []>;
 }
 
-let DecoderNamespace = "E2KV9", DecoderMethod = "DecodeTRAP", Predicates = [HasV9], hasSideEffects = 1, Uses = [ICC], cc = 0b00 in
+let DecoderNamespace = "E2KV9", DecoderMethod = "DecodeTRAP", hasSideEffects = 1, Uses = [ICC], cc = 0b00 in
   defm TICC : TRAP<"%icc">;
 
 
@@ -1111,30 +1066,30 @@ let rs2 = 0 in
                  "rd $rs1, $rd", []>;
 
 // PSR, WIM, and TBR don't exist on the E2KV9, only the V8.
-let Predicates = [HasNoV9] in {
-  let rs2 = 0, rs1 = 0, Uses=[PSR] in
-    def RDPSR : F3_1<2, 0b101001,
-		     (outs IntRegs:$rd), (ins),
-		     "rd %psr, $rd", []>;
 
-  let rs2 = 0, rs1 = 0, Uses=[WIM] in
-    def RDWIM : F3_1<2, 0b101010,
-		     (outs IntRegs:$rd), (ins),
-		     "rd %wim, $rd", []>;
+let rs2 = 0, rs1 = 0, Uses=[PSR] in
+def RDPSR : F3_1<2, 0b101001,
+         (outs IntRegs:$rd), (ins),
+         "rd %psr, $rd", []>;
 
-  let rs2 = 0, rs1 = 0, Uses=[TBR] in
-    def RDTBR : F3_1<2, 0b101011,
-		     (outs IntRegs:$rd), (ins),
-		     "rd %tbr, $rd", []>;
-}
+let rs2 = 0, rs1 = 0, Uses=[WIM] in
+def RDWIM : F3_1<2, 0b101010,
+         (outs IntRegs:$rd), (ins),
+         "rd %wim, $rd", []>;
+
+let rs2 = 0, rs1 = 0, Uses=[TBR] in
+def RDTBR : F3_1<2, 0b101011,
+         (outs IntRegs:$rd), (ins),
+         "rd %tbr, $rd", []>;
+
 
 // PC don't exist on the E2KV8, only the V9.
-let Predicates = [HasV9] in {
-  let rs2 = 0, rs1 = 5 in
-    def RDPC : F3_1<2, 0b101000,
-		     (outs IntRegs:$rd), (ins),
-		     "rd %pc, $rd", []>;
-}
+
+let rs2 = 0, rs1 = 5 in
+def RDPC : F3_1<2, 0b101000,
+         (outs IntRegs:$rd), (ins),
+         "rd %pc, $rd", []>;
+
 
 // Section B.29 - Write State Register Instructions
 def WRASRrr : F3_1<2, 0b110000,
@@ -1145,34 +1100,34 @@ def WRASRri : F3_2<2, 0b110000,
                  "wr $rs1, $simm13, $rd", []>;
 
 // PSR, WIM, and TBR don't exist on the E2KV9, only the V8.
-let Predicates = [HasNoV9] in {
-  let Defs = [PSR], rd=0 in {
-    def WRPSRrr : F3_1<2, 0b110001,
-		     (outs), (ins IntRegs:$rs1, IntRegs:$rs2),
-		     "wr $rs1, $rs2, %psr", []>;
-    def WRPSRri : F3_2<2, 0b110001,
-		     (outs), (ins IntRegs:$rs1, simm13Op:$simm13),
-		     "wr $rs1, $simm13, %psr", []>;
-  }
 
-  let Defs = [WIM], rd=0 in {
-    def WRWIMrr : F3_1<2, 0b110010,
-		     (outs), (ins IntRegs:$rs1, IntRegs:$rs2),
-		     "wr $rs1, $rs2, %wim", []>;
-    def WRWIMri : F3_2<2, 0b110010,
-		     (outs), (ins IntRegs:$rs1, simm13Op:$simm13),
-		     "wr $rs1, $simm13, %wim", []>;
-  }
-
-  let Defs = [TBR], rd=0 in {
-    def WRTBRrr : F3_1<2, 0b110011,
-		     (outs), (ins IntRegs:$rs1, IntRegs:$rs2),
-		     "wr $rs1, $rs2, %tbr", []>;
-    def WRTBRri : F3_2<2, 0b110011,
-		     (outs), (ins IntRegs:$rs1, simm13Op:$simm13),
-		     "wr $rs1, $simm13, %tbr", []>;
-  }
+let Defs = [PSR], rd=0 in {
+def WRPSRrr : F3_1<2, 0b110001,
+         (outs), (ins IntRegs:$rs1, IntRegs:$rs2),
+         "wr $rs1, $rs2, %psr", []>;
+def WRPSRri : F3_2<2, 0b110001,
+         (outs), (ins IntRegs:$rs1, simm13Op:$simm13),
+         "wr $rs1, $simm13, %psr", []>;
 }
+
+let Defs = [WIM], rd=0 in {
+def WRWIMrr : F3_1<2, 0b110010,
+         (outs), (ins IntRegs:$rs1, IntRegs:$rs2),
+         "wr $rs1, $rs2, %wim", []>;
+def WRWIMri : F3_2<2, 0b110010,
+         (outs), (ins IntRegs:$rs1, simm13Op:$simm13),
+         "wr $rs1, $simm13, %wim", []>;
+}
+
+let Defs = [TBR], rd=0 in {
+def WRTBRrr : F3_1<2, 0b110011,
+         (outs), (ins IntRegs:$rs1, IntRegs:$rs2),
+         "wr $rs1, $rs2, %tbr", []>;
+def WRTBRri : F3_2<2, 0b110011,
+         (outs), (ins IntRegs:$rs1, simm13Op:$simm13),
+         "wr $rs1, $simm13, %tbr", []>;
+}
+
 
 // Section B.30 - STBAR Instruction
 let hasSideEffects = 1, rd = 0, rs1 = 0b01111, rs2 = 0 in
@@ -1214,8 +1169,7 @@ def FITOD : F3_3u<2, 0b110100, 0b011001000,
 def FITOQ : F3_3u<2, 0b110100, 0b011001100,
                  (outs QFPRegs:$rd), (ins FPRegs:$rs2),
                  "fitoq $rs2, $rd",
-                 [(set QFPRegs:$rd, (SPitof FPRegs:$rs2))]>,
-                 Requires<[HasHardQuad]>;
+                 [(set QFPRegs:$rd, (SPitof FPRegs:$rs2))]>;
 
 // Convert Floating-point to Integer Instructions, p. 142
 def FSTOI : F3_3u<2, 0b110100, 0b011010001,
@@ -1231,8 +1185,7 @@ def FDTOI : F3_3u<2, 0b110100, 0b011010010,
 def FQTOI : F3_3u<2, 0b110100, 0b011010011,
                  (outs FPRegs:$rd), (ins QFPRegs:$rs2),
                  "fqtoi $rs2, $rd",
-                 [(set FPRegs:$rd, (SPftoi QFPRegs:$rs2))]>,
-                 Requires<[HasHardQuad]>;
+                 [(set FPRegs:$rd, (SPftoi QFPRegs:$rs2))]>;
 
 // Convert between Floating-point Formats Instructions, p. 143
 def FSTOD : F3_3u<2, 0b110100, 0b011001001,
@@ -1243,8 +1196,7 @@ def FSTOD : F3_3u<2, 0b110100, 0b011001001,
 def FSTOQ : F3_3u<2, 0b110100, 0b011001101,
                  (outs QFPRegs:$rd), (ins FPRegs:$rs2),
                  "fstoq $rs2, $rd",
-                 [(set f128:$rd, (fpextend f32:$rs2))]>,
-                 Requires<[HasHardQuad]>;
+                 [(set f128:$rd, (fpextend f32:$rs2))]>;
 def FDTOS : F3_3u<2, 0b110100, 0b011000110,
                  (outs FPRegs:$rd), (ins DFPRegs:$rs2),
                  "fdtos $rs2, $rd",
@@ -1253,18 +1205,15 @@ def FDTOS : F3_3u<2, 0b110100, 0b011000110,
 def FDTOQ : F3_3u<2, 0b110100, 0b011001110,
                  (outs QFPRegs:$rd), (ins DFPRegs:$rs2),
                  "fdtoq $rs2, $rd",
-                 [(set f128:$rd, (fpextend f64:$rs2))]>,
-                 Requires<[HasHardQuad]>;
+                 [(set f128:$rd, (fpextend f64:$rs2))]>;
 def FQTOS : F3_3u<2, 0b110100, 0b011000111,
                  (outs FPRegs:$rd), (ins QFPRegs:$rs2),
                  "fqtos $rs2, $rd",
-                 [(set f32:$rd, (fpround f128:$rs2))]>,
-                 Requires<[HasHardQuad]>;
+                 [(set f32:$rd, (fpround f128:$rs2))]>;
 def FQTOD : F3_3u<2, 0b110100, 0b011001011,
                  (outs DFPRegs:$rd), (ins QFPRegs:$rs2),
                  "fqtod $rs2, $rd",
-                 [(set f64:$rd, (fpround f128:$rs2))]>,
-                 Requires<[HasHardQuad]>;
+                 [(set f64:$rd, (fpround f128:$rs2))]>;
 
 // Floating-point Move Instructions, p. 144
 def FMOVS : F3_3u<2, 0b110100, 0b000000001,
@@ -1299,8 +1248,7 @@ def FADDD  : F3_3<2, 0b110100, 0b001000010,
 def FADDQ  : F3_3<2, 0b110100, 0b001000011,
                   (outs QFPRegs:$rd), (ins QFPRegs:$rs1, QFPRegs:$rs2),
                   "faddq $rs1, $rs2, $rd",
-                  [(set f128:$rd, (fadd f128:$rs1, f128:$rs2))]>,
-                  Requires<[HasHardQuad]>;
+                  [(set f128:$rd, (fadd f128:$rs1, f128:$rs2))]>;
 
 def FSUBS  : F3_3<2, 0b110100, 0b001000101,
                   (outs FPRegs:$rd), (ins FPRegs:$rs1, FPRegs:$rs2),
@@ -1315,8 +1263,7 @@ def FSUBD  : F3_3<2, 0b110100, 0b001000110,
 def FSUBQ  : F3_3<2, 0b110100, 0b001000111,
                   (outs QFPRegs:$rd), (ins QFPRegs:$rs1, QFPRegs:$rs2),
                   "fsubq $rs1, $rs2, $rd",
-                  [(set f128:$rd, (fsub f128:$rs1, f128:$rs2))]>,
-                  Requires<[HasHardQuad]>;
+                  [(set f128:$rd, (fsub f128:$rs1, f128:$rs2))]>;
 
 
 // Floating-point Multiply and Divide Instructions, p. 147
@@ -1324,8 +1271,7 @@ def FMULS  : F3_3<2, 0b110100, 0b001001001,
                   (outs FPRegs:$rd), (ins FPRegs:$rs1, FPRegs:$rs2),
                   "fmuls $rs1, $rs2, $rd",
                   [(set f32:$rd, (fmul f32:$rs1, f32:$rs2))],
-                  IIC_fpu_muls>,
-		  Requires<[HasFMULS]>;
+                  IIC_fpu_muls>;
 def FMULD  : F3_3<2, 0b110100, 0b001001010,
                   (outs DFPRegs:$rd), (ins DFPRegs:$rs1, DFPRegs:$rs2),
                   "fmuld $rs1, $rs2, $rd",
@@ -1334,22 +1280,19 @@ def FMULD  : F3_3<2, 0b110100, 0b001001010,
 def FMULQ  : F3_3<2, 0b110100, 0b001001011,
                   (outs QFPRegs:$rd), (ins QFPRegs:$rs1, QFPRegs:$rs2),
                   "fmulq $rs1, $rs2, $rd",
-                  [(set f128:$rd, (fmul f128:$rs1, f128:$rs2))]>,
-                  Requires<[HasHardQuad]>;
+                  [(set f128:$rd, (fmul f128:$rs1, f128:$rs2))]>;
 
 def FSMULD : F3_3<2, 0b110100, 0b001101001,
                   (outs DFPRegs:$rd), (ins FPRegs:$rs1, FPRegs:$rs2),
                   "fsmuld $rs1, $rs2, $rd",
                   [(set f64:$rd, (fmul (fpextend f32:$rs1),
                                         (fpextend f32:$rs2)))],
-                  IIC_fpu_muld>,
-		  Requires<[HasFSMULD]>;
+                  IIC_fpu_muld>;
 def FDMULQ : F3_3<2, 0b110100, 0b001101110,
                   (outs QFPRegs:$rd), (ins DFPRegs:$rs1, DFPRegs:$rs2),
                   "fdmulq $rs1, $rs2, $rd",
                   [(set f128:$rd, (fmul (fpextend f64:$rs1),
-                                         (fpextend f64:$rs2)))]>,
-                  Requires<[HasHardQuad]>;
+                                         (fpextend f64:$rs2)))]>;
 
 // FDIVS generates an erratum on processors, so by disabling this instruction
 // this will be promoted to use FDIVD with doubles instead.
@@ -1366,8 +1309,7 @@ def FDIVD  : F3_3<2, 0b110100, 0b001001110,
 def FDIVQ  : F3_3<2, 0b110100, 0b001001111,
                  (outs QFPRegs:$rd), (ins QFPRegs:$rs1, QFPRegs:$rs2),
                  "fdivq $rs1, $rs2, $rd",
-                 [(set f128:$rd, (fdiv f128:$rs1, f128:$rs2))]>,
-                 Requires<[HasHardQuad]>;
+                 [(set f128:$rd, (fdiv f128:$rs1, f128:$rs2))]>;
 
 // Floating-point Compare Instructions, p. 148
 // Note: the 2nd template arg is different for these guys.
@@ -1390,8 +1332,7 @@ let Defs = [FCC0], rd = 0, isCodeGenOnly = 1 in {
   def FCMPQ  : F3_3c<2, 0b110101, 0b001010011,
                    (outs), (ins QFPRegs:$rs1, QFPRegs:$rs2),
                    "fcmpq $rs1, $rs2",
-                   [(SPcmpfcc f128:$rs1, f128:$rs2)]>,
-                   Requires<[HasHardQuad]>;
+                   [(SPcmpfcc f128:$rs1, f128:$rs2)]>;
 }
 
 // A.13 Floating-Point Compare (E2K v9)
@@ -1401,7 +1342,7 @@ let Defs = [FCC0], rd = 0, isCodeGenOnly = 1 in {
 // the contents of an FCC, since E2K v9 doesn't have facilities to spill
 // an individual FCC.
 
-let Predicates = [HasV9], Defs = [FCC0], rd = 0, isCodeGenOnly = 1 in {
+let Defs = [FCC0], rd = 0, isCodeGenOnly = 1 in {
   def FCMPS_V9  : F3_3c<2, 0b110101, 0b001010001,
                    (outs), (ins FPRegs:$rs1, FPRegs:$rs2),
                    "fcmps %fcc0, $rs1, $rs2",
@@ -1415,8 +1356,7 @@ let Predicates = [HasV9], Defs = [FCC0], rd = 0, isCodeGenOnly = 1 in {
   def FCMPQ_V9  : F3_3c<2, 0b110101, 0b001010011,
                    (outs), (ins QFPRegs:$rs1, QFPRegs:$rs2),
                    "fcmpq %fcc0, $rs1, $rs2",
-                   [(SPcmpfccv9 f128:$rs1, f128:$rs2)]>,
-                   Requires<[HasHardQuad]>;
+                   [(SPcmpfccv9 f128:$rs1, f128:$rs2)]>;
 }
 
 //===----------------------------------------------------------------------===//
@@ -1482,7 +1422,7 @@ let isCodeGenOnly = 1, isReturn = 1,  hasDelaySlot = 1,  isTerminator = 1,
 //===----------------------------------------------------------------------===//
 
 // V9 Conditional Moves.
-let Predicates = [HasV9], Constraints = "$f = $rd" in {
+let Constraints = "$f = $rd" in {
   // Move Integer Register on Condition (MOVcc) p. 194 of the V9 manual.
   let Uses = [ICC], intcc = 1, cc = 0b00 in {
     def MOVICCrr
@@ -1524,7 +1464,6 @@ let Predicates = [HasV9], Constraints = "$f = $rd" in {
                (ins DFPRegs:$rs2, DFPRegs:$f, CCOp:$cond),
                "fmovd$cond %icc, $rs2, $rd",
                [(set f64:$rd, (SPselecticc f64:$rs2, f64:$f, imm:$cond))]>;
-    let Predicates = [HasV9, HasHardQuad] in
     def FMOVQ_ICC
       : F4_3<0b110101, 0b000011, (outs QFPRegs:$rd),
                (ins QFPRegs:$rs2, QFPRegs:$f, CCOp:$cond),
@@ -1543,7 +1482,6 @@ let Predicates = [HasV9], Constraints = "$f = $rd" in {
              (ins DFPRegs:$rs2, DFPRegs:$f, CCOp:$cond),
              "fmovd$cond %fcc0, $rs2, $rd",
              [(set f64:$rd, (SPselectfcc f64:$rs2, f64:$f, imm:$cond))]>;
-    let Predicates = [HasV9, HasHardQuad] in
     def FMOVQ_FCC
       : F4_3<0b110101, 0b000011, (outs QFPRegs:$rd),
              (ins QFPRegs:$rs2, QFPRegs:$f, CCOp:$cond),
@@ -1554,33 +1492,28 @@ let Predicates = [HasV9], Constraints = "$f = $rd" in {
 }
 
 // Floating-Point Move Instructions, p. 164 of the V9 manual.
-let Predicates = [HasV9] in {
-  def FMOVD : F3_3u<2, 0b110100, 0b000000010,
-                   (outs DFPRegs:$rd), (ins DFPRegs:$rs2),
-                   "fmovd $rs2, $rd", []>;
-  let Predicates = [HasV9, HasHardQuad] in
-  def FMOVQ : F3_3u<2, 0b110100, 0b000000011,
-                   (outs QFPRegs:$rd), (ins QFPRegs:$rs2),
-                   "fmovq $rs2, $rd", []>;
-  def FNEGD : F3_3u<2, 0b110100, 0b000000110,
-                   (outs DFPRegs:$rd), (ins DFPRegs:$rs2),
-                   "fnegd $rs2, $rd",
-                   [(set f64:$rd, (fneg f64:$rs2))]>;
-  let Predicates = [HasV9, HasHardQuad] in
-  def FNEGQ : F3_3u<2, 0b110100, 0b000000111,
-                   (outs QFPRegs:$rd), (ins QFPRegs:$rs2),
-                   "fnegq $rs2, $rd",
-                   [(set f128:$rd, (fneg f128:$rs2))]>;
-  def FABSD : F3_3u<2, 0b110100, 0b000001010,
-                   (outs DFPRegs:$rd), (ins DFPRegs:$rs2),
-                   "fabsd $rs2, $rd",
-                   [(set f64:$rd, (fabs f64:$rs2))]>;
-  let Predicates = [HasV9, HasHardQuad] in
-  def FABSQ : F3_3u<2, 0b110100, 0b000001011,
-                   (outs QFPRegs:$rd), (ins QFPRegs:$rs2),
-                   "fabsq $rs2, $rd",
-                   [(set f128:$rd, (fabs f128:$rs2))]>;
-}
+def FMOVD : F3_3u<2, 0b110100, 0b000000010,
+               (outs DFPRegs:$rd), (ins DFPRegs:$rs2),
+               "fmovd $rs2, $rd", []>;
+def FMOVQ : F3_3u<2, 0b110100, 0b000000011,
+               (outs QFPRegs:$rd), (ins QFPRegs:$rs2),
+               "fmovq $rs2, $rd", []>;
+def FNEGD : F3_3u<2, 0b110100, 0b000000110,
+               (outs DFPRegs:$rd), (ins DFPRegs:$rs2),
+               "fnegd $rs2, $rd",
+               [(set f64:$rd, (fneg f64:$rs2))]>;
+def FNEGQ : F3_3u<2, 0b110100, 0b000000111,
+               (outs QFPRegs:$rd), (ins QFPRegs:$rs2),
+               "fnegq $rs2, $rd",
+               [(set f128:$rd, (fneg f128:$rs2))]>;
+def FABSD : F3_3u<2, 0b110100, 0b000001010,
+               (outs DFPRegs:$rd), (ins DFPRegs:$rs2),
+               "fabsd $rs2, $rd",
+               [(set f64:$rd, (fabs f64:$rs2))]>;
+def FABSQ : F3_3u<2, 0b110100, 0b000001011,
+               (outs QFPRegs:$rd), (ins QFPRegs:$rs2),
+               "fabsq $rs2, $rd",
+               [(set f128:$rd, (fabs f128:$rs2))]>;
 
 // Floating-point compare instruction with %fcc0-%fcc3.
 def V9FCMPS  : F3_3c<2, 0b110101, 0b001010001,
@@ -1591,8 +1524,7 @@ def V9FCMPD  : F3_3c<2, 0b110101, 0b001010010,
                 "fcmpd $rd, $rs1, $rs2", []>;
 def V9FCMPQ  : F3_3c<2, 0b110101, 0b001010011,
                 (outs FCCRegs:$rd), (ins QFPRegs:$rs1, QFPRegs:$rs2),
-                "fcmpq $rd, $rs1, $rs2", []>,
-                 Requires<[HasHardQuad]>;
+                "fcmpq $rd, $rs1, $rs2", []>;
 
 let hasSideEffects = 1 in {
   def V9FCMPES  : F3_3c<2, 0b110101, 0b001010101,
@@ -1603,36 +1535,32 @@ let hasSideEffects = 1 in {
                    "fcmped $rd, $rs1, $rs2", []>;
   def V9FCMPEQ  : F3_3c<2, 0b110101, 0b001010111,
                    (outs FCCRegs:$rd), (ins QFPRegs:$rs1, QFPRegs:$rs2),
-                   "fcmpeq $rd, $rs1, $rs2", []>,
-                   Requires<[HasHardQuad]>;
+                   "fcmpeq $rd, $rs1, $rs2", []>;
 }
 
 // Floating point conditional move instrucitons with %fcc0-%fcc3.
-let Predicates = [HasV9] in {
-  let Constraints = "$f = $rd", intcc = 0 in {
-    def V9MOVFCCrr
-      : F4_1<0b101100, (outs IntRegs:$rd),
-             (ins FCCRegs:$cc, IntRegs:$rs2, IntRegs:$f, CCOp:$cond),
-             "mov$cond $cc, $rs2, $rd", []>;
-    def V9MOVFCCri
-      : F4_2<0b101100, (outs IntRegs:$rd),
-             (ins FCCRegs:$cc, i32imm:$simm11, IntRegs:$f, CCOp:$cond),
-             "mov$cond $cc, $simm11, $rd", []>;
-    def V9FMOVS_FCC
-      : F4_3<0b110101, 0b000001, (outs FPRegs:$rd),
-             (ins FCCRegs:$opf_cc, FPRegs:$rs2, FPRegs:$f, CCOp:$cond),
-             "fmovs$cond $opf_cc, $rs2, $rd", []>;
-    def V9FMOVD_FCC
-      : F4_3<0b110101, 0b000010, (outs DFPRegs:$rd),
-             (ins FCCRegs:$opf_cc, DFPRegs:$rs2, DFPRegs:$f, CCOp:$cond),
-             "fmovd$cond $opf_cc, $rs2, $rd", []>;
-    let Predicates = [HasV9, HasHardQuad] in
-    def V9FMOVQ_FCC
-      : F4_3<0b110101, 0b000011, (outs QFPRegs:$rd),
-             (ins FCCRegs:$opf_cc, QFPRegs:$rs2, QFPRegs:$f, CCOp:$cond),
-             "fmovq$cond $opf_cc, $rs2, $rd", []>;
-  } // Constraints = "$f = $rd", ...
-} // let Predicates = [hasV9]
+let Constraints = "$f = $rd", intcc = 0 in {
+def V9MOVFCCrr
+  : F4_1<0b101100, (outs IntRegs:$rd),
+         (ins FCCRegs:$cc, IntRegs:$rs2, IntRegs:$f, CCOp:$cond),
+         "mov$cond $cc, $rs2, $rd", []>;
+def V9MOVFCCri
+  : F4_2<0b101100, (outs IntRegs:$rd),
+         (ins FCCRegs:$cc, i32imm:$simm11, IntRegs:$f, CCOp:$cond),
+         "mov$cond $cc, $simm11, $rd", []>;
+def V9FMOVS_FCC
+  : F4_3<0b110101, 0b000001, (outs FPRegs:$rd),
+         (ins FCCRegs:$opf_cc, FPRegs:$rs2, FPRegs:$f, CCOp:$cond),
+         "fmovs$cond $opf_cc, $rs2, $rd", []>;
+def V9FMOVD_FCC
+  : F4_3<0b110101, 0b000010, (outs DFPRegs:$rd),
+         (ins FCCRegs:$opf_cc, DFPRegs:$rs2, DFPRegs:$f, CCOp:$cond),
+         "fmovd$cond $opf_cc, $rs2, $rd", []>;
+def V9FMOVQ_FCC
+  : F4_3<0b110101, 0b000011, (outs QFPRegs:$rd),
+         (ins FCCRegs:$opf_cc, QFPRegs:$rs2, QFPRegs:$f, CCOp:$cond),
+         "fmovq$cond $opf_cc, $rs2, $rd", []>;
+} // Constraints = "$f = $rd", ...
 
 
 // POPCrr - This does a ctpop of a 64-bit register.  As such, we have to clear
@@ -1640,15 +1568,15 @@ let Predicates = [HasV9] in {
 let rs1 = 0 in
   def POPCrr : F3_1<2, 0b101110,
                     (outs IntRegs:$rd), (ins IntRegs:$rs2),
-                    "popc $rs2, $rd", []>, Requires<[HasV9]>;
+                    "popc $rs2, $rd", []>;
 def : Pat<(i32 (ctpop i32:$src)),
           (POPCrr (SRLri $src, 0))>;
 
-let Predicates = [HasV9], hasSideEffects = 1, rd = 0, rs1 = 0b01111 in
+let hasSideEffects = 1, rd = 0, rs1 = 0b01111 in
  def MEMBARi : F3_2<2, 0b101000, (outs), (ins MembarTag:$simm13),
                     "membar $simm13", []>;
 
-let Predicates = [HasV9], rd = 15, rs1 = 0b00000 in
+let rd = 15, rs1 = 0b00000 in
   def SIR: F3_2<2, 0b110000, (outs),
                 (ins simm13Op:$simm13),
                  "sir $simm13", []>;
@@ -1656,7 +1584,7 @@ let Predicates = [HasV9], rd = 15, rs1 = 0b00000 in
 // The CAS instruction, unlike other instructions, only comes in a
 // form which requires an ASI be provided. The ASI value hardcoded
 // here is ASI_PRIMARY, the default unprivileged ASI for E2KV9.
-let Predicates = [HasV9], Constraints = "$swap = $rd", asi = 0b10000000 in
+let Constraints = "$swap = $rd", asi = 0b10000000 in
   def CASrr: F3_1_asi<3, 0b111100,
                 (outs IntRegs:$rd), (ins IntRegs:$rs1, IntRegs:$rs2,
                                      IntRegs:$swap),
@@ -1668,7 +1596,7 @@ let Predicates = [HasV9], Constraints = "$swap = $rd", asi = 0b10000000 in
 
 // TODO: Add DAG sequence to lower these instructions. Currently, only provided
 // as inline assembler-supported instructions.
-let Predicates = [HasUMAC_SMAC], Defs = [Y, ASR18], Uses = [Y, ASR18] in {
+let Defs = [Y, ASR18], Uses = [Y, ASR18] in {
   def SMACrr :  F3_1<2, 0b111111,
                    (outs IntRegs:$rd), (ins IntRegs:$rs1, IntRegs:$rs2, ASRRegs:$asr18),
                    "smac $rs1, $rs2, $rd",
@@ -1701,34 +1629,28 @@ let hasSideEffects = 1 in {
 }
 
 // Section A.42 - Prefetch Data
-let Predicates = [HasV9] in {
-  def PREFETCHr : F3_1<3, 0b101101,
-                   (outs), (ins (MEMrr $rs1, $rs2):$addr, shift_imm5:$rd),
-                   "prefetch [$addr], $rd", []>;
-  def PREFETCHi : F3_2<3, 0b101101,
-                   (outs), (ins (MEMri $rs1, $simm13):$addr, shift_imm5:$rd),
-                   "prefetch [$addr], $rd", []>;
-}
-
+def PREFETCHr : F3_1<3, 0b101101,
+               (outs), (ins (MEMrr $rs1, $rs2):$addr, shift_imm5:$rd),
+               "prefetch [$addr], $rd", []>;
+def PREFETCHi : F3_2<3, 0b101101,
+               (outs), (ins (MEMri $rs1, $simm13):$addr, shift_imm5:$rd),
+               "prefetch [$addr], $rd", []>;
 
 
 // Section A.43 - Read Privileged Register Instructions
-let Predicates = [HasV9] in {
 let rs2 = 0 in
   def RDPR : F3_1<2, 0b101010,
                  (outs IntRegs:$rd), (ins PRRegs:$rs1),
                  "rdpr $rs1, $rd", []>;
-}
+
 
 // Section A.62 - Write Privileged Register Instructions
-let Predicates = [HasV9] in {
-  def WRPRrr : F3_1<2, 0b110010,
-                   (outs PRRegs:$rd), (ins IntRegs:$rs1, IntRegs:$rs2),
-                   "wrpr $rs1, $rs2, $rd", []>;
-  def WRPRri : F3_2<2, 0b110010,
-                   (outs PRRegs:$rd), (ins IntRegs:$rs1, simm13Op:$simm13),
-                   "wrpr $rs1, $simm13, $rd", []>;
-}
+def WRPRrr : F3_1<2, 0b110010,
+               (outs PRRegs:$rd), (ins IntRegs:$rs1, IntRegs:$rs2),
+               "wrpr $rs1, $rs2, $rd", []>;
+def WRPRri : F3_2<2, 0b110010,
+               (outs PRRegs:$rd), (ins IntRegs:$rs1, simm13Op:$simm13),
+               "wrpr $rs1, $simm13, $rd", []>;
 
 //===----------------------------------------------------------------------===//
 // Non-Instruction Patterns
@@ -1746,7 +1668,6 @@ def : Pat<(i32 imm:$val),
 
 
 // Global addresses, constant pool entries
-let Predicates = [Is32Bit] in {
 
 def : Pat<(SPhi tglobaladdr:$in), (SETHIi tglobaladdr:$in)>;
 def : Pat<(SPlo tglobaladdr:$in), (ORri (i32 G0), tglobaladdr:$in)>;
@@ -1770,7 +1691,6 @@ def : Pat<(add iPTR:$r, (SPlo tglobaladdr:$in)), (ADDri $r, tglobaladdr:$in)>;
 def : Pat<(add iPTR:$r, (SPlo tconstpool:$in)),  (ADDri $r, tconstpool:$in)>;
 def : Pat<(add iPTR:$r, (SPlo tblockaddress:$in)),
                         (ADDri $r, tblockaddress:$in)>;
-}
 
 // Calls:
 def : Pat<(call tglobaladdr:$dst),
@@ -1795,11 +1715,9 @@ def : Pat<(store (i32 0), ADDRrr:$dst), (STrr ADDRrr:$dst, (i32 G0))>;
 def : Pat<(store (i32 0), ADDRri:$dst), (STri ADDRri:$dst, (i32 G0))>;
 
 // store bar for all atomic_fence in V8.
-let Predicates = [HasNoV9] in
-  def : Pat<(atomic_fence timm, timm), (STBAR)>;
+def : Pat<(atomic_fence timm, timm), (STBAR)>;
 
-let Predicates = [HasV9] in
-  def : Pat<(atomic_fence timm, timm), (MEMBARi 0xf)>;
+def : Pat<(atomic_fence timm, timm), (MEMBARi 0xf)>;
 
 // atomic_load addr -> load addr
 def : Pat<(i32 (atomic_load_8 ADDRrr:$src)), (LDUBrr ADDRrr:$src)>;

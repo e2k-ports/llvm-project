@@ -53,7 +53,6 @@ class VISInstD<bits<9> opfval, string OpcStr, RegisterClass RC = DFPRegs>
         !strconcat(OpcStr, " $rd"), []>;
 
 // VIS 1 Instructions
-let Predicates = [HasVIS] in {
 
 def FPADD16     : VISInst<0b001010000, "fpadd16">;
 def FPADD16S    : VISInst<0b001010001, "fpadd16s">;
@@ -141,12 +140,8 @@ def ARRAY32     : VISInst<0b000010100, "array32", I64Regs>;
 
 def SHUTDOWN    : VISInst0<0b010000000, "shutdown">;
 
-} // Predicates = [HasVIS]
-
 
 // VIS 2 Instructions.
-let Predicates = [HasVIS2] in {
-
 def BMASK     : VISInst<0b000011001, "bmask", I64Regs>;
 def BSHUFFLE  : VISInst<0b000011100, "bshuffle">;
 
@@ -158,12 +153,9 @@ def EDGE16N   : VISInst<0b000000101,  "edge16n",  I64Regs>;
 def EDGE16LN  : VISInst<0b000000111,  "edge16ln", I64Regs>;
 def EDGE32N   : VISInst<0b000001001,  "edge32n",  I64Regs>;
 def EDGE32LN  : VISInst<0b000001011,  "edge32ln", I64Regs>;
-} // Predicates = [HasVIS2]
 
 
 // VIS 3 Instructions.
-let Predicates = [HasVIS3] in {
-
 let Uses = [ICC] in
 def ADDXC : VISInst<0b000010001, "addxc", I64Regs>;
 
@@ -259,4 +251,4 @@ def PDISTN   : VISInst<0b000111111, "pdistn">;
 def UMULXHI  : VISInst<0b000010110, "umulxhi", I64Regs>;
 def XMULX    : VISInst<0b100010101, "xmulx",   I64Regs>;
 def XMULXHI  : VISInst<0b100010111, "xmulxhi", I64Regs>;
-} // Predicates = [IsVIS3]
+
