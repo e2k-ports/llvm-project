@@ -1513,11 +1513,11 @@ E2KTargetLowering::E2KTargetLowering(const TargetMachine &TM,
 
   // Set up the register classes.
   addRegisterClass(MVT::i32, &E2K::IntRegsRegClass);
-  if (!Subtarget->useSoftFloat()) {
-    addRegisterClass(MVT::f32, &E2K::FPRegsRegClass);
-    addRegisterClass(MVT::f64, &E2K::DFPRegsRegClass);
-    addRegisterClass(MVT::f128, &E2K::QFPRegsRegClass);
-  }
+
+  addRegisterClass(MVT::f32, &E2K::FPRegsRegClass);
+  addRegisterClass(MVT::f64, &E2K::DFPRegsRegClass);
+  addRegisterClass(MVT::f128, &E2K::QFPRegsRegClass);
+
   if (Subtarget->is64Bit()) {
     addRegisterClass(MVT::i64, &E2K::I64RegsRegClass);
   } else {
@@ -1667,8 +1667,7 @@ E2KTargetLowering::E2KTargetLowering(const TargetMachine &TM,
     setOperationAction(ISD::BR_CC, MVT::i64, Custom);
     setOperationAction(ISD::SELECT_CC, MVT::i64, Custom);
 
-    setOperationAction(ISD::CTPOP, MVT::i64,
-                       Subtarget->usePopc() ? Legal : Expand);
+    setOperationAction(ISD::CTPOP, MVT::i64, Expand);
     setOperationAction(ISD::CTTZ , MVT::i64, Expand);
     setOperationAction(ISD::CTLZ , MVT::i64, Expand);
     setOperationAction(ISD::BSWAP, MVT::i64, Expand);
@@ -1681,7 +1680,7 @@ E2KTargetLowering::E2KTargetLowering(const TargetMachine &TM,
   // Atomics are supported on E2KV9. 32-bit atomics are also
   // supported by some E2KV8 variants. Otherwise, atomics
   // are unsupported.
-  if (Subtarget->isV9())
+  if (Subtarget->is64Bit())
     setMaxAtomicSizeInBitsSupported(64);
   else
     setMaxAtomicSizeInBitsSupported(0);
@@ -1713,7 +1712,7 @@ E2KTargetLowering::E2KTargetLowering(const TargetMachine &TM,
 
   setLibcallName(RTLIB::MULO_I128, nullptr);
 
-  if (!Subtarget->isV9()) {
+  if (Subtarget->is64Bit()) {
     // E2KV8 does not have FNEGD and FABSD.
     setOperationAction(ISD::FNEG, MVT::f64, Custom);
     setOperationAction(ISD::FABS, MVT::f64, Custom);
@@ -1755,22 +1754,6 @@ E2KTargetLowering::E2KTargetLowering(const TargetMachine &TM,
   setOperationAction(ISD::MULHS,     MVT::i32, Expand);
   setOperationAction(ISD::MUL,       MVT::i32, Expand);
 
-  if (Subtarget->useSoftMulDiv()) {
-    // .umul works for both signed and unsigned
-    setOperationAction(ISD::SMUL_LOHI, MVT::i32, Expand);
-    setOperationAction(ISD::UMUL_LOHI, MVT::i32, Expand);
-    setLibcallName(RTLIB::MUL_I32, ".umul");
-
-    setOperationAction(ISD::SDIV, MVT::i32, Expand);
-    setLibcallName(RTLIB::SDIV_I32, ".div");
-
-    setOperationAction(ISD::UDIV, MVT::i32, Expand);
-    setLibcallName(RTLIB::UDIV_I32, ".udiv");
-
-    setLibcallName(RTLIB::SREM_I32, ".rem");
-    setLibcallName(RTLIB::UREM_I32, ".urem");
-  }
-
   if (Subtarget->is64Bit()) {
     setOperationAction(ISD::UMUL_LOHI, MVT::i64, Expand);
     setOperationAction(ISD::SMUL_LOHI, MVT::i64, Expand);
@@ -1802,98 +1785,44 @@ E2KTargetLowering::E2KTargetLowering(const TargetMachine &TM,
 
   setStackPointerRegisterToSaveRestore(E2K::O6);
 
-  setOperationAction(ISD::CTPOP, MVT::i32,
-                     Subtarget->usePopc() ? Legal : Expand);
+  setOperationAction(ISD::CTPOP, MVT::i32, Expand);
 
-  if (Subtarget->isV9() && Subtarget->hasHardQuad()) {
-    setOperationAction(ISD::LOAD, MVT::f128, Legal);
-    setOperationAction(ISD::STORE, MVT::f128, Legal);
-  } else {
-    setOperationAction(ISD::LOAD, MVT::f128, Custom);
-    setOperationAction(ISD::STORE, MVT::f128, Custom);
-  }
+  setOperationAction(ISD::LOAD, MVT::f128, Custom);
+  setOperationAction(ISD::STORE, MVT::f128, Custom);
 
-  if (Subtarget->hasHardQuad()) {
-    setOperationAction(ISD::FADD,  MVT::f128, Legal);
-    setOperationAction(ISD::FSUB,  MVT::f128, Legal);
-    setOperationAction(ISD::FMUL,  MVT::f128, Legal);
-    setOperationAction(ISD::FDIV,  MVT::f128, Legal);
-    setOperationAction(ISD::FSQRT, MVT::f128, Legal);
-    setOperationAction(ISD::FP_EXTEND, MVT::f128, Legal);
-    setOperationAction(ISD::FP_ROUND,  MVT::f64, Legal);
-    if (Subtarget->isV9()) {
-      setOperationAction(ISD::FNEG, MVT::f128, Legal);
-      setOperationAction(ISD::FABS, MVT::f128, Legal);
-    } else {
-      setOperationAction(ISD::FNEG, MVT::f128, Custom);
-      setOperationAction(ISD::FABS, MVT::f128, Custom);
-    }
 
-    if (!Subtarget->is64Bit()) {
-      setLibcallName(RTLIB::FPTOSINT_F128_I64, "_Q_qtoll");
-      setLibcallName(RTLIB::FPTOUINT_F128_I64, "_Q_qtoull");
-      setLibcallName(RTLIB::SINTTOFP_I64_F128, "_Q_lltoq");
-      setLibcallName(RTLIB::UINTTOFP_I64_F128, "_Q_ulltoq");
-    }
-
-  } else {
     // Custom legalize f128 operations.
 
-    setOperationAction(ISD::FADD,  MVT::f128, Custom);
-    setOperationAction(ISD::FSUB,  MVT::f128, Custom);
-    setOperationAction(ISD::FMUL,  MVT::f128, Custom);
-    setOperationAction(ISD::FDIV,  MVT::f128, Custom);
-    setOperationAction(ISD::FSQRT, MVT::f128, Custom);
-    setOperationAction(ISD::FNEG,  MVT::f128, Custom);
-    setOperationAction(ISD::FABS,  MVT::f128, Custom);
+  setOperationAction(ISD::FADD,  MVT::f128, Custom);
+  setOperationAction(ISD::FSUB,  MVT::f128, Custom);
+  setOperationAction(ISD::FMUL,  MVT::f128, Custom);
+  setOperationAction(ISD::FDIV,  MVT::f128, Custom);
+  setOperationAction(ISD::FSQRT, MVT::f128, Custom);
+  setOperationAction(ISD::FNEG,  MVT::f128, Custom);
+  setOperationAction(ISD::FABS,  MVT::f128, Custom);
 
-    setOperationAction(ISD::FP_EXTEND, MVT::f128, Custom);
-    setOperationAction(ISD::FP_ROUND,  MVT::f64, Custom);
-    setOperationAction(ISD::FP_ROUND,  MVT::f32, Custom);
+  setOperationAction(ISD::FP_EXTEND, MVT::f128, Custom);
+  setOperationAction(ISD::FP_ROUND,  MVT::f64, Custom);
+  setOperationAction(ISD::FP_ROUND,  MVT::f32, Custom);
 
     // Setup Runtime library names.
-    if (Subtarget->is64Bit() && !Subtarget->useSoftFloat()) {
-      setLibcallName(RTLIB::ADD_F128,  "_Qp_add");
-      setLibcallName(RTLIB::SUB_F128,  "_Qp_sub");
-      setLibcallName(RTLIB::MUL_F128,  "_Qp_mul");
-      setLibcallName(RTLIB::DIV_F128,  "_Qp_div");
-      setLibcallName(RTLIB::SQRT_F128, "_Qp_sqrt");
-      setLibcallName(RTLIB::FPTOSINT_F128_I32, "_Qp_qtoi");
-      setLibcallName(RTLIB::FPTOUINT_F128_I32, "_Qp_qtoui");
-      setLibcallName(RTLIB::SINTTOFP_I32_F128, "_Qp_itoq");
-      setLibcallName(RTLIB::UINTTOFP_I32_F128, "_Qp_uitoq");
-      setLibcallName(RTLIB::FPTOSINT_F128_I64, "_Qp_qtox");
-      setLibcallName(RTLIB::FPTOUINT_F128_I64, "_Qp_qtoux");
-      setLibcallName(RTLIB::SINTTOFP_I64_F128, "_Qp_xtoq");
-      setLibcallName(RTLIB::UINTTOFP_I64_F128, "_Qp_uxtoq");
-      setLibcallName(RTLIB::FPEXT_F32_F128, "_Qp_stoq");
-      setLibcallName(RTLIB::FPEXT_F64_F128, "_Qp_dtoq");
-      setLibcallName(RTLIB::FPROUND_F128_F32, "_Qp_qtos");
-      setLibcallName(RTLIB::FPROUND_F128_F64, "_Qp_qtod");
-    } else if (!Subtarget->useSoftFloat()) {
-      setLibcallName(RTLIB::ADD_F128,  "_Q_add");
-      setLibcallName(RTLIB::SUB_F128,  "_Q_sub");
-      setLibcallName(RTLIB::MUL_F128,  "_Q_mul");
-      setLibcallName(RTLIB::DIV_F128,  "_Q_div");
-      setLibcallName(RTLIB::SQRT_F128, "_Q_sqrt");
-      setLibcallName(RTLIB::FPTOSINT_F128_I32, "_Q_qtoi");
-      setLibcallName(RTLIB::FPTOUINT_F128_I32, "_Q_qtou");
-      setLibcallName(RTLIB::SINTTOFP_I32_F128, "_Q_itoq");
-      setLibcallName(RTLIB::UINTTOFP_I32_F128, "_Q_utoq");
-      setLibcallName(RTLIB::FPTOSINT_F128_I64, "_Q_qtoll");
-      setLibcallName(RTLIB::FPTOUINT_F128_I64, "_Q_qtoull");
-      setLibcallName(RTLIB::SINTTOFP_I64_F128, "_Q_lltoq");
-      setLibcallName(RTLIB::UINTTOFP_I64_F128, "_Q_ulltoq");
-      setLibcallName(RTLIB::FPEXT_F32_F128, "_Q_stoq");
-      setLibcallName(RTLIB::FPEXT_F64_F128, "_Q_dtoq");
-      setLibcallName(RTLIB::FPROUND_F128_F32, "_Q_qtos");
-      setLibcallName(RTLIB::FPROUND_F128_F64, "_Q_qtod");
-    }
-  }
-
-  if (Subtarget->hasNoFMULS()) {
-    setOperationAction(ISD::FMUL, MVT::f32, Promote);
-  }
+    setLibcallName(RTLIB::ADD_F128,  "_Q_add");
+    setLibcallName(RTLIB::SUB_F128,  "_Q_sub");
+    setLibcallName(RTLIB::MUL_F128,  "_Q_mul");
+    setLibcallName(RTLIB::DIV_F128,  "_Q_div");
+    setLibcallName(RTLIB::SQRT_F128, "_Q_sqrt");
+    setLibcallName(RTLIB::FPTOSINT_F128_I32, "_Q_qtoi");
+    setLibcallName(RTLIB::FPTOUINT_F128_I32, "_Q_qtou");
+    setLibcallName(RTLIB::SINTTOFP_I32_F128, "_Q_itoq");
+    setLibcallName(RTLIB::UINTTOFP_I32_F128, "_Q_utoq");
+    setLibcallName(RTLIB::FPTOSINT_F128_I64, "_Q_qtoll");
+    setLibcallName(RTLIB::FPTOUINT_F128_I64, "_Q_qtoull");
+    setLibcallName(RTLIB::SINTTOFP_I64_F128, "_Q_lltoq");
+    setLibcallName(RTLIB::UINTTOFP_I64_F128, "_Q_ulltoq");
+    setLibcallName(RTLIB::FPEXT_F32_F128, "_Q_stoq");
+    setLibcallName(RTLIB::FPEXT_F64_F128, "_Q_dtoq");
+    setLibcallName(RTLIB::FPROUND_F128_F32, "_Q_qtos");
+    setLibcallName(RTLIB::FPROUND_F128_F64, "_Q_qtod");
 
   // Custom combine bitcast between f64 and v2i32
   if (!Subtarget->is64Bit())
@@ -1904,10 +1833,6 @@ E2KTargetLowering::E2KTargetLowering(const TargetMachine &TM,
   setMinFunctionAlignment(Align(4));
 
   computeRegisterProperties(Subtarget->getRegisterInfo());
-}
-
-bool E2KTargetLowering::useSoftFloat() const {
-  return Subtarget->useSoftFloat();
 }
 
 const char *E2KTargetLowering::getTargetNodeName(unsigned Opcode) const {
@@ -3119,8 +3044,8 @@ SDValue E2KTargetLowering::LowerINTRINSIC_WO_CHAIN(SDValue Op,
 SDValue E2KTargetLowering::
 LowerOperation(SDValue Op, SelectionDAG &DAG) const {
 
-  bool hasHardQuad = Subtarget->hasHardQuad();
-  bool isV9        = Subtarget->isV9();
+  bool hasHardQuad = false;
+  bool isV9        = Subtarget->is64Bit();
 
   switch (Op.getOpcode()) {
   default: llvm_unreachable("Should not custom lower this!");
@@ -3221,7 +3146,7 @@ E2KTargetLowering::EmitInstrWithCustomInserter(MachineInstr &MI,
   case E2K::SELECT_CC_FP_ICC:
   case E2K::SELECT_CC_DFP_ICC:
   case E2K::SELECT_CC_QFP_ICC:
-    if (Subtarget->isV9())
+    if (Subtarget->is64Bit())
       return expandSelectCC(MI, BB, E2K::BPICC);
     return expandSelectCC(MI, BB, E2K::BCOND);
   case E2K::SELECT_CC_Int_XCC:
@@ -3233,7 +3158,7 @@ E2KTargetLowering::EmitInstrWithCustomInserter(MachineInstr &MI,
   case E2K::SELECT_CC_FP_FCC:
   case E2K::SELECT_CC_DFP_FCC:
   case E2K::SELECT_CC_QFP_FCC:
-    if (Subtarget->isV9())
+    if (Subtarget->is64Bit())
       return expandSelectCC(MI, BB, E2K::FBCOND_V9);
     return expandSelectCC(MI, BB, E2K::FBCOND);
   }
