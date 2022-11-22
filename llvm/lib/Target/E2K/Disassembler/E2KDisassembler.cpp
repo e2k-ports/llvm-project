@@ -342,6 +342,7 @@ DecodeStatus E2KDisassembler::getInstruction(MCInst &Instr, uint64_t &Size,
                                                raw_ostream &CStream) const {
   uint32_t Insn;
   bool isLittleEndian = getContext().getAsmInfo()->isLittleEndian();
+  bool is64bit = getContext().getAsmInfo()->getCodePointerSize() == 8;
   DecodeStatus Result =
       readInstruction32(Bytes, Address, Size, Insn, isLittleEndian);
   if (Result == MCDisassembler::Fail)
@@ -349,7 +350,7 @@ DecodeStatus E2KDisassembler::getInstruction(MCInst &Instr, uint64_t &Size,
 
   // Calling the auto-generated decoder function.
 
-  if (STI.getFeatureBits()[E2K::FeatureV9])
+  if (is64bit)
   {
     Result = decodeInstruction(DecoderTableE2KV932, Instr, Insn, Address, this, STI);
   }

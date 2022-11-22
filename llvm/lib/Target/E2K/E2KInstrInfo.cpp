@@ -274,7 +274,7 @@ unsigned E2KInstrInfo::insertBranch(MachineBasicBlock &MBB,
 
   if (Cond.empty()) {
     assert(!FBB && "Unconditional branch with multiple successors!");
-    BuildMI(&MBB, DL, get(Subtarget.isV9() ? E2K::BPA : E2K::BA)).addMBB(TBB);
+    BuildMI(&MBB, DL, get(Subtarget.is64Bit() ? E2K::BPA : E2K::BA)).addMBB(TBB);
     return 1;
   }
 
@@ -290,7 +290,7 @@ unsigned E2KInstrInfo::insertBranch(MachineBasicBlock &MBB,
   if (!FBB)
     return 1;
 
-  BuildMI(&MBB, DL, get(Subtarget.isV9() ? E2K::BPA : E2K::BA)).addMBB(FBB);
+  BuildMI(&MBB, DL, get(Subtarget.is64Bit() ? E2K::BPA : E2K::BA)).addMBB(FBB);
   return 2;
 }
 
@@ -353,7 +353,7 @@ void E2KInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
     BuildMI(MBB, I, DL, get(E2K::FMOVS), DestReg)
       .addReg(SrcReg, getKillRegState(KillSrc));
   else if (E2K::DFPRegsRegClass.contains(DestReg, SrcReg)) {
-    if (Subtarget.isV9()) {
+    if (Subtarget.is64Bit()) {
       BuildMI(MBB, I, DL, get(E2K::FMOVD), DestReg)
         .addReg(SrcReg, getKillRegState(KillSrc));
     } else {
@@ -363,16 +363,11 @@ void E2KInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
       movOpc     = E2K::FMOVS;
     }
   } else if (E2K::QFPRegsRegClass.contains(DestReg, SrcReg)) {
-    if (Subtarget.isV9()) {
-      if (Subtarget.hasHardQuad()) {
-        BuildMI(MBB, I, DL, get(E2K::FMOVQ), DestReg)
-          .addReg(SrcReg, getKillRegState(KillSrc));
-      } else {
-        // Use two FMOVD instructions.
-        subRegIdx  = QFP_DFP_SubRegsIdx;
-        numSubRegs = 2;
-        movOpc     = E2K::FMOVD;
-      }
+    if (Subtarget.is64Bit()) {
+      // Use two FMOVD instructions.
+      subRegIdx  = QFP_DFP_SubRegsIdx;
+      numSubRegs = 2;
+      movOpc     = E2K::FMOVD;
     } else {
       // Use four FMOVS instructions.
       subRegIdx  = QFP_FP_SubRegsIdx;
