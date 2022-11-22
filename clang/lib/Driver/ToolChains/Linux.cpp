@@ -567,6 +567,13 @@ std::string Linux::getDynamicLinker(const ArgList &Args) const {
     Loader = "ld.so.1";
     break;
   }
+  case llvm::Triple::e2k:
+  case llvm::Triple::e2kv9:
+  case llvm::Triple::e2kel: {
+    LibDir = "lib64";
+    Loader = "ld-linux.so.2";
+    break;
+  }
   }
 
   if (Distro == Distro::Exherbo &&
