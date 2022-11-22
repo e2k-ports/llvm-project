@@ -64,8 +64,6 @@ namespace llvm {
     E2KTargetLowering(const TargetMachine &TM, const E2KSubtarget &STI);
     SDValue LowerOperation(SDValue Op, SelectionDAG &DAG) const override;
 
-    bool useSoftFloat() const override;
-
     /// computeKnownBitsForTargetNode - Determine which of the bits specified
     /// in Mask are known to be either zero or one and return them in the
     /// KnownZero/KnownOne bitsets.
