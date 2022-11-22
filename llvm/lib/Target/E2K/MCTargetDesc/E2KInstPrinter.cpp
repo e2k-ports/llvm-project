@@ -34,9 +34,6 @@ using namespace llvm;
 #define PRINT_ALIAS_INSTR
 #include "E2KGenAsmWriter.inc"
 
-bool E2KInstPrinter::isV9(const MCSubtargetInfo &STI) const {
-  return (STI.getFeatureBits()[E2K::FeatureV9]) != 0;
-}
 
 void E2KInstPrinter::printRegName(raw_ostream &OS, unsigned RegNo) const
 {
@@ -83,8 +80,7 @@ bool E2KInstPrinter::printE2KAliasInstr(const MCInst *MI,
   }
   case E2K::V9FCMPS:  case E2K::V9FCMPD:  case E2K::V9FCMPQ:
   case E2K::V9FCMPES: case E2K::V9FCMPED: case E2K::V9FCMPEQ: {
-    if (isV9(STI)
-        || (MI->getNumOperands() != 3)
+    if ((MI->getNumOperands() != 3)
         || (!MI->getOperand(0).isReg())
         || (MI->getOperand(0).getReg() != E2K::FCC0))
       return false;
