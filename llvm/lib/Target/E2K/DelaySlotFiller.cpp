@@ -121,7 +121,7 @@ bool Filler::runOnMachineBasicBlock(MachineBasicBlock &MBB) {
 
     // TODO: If we ever want to support v7, this needs to be extended
     // to cover all floating point operations.
-    if (!Subtarget->isV9() &&
+    if (!Subtarget->is64Bit() &&
         (MI->getOpcode() == E2K::FCMPS || MI->getOpcode() == E2K::FCMPD
          || MI->getOpcode() == E2K::FCMPQ)) {
       BuildMI(MBB, I, MI->getDebugLoc(), TII->get(E2K::NOP));

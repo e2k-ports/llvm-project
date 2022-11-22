@@ -27,17 +27,6 @@ void E2KSubtarget::anchor() { }
 
 E2KSubtarget &E2KSubtarget::initializeSubtargetDependencies(StringRef CPU,
                                                                 StringRef FS) {
-  UseSoftMulDiv = false;
-  IsV9 = false;
-  V8DeprecatedInsts = false;
-  IsVIS = false;
-  IsVIS2 = false;
-  IsVIS3 = false;
-  HasHardQuad = false;
-  UsePopc = false;
-  UseSoftFloat = false;
-  HasNoFSMULD = false;
-  HasNoFMULS = false;
 
   // Determine default and user specified characteristics
   std::string CPUName = std::string(CPU);
@@ -46,10 +35,6 @@ E2KSubtarget &E2KSubtarget::initializeSubtargetDependencies(StringRef CPU,
 
   // Parse features string.
   ParseSubtargetFeatures(CPUName, /*TuneCPU*/ CPUName, FS);
-
-  // Popc is a v9-only instruction.
-  if (!IsV9)
-    UsePopc = false;
 
   return *this;
 }

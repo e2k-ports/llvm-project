@@ -87,7 +87,7 @@ BitVector E2KRegisterInfo::getReservedRegs(const MachineFunction &MF) const {
   Reserved.set(E2K::G6_G7);
 
   // Unaliased double registers are not available in non-V9 targets.
-  if (!Subtarget.isV9()) {
+  if (!Subtarget.is64Bit()) {
     for (unsigned n = 0; n != 16; ++n) {
       for (MCRegAliasIterator AI(E2K::D16 + n, this, true); AI.isValid(); ++AI)
         Reserved.set(*AI);
@@ -179,7 +179,7 @@ E2KRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
 
   Offset += MI.getOperand(FIOperandNum + 1).getImm();
 
-  if (!Subtarget.isV9() || !Subtarget.hasHardQuad()) {
+  if (!Subtarget.is64Bit()) {
     if (MI.getOpcode() == E2K::STQFri) {
       const TargetInstrInfo &TII = *Subtarget.getInstrInfo();
       Register SrcReg = MI.getOperand(2).getReg();
