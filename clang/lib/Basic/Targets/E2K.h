@@ -22,11 +22,10 @@ namespace targets {
 class LLVM_LIBRARY_VISIBILITY E2KTargetInfo : public TargetInfo {
   static const TargetInfo::GCCRegAlias GCCRegAliases[];
   static const char *const GCCRegNames[];
-  bool SoftFloat;
 
 public:
   E2KTargetInfo(const llvm::Triple &Triple, const TargetOptions &)
-      : TargetInfo(Triple), SoftFloat(false) {}
+      : TargetInfo(Triple) {}
 
   int getEHDataRegisterNumber(unsigned RegNo) const override {
     if (RegNo == 0)
@@ -38,9 +37,6 @@ public:
 
   bool handleTargetFeatures(std::vector<std::string> &Features,
                             DiagnosticsEngine &Diags) override {
-    // Check if software floating point is enabled
-    if (llvm::is_contained(Features, "+soft-float"))
-      SoftFloat = true;
     return true;
   }
   void getTargetDefines(const LangOptions &Opts,
