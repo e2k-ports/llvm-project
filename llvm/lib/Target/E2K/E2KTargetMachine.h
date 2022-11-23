@@ -43,10 +43,10 @@ public:
 
 /// E2K 32-bit target machine
 ///
-class E2KV8TargetMachine : public E2KTargetMachine {
+class E2K32TargetMachine : public E2KTargetMachine {
   virtual void anchor();
 public:
-  E2KV8TargetMachine(const Target &T, const Triple &TT, StringRef CPU,
+  E2K32TargetMachine(const Target &T, const Triple &TT, StringRef CPU,
                        StringRef FS, const TargetOptions &Options,
                        std::optional<Reloc::Model> RM, std::optional<CodeModel::Model> CM,
                        CodeGenOpt::Level OL, bool JIT);
@@ -54,20 +54,10 @@ public:
 
 /// E2K 64-bit target machine
 ///
-class E2KV9TargetMachine : public E2KTargetMachine {
+class E2K64TargetMachine : public E2KTargetMachine {
   virtual void anchor();
 public:
-  E2KV9TargetMachine(const Target &T, const Triple &TT, StringRef CPU,
-                       StringRef FS, const TargetOptions &Options,
-                       Optional<Reloc::Model> RM, Optional<CodeModel::Model> CM,
-                       CodeGenOpt::Level OL, bool JIT);
-};
-
-class E2KelTargetMachine : public E2KTargetMachine {
-  virtual void anchor();
-
-public:
-  E2KelTargetMachine(const Target &T, const Triple &TT, StringRef CPU,
+  E2K64TargetMachine(const Target &T, const Triple &TT, StringRef CPU,
                        StringRef FS, const TargetOptions &Options,
                        std::optional<Reloc::Model> RM, std::optional<CodeModel::Model> CM,
                        CodeGenOpt::Level OL, bool JIT);
