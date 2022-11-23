@@ -33,7 +33,7 @@ using namespace llvm;
 #define GET_REGINFO_MC_DESC
 #include "E2KGenRegisterInfo.inc"
 
-static MCAsmInfo *createE2KMCAsmInfo(const MCRegisterInfo &MRI,
+static MCAsmInfo *createE2K32MCAsmInfo(const MCRegisterInfo &MRI,
                                        const Triple &TT,
                                        const MCTargetOptions &Options) {
   MCAsmInfo *MAI = new E2KELFMCAsmInfo(TT);
@@ -43,7 +43,7 @@ static MCAsmInfo *createE2KMCAsmInfo(const MCRegisterInfo &MRI,
   return MAI;
 }
 
-static MCAsmInfo *createE2KV9MCAsmInfo(const MCRegisterInfo &MRI,
+static MCAsmInfo *createE2K64MCAsmInfo(const MCRegisterInfo &MRI,
                                          const Triple &TT,
                                          const MCTargetOptions &Options) {
   MCAsmInfo *MAI = new E2KELFMCAsmInfo(TT);
@@ -68,7 +68,7 @@ static MCRegisterInfo *createE2KMCRegisterInfo(const Triple &TT) {
 static MCSubtargetInfo *
 createE2KMCSubtargetInfo(const Triple &TT, StringRef CPU, StringRef FS) {
   if (CPU.empty())
-    CPU = (TT.getArch() == Triple::e2kv9) ? "v9" : "v8";
+    CPU = "generic";
   return createE2KMCSubtargetInfoImpl(TT, CPU, /*TuneCPU*/ CPU, FS);
 }
 
@@ -98,12 +98,11 @@ static MCInstPrinter *createE2KMCInstPrinter(const Triple &T,
 
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeE2KTargetMC() {
   // Register the MC asm info.
-  RegisterMCAsmInfoFn X(getTheE2KTarget(), createE2KMCAsmInfo);
-  RegisterMCAsmInfoFn Y(getTheE2KV9Target(), createE2KV9MCAsmInfo);
-  RegisterMCAsmInfoFn Z(getTheE2KelTarget(), createE2KMCAsmInfo);
+  RegisterMCAsmInfoFn X(getTheE2K32Target(), createE2K32MCAsmInfo);
+  RegisterMCAsmInfoFn Y(getTheE2K64Target(), createE2K64MCAsmInfo);
 
   for (Target *T :
-       {&getTheE2KTarget(), &getTheE2KV9Target(), &getTheE2KelTarget()}) {
+       {&getTheE2K32Target(), &getTheE2K64Target()}) {
     // Register the MC instruction info.
     TargetRegistry::RegisterMCInstrInfo(*T, createE2KMCInstrInfo);
 

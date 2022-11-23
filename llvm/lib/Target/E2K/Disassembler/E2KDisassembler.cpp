@@ -49,11 +49,9 @@ static MCDisassembler *createE2KDisassembler(const Target &T,
 
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeE2KDisassembler() {
   // Register the disassembler.
-  TargetRegistry::RegisterMCDisassembler(getTheE2KTarget(),
+  TargetRegistry::RegisterMCDisassembler(getTheE2K32Target(),
                                          createE2KDisassembler);
-  TargetRegistry::RegisterMCDisassembler(getTheE2KV9Target(),
-                                         createE2KDisassembler);
-  TargetRegistry::RegisterMCDisassembler(getTheE2KelTarget(),
+  TargetRegistry::RegisterMCDisassembler(getTheE2K64Target(),
                                          createE2KDisassembler);
 }
 
