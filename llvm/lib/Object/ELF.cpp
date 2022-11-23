@@ -230,7 +230,7 @@ uint32_t llvm::object::getELFRelativeRelocationType(uint32_t Machine) {
   case ELF::EM_BPF:
     break;
   case ELF::EM_MCST_ELBRUS:
-    return ELF::R_E2K_RELATIVE;
+    return ELF::R_E2K_64_RELATIVE;
   default:
     break;
   }
