@@ -147,10 +147,6 @@ namespace {
 #include "llvm/BinaryFormat/ELFRelocs/E2K.def"
 #undef ELF_RELOC
                  .Case("BFD_RELOC_NONE", ELF::R_E2K_NONE)
-                 .Case("BFD_RELOC_8", ELF::R_E2K_8)
-                 .Case("BFD_RELOC_16", ELF::R_E2K_16)
-                 .Case("BFD_RELOC_32", ELF::R_E2K_32)
-                 .Case("BFD_RELOC_64", ELF::R_E2K_64)
                  .Default(-1u);
       if (Type == -1u)
         return std::nullopt;
