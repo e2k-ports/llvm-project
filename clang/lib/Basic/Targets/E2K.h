@@ -82,40 +82,75 @@ public:
     return "";
   }
 
-  // No E2K V7 for now, the backend doesn't support it anyway.
   enum CPUKind {
     CK_GENERIC,
-    CK_V8,
-    CK_SUPERE2K,
-    CK_E2KLITE,
-    CK_F934,
-    CK_HYPERE2K,
-    CK_E2KLITE86X,
-    CK_E2KLET,
-    CK_TSC701,
-    CK_V9,
-    CK_ULTRAE2K,
-    CK_ULTRAE2K3,
-    CK_NIAGARA,
-    CK_NIAGARA2,
-    CK_NIAGARA3,
-    CK_NIAGARA4,
-    CK_MYRIAD2100,
-    CK_MYRIAD2150,
-    CK_MYRIAD2155,
-    CK_MYRIAD2450,
-    CK_MYRIAD2455,
-    CK_MYRIAD2x5x,
-    CK_MYRIAD2080,
-    CK_MYRIAD2085,
-    CK_MYRIAD2480,
-    CK_MYRIAD2485,
-    CK_MYRIAD2x8x,
+    CK_V1,
+    CK_V2,
+    CK_V3,
+    CK_V4,
+    CK_V5,
+    CK_V6,
+    CK_V7,
+
+    CK_Elbrus,
+
+    CK_ElbrusS,
+    CK_Elbrus3S,      // same as CK_ElbrusS
+    CK_Elbrus2C,      // same as CK_ElbrusS
+    CK_Elbrus2C1,     // same as CK_ElbrusS
+
+    CK_Elbrus1CPlus,
+    CK_Elbrus4C1Plus, // same as CK_Elbrus1CPlus
+
+    CK_Elbrus1CK,
+
+    CK_Elbrus2CPlus,
+    CK_Elbrus2C2,     // same as CK_Elbrus2CPlus
+    CK_ElbrusS2,      // same as CK_Elbrus2CPlus
+    CK_ElbrusSX2,     // same as CK_Elbrus2CPlus
+    CK_Elbrus3S2,     // same as CK_Elbrus2CPlus
+
+    CK_Elbrus2CM,
+    CK_Elbrus1C,      // same as CK_Elbrus2CM
+
+    CK_Elbrus2S3,
+    CK_Elbrus2C3,     // same as CK_Elbrus2S3
+
+    CK_Elbrus4C,
+    CK_Elbrus2S,      // same as CK_Elbrus4C
+    CK_Elbrus2S4M,    // same as CK_Elbrus4C
+    CK_Elbrus3C4,     // same as CK_Elbrus4C
+
+    CK_Elbrus8C,
+    CK_Elbrus4CPlus,  // same as CK_Elbrus8C
+    CK_Elbrus4C8,     // same as CK_Elbrus8C
+    CK_Elbrus4S,      // same as CK_Elbrus8C
+
+    CK_Elbrus8C1,
+
+    CK_Elbrus8SV,
+    CK_Elbrus8C2,     // same as CK_Elbrus8SV
+    CK_Elbrus8CB,     // same as CK_Elbrus8SV
+
+    CK_Elbrus12S,
+    CK_Elbrus12C,     // same as CK_Elbrus12S
+
+    CK_Elbrus16S,
+    CK_Elbrus16C,     // same as CK_Elbrus16S
+
+    CK_Elbrus32S,
+    CK_Elbrus32C,     // same as CK_Elbrus32S
+
   } CPU = CK_GENERIC;
 
   enum CPUGeneration {
-    CG_V8,
-    CG_V9,
+    CG_V1,
+    CG_V2,
+    CG_V3,
+    CG_V4,
+    CG_V5,
+    CG_V6,
+    CG_V7
   };
 
   CPUGeneration getCPUGeneration(CPUKind Kind) const;
@@ -140,29 +175,14 @@ public:
   E2KV8TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
       : E2KTargetInfo(Triple, Opts) {
     resetDataLayout("E-m:e-p:32:32-i64:64-f128:64-n32-S64");
-    // NetBSD / OpenBSD use long (same as llvm default); everyone else uses int.
-    switch (getTriple().getOS()) {
-    default:
-      SizeType = UnsignedInt;
-      IntPtrType = SignedInt;
-      PtrDiffType = SignedInt;
-      break;
-    case llvm::Triple::NetBSD:
-    case llvm::Triple::OpenBSD:
-      SizeType = UnsignedLong;
-      IntPtrType = SignedLong;
-      PtrDiffType = SignedLong;
-      break;
-    }
+
+    SizeType = UnsignedInt;
+    IntPtrType = SignedInt;
+    PtrDiffType = SignedInt;
     // Up to 32 bits (V8) or 64 bits (V9) are lock-free atomic, but we're
     // willing to do atomic ops on up to 64 bits.
     MaxAtomicPromoteWidth = 64;
-    if (getCPUGeneration(CPU) == CG_V9)
-      MaxAtomicInlineWidth = 64;
-    else
-      // FIXME: This isn't correct for plain V8 which lacks CAS,
-      // only for Myriad.
-      MaxAtomicInlineWidth = 32;
+    MaxAtomicInlineWidth = 64;
   }
 
   void getTargetDefines(const LangOptions &Opts,
@@ -190,11 +210,7 @@ public:
     // This is an LP64 platform.
     LongWidth = LongAlign = PointerWidth = PointerAlign = 64;
 
-    // OpenBSD uses long long for int64_t and intmax_t.
-    if (getTriple().isOSOpenBSD())
-      IntMaxType = SignedLongLong;
-    else
-      IntMaxType = SignedLong;
+    IntMaxType = SignedLong;
     Int64Type = IntMaxType;
 
     // The E2Kv8 System V ABI has long double 128-bits in size, but 64-bit
@@ -210,7 +226,7 @@ public:
                         MacroBuilder &Builder) const override;
 
   bool isValidCPUName(StringRef Name) const override {
-    return getCPUGeneration(E2KTargetInfo::getCPUKind(Name)) == CG_V9;
+    return false;
   }
 
   void fillValidCPUList(SmallVectorImpl<StringRef> &Values) const override;
@@ -218,7 +234,7 @@ public:
   bool setCPU(const std::string &Name) override {
     if (!E2KTargetInfo::setCPU(Name))
       return false;
-    return getCPUGeneration(CPU) == CG_V9;
+    return true;
   }
 
   bool hasBitIntType() const override { return true; }
