@@ -53,7 +53,6 @@ ArrayRef<TargetInfo::GCCRegAlias> E2KTargetInfo::getGCCRegAliases() const {
 
 bool E2KTargetInfo::hasFeature(StringRef Feature) const {
   return llvm::StringSwitch<bool>(Feature)
-      .Case("softfloat", SoftFloat)
       .Case("e2k", true)
       .Default(false);
 }
@@ -152,9 +151,6 @@ void E2KTargetInfo::getTargetDefines(const LangOptions &Opts,
                                        MacroBuilder &Builder) const {
   DefineStd(Builder, "e2k", Opts);
   Builder.defineMacro("__REGISTER_PREFIX__", "");
-
-  if (SoftFloat)
-    Builder.defineMacro("SOFT_FLOAT", "1");
 }
 
 void E2K32TargetInfo::getTargetDefines(const LangOptions &Opts,
