@@ -113,7 +113,7 @@ class E2KAsmParser : public MCTargetAsmParser {
   bool matchE2KAsmModifiers(const MCExpr *&EVal, SMLoc &EndLoc);
 
   bool is64Bit() const {
-    return getSTI().getTargetTriple().getArch() == Triple::e2kv9;
+    return getSTI().getTargetTriple().getArch() == Triple::e2k64;
   }
 
   bool expandSET(MCInst &Inst, SMLoc IDLoc,
@@ -1550,9 +1550,8 @@ bool E2KAsmParser::matchE2KAsmModifiers(const MCExpr *&EVal,
 }
 
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeE2KAsmParser() {
-  RegisterMCAsmParser<E2KAsmParser> A(getTheE2KTarget());
-  RegisterMCAsmParser<E2KAsmParser> B(getTheE2KV9Target());
-  RegisterMCAsmParser<E2KAsmParser> C(getTheE2KelTarget());
+  RegisterMCAsmParser<E2KAsmParser> A(getTheE2K32Target());
+  RegisterMCAsmParser<E2KAsmParser> B(getTheE2K64Target());
 }
 
 #define GET_REGISTER_MATCHER
