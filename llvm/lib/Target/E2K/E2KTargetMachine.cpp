@@ -21,14 +21,13 @@ using namespace llvm;
 
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeE2KTarget() {
   // Register the target.
-  RegisterTargetMachine<E2KV8TargetMachine> X(getTheE2KTarget());
-  RegisterTargetMachine<E2KV9TargetMachine> Y(getTheE2KV9Target());
-  RegisterTargetMachine<E2KelTargetMachine> Z(getTheE2KelTarget());
+  RegisterTargetMachine<E2K32TargetMachine> X(getTheE2K32Target());
+  RegisterTargetMachine<E2K64TargetMachine> Y(getTheE2K64Target());
 }
 
 static std::string computeDataLayout(const Triple &T, bool is64Bit) {
-  // E2K is typically big endian, but some are little.
-  std::string Ret = T.getArch() == Triple::e2kel ? "e" : "E";
+  // E2K is always little endian
+  std::string Ret = "e";
   Ret += "-m:e";
 
   // Some ABIs have 32bit pointers.
@@ -38,8 +37,8 @@ static std::string computeDataLayout(const Triple &T, bool is64Bit) {
   // Alignments for 64 bit integers.
   Ret += "-i64:64";
 
-  // On E2KV9 128 floats are aligned to 128 bits, on others only to 64.
-  // On E2KV9 registers can hold 64 or 32 bits, on others only 32.
+  // On E2K64 128 floats are aligned to 128 bits, on others only to 64.
+  // On E2K64 registers can hold 64 or 32 bits, on others only 32.
   if (is64Bit)
     Ret += "-n32:64";
   else
@@ -169,9 +168,9 @@ void E2KPassConfig::addPreEmitPass(){
   addPass(createE2KDelaySlotFillerPass());
 }
 
-void E2KV8TargetMachine::anchor() { }
+void E2K32TargetMachine::anchor() { }
 
-E2KV8TargetMachine::E2KV8TargetMachine(const Target &T, const Triple &TT,
+E2K32TargetMachine::E2K32TargetMachine(const Target &T, const Triple &TT,
                                            StringRef CPU, StringRef FS,
                                            const TargetOptions &Options,
                                            std::optional<Reloc::Model> RM,
@@ -179,22 +178,12 @@ E2KV8TargetMachine::E2KV8TargetMachine(const Target &T, const Triple &TT,
                                            CodeGenOpt::Level OL, bool JIT)
     : E2KTargetMachine(T, TT, CPU, FS, Options, RM, CM, OL, JIT, false) {}
 
-void E2KV9TargetMachine::anchor() { }
+void E2K64TargetMachine::anchor() { }
 
-E2KV9TargetMachine::E2KV9TargetMachine(const Target &T, const Triple &TT,
+E2K64TargetMachine::E2K64TargetMachine(const Target &T, const Triple &TT,
                                            StringRef CPU, StringRef FS,
                                            const TargetOptions &Options,
                                            std::optional<Reloc::Model> RM,
                                            std::optional<CodeModel::Model> CM,
                                            CodeGenOpt::Level OL, bool JIT)
     : E2KTargetMachine(T, TT, CPU, FS, Options, RM, CM, OL, JIT, true) {}
-
-void E2KelTargetMachine::anchor() {}
-
-E2KelTargetMachine::E2KelTargetMachine(const Target &T, const Triple &TT,
-                                           StringRef CPU, StringRef FS,
-                                           const TargetOptions &Options,
-                                           Optional<Reloc::Model> RM,
-                                           Optional<CodeModel::Model> CM,
-                                           CodeGenOpt::Level OL, bool JIT)
-    : E2KTargetMachine(T, TT, CPU, FS, Options, RM, CM, OL, JIT, false) {}
