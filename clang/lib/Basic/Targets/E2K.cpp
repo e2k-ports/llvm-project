@@ -65,46 +65,66 @@ struct E2KCPUInfo {
 };
 
 static constexpr E2KCPUInfo CPUInfo[] = {
-    {{"v8"}, E2KTargetInfo::CK_V8, E2KTargetInfo::CG_V8},
-    {{"supere2k"}, E2KTargetInfo::CK_SUPERE2K, E2KTargetInfo::CG_V8},
-    {{"e2klite"}, E2KTargetInfo::CK_E2KLITE, E2KTargetInfo::CG_V8},
-    {{"f934"}, E2KTargetInfo::CK_F934, E2KTargetInfo::CG_V8},
-    {{"hypere2k"}, E2KTargetInfo::CK_HYPERE2K, E2KTargetInfo::CG_V8},
-    {{"e2klite86x"},
-     E2KTargetInfo::CK_E2KLITE86X,
-     E2KTargetInfo::CG_V8},
-    {{"e2klet"}, E2KTargetInfo::CK_E2KLET, E2KTargetInfo::CG_V8},
-    {{"tsc701"}, E2KTargetInfo::CK_TSC701, E2KTargetInfo::CG_V8},
-    {{"v9"}, E2KTargetInfo::CK_V9, E2KTargetInfo::CG_V9},
-    {{"ultrae2k"}, E2KTargetInfo::CK_ULTRAE2K, E2KTargetInfo::CG_V9},
-    {{"ultrase2k3"}, E2KTargetInfo::CK_ULTRAE2K3, E2KTargetInfo::CG_V9},
-    {{"niagara"}, E2KTargetInfo::CK_NIAGARA, E2KTargetInfo::CG_V9},
-    {{"niagara2"}, E2KTargetInfo::CK_NIAGARA2, E2KTargetInfo::CG_V9},
-    {{"niagara3"}, E2KTargetInfo::CK_NIAGARA3, E2KTargetInfo::CG_V9},
-    {{"niagara4"}, E2KTargetInfo::CK_NIAGARA4, E2KTargetInfo::CG_V9},
-    {{"ma2100"}, E2KTargetInfo::CK_MYRIAD2100, E2KTargetInfo::CG_V8},
-    {{"ma2150"}, E2KTargetInfo::CK_MYRIAD2150, E2KTargetInfo::CG_V8},
-    {{"ma2155"}, E2KTargetInfo::CK_MYRIAD2155, E2KTargetInfo::CG_V8},
-    {{"ma2450"}, E2KTargetInfo::CK_MYRIAD2450, E2KTargetInfo::CG_V8},
-    {{"ma2455"}, E2KTargetInfo::CK_MYRIAD2455, E2KTargetInfo::CG_V8},
-    {{"ma2x5x"}, E2KTargetInfo::CK_MYRIAD2x5x, E2KTargetInfo::CG_V8},
-    {{"ma2080"}, E2KTargetInfo::CK_MYRIAD2080, E2KTargetInfo::CG_V8},
-    {{"ma2085"}, E2KTargetInfo::CK_MYRIAD2085, E2KTargetInfo::CG_V8},
-    {{"ma2480"}, E2KTargetInfo::CK_MYRIAD2480, E2KTargetInfo::CG_V8},
-    {{"ma2485"}, E2KTargetInfo::CK_MYRIAD2485, E2KTargetInfo::CG_V8},
-    {{"ma2x8x"}, E2KTargetInfo::CK_MYRIAD2x8x, E2KTargetInfo::CG_V8},
-    // FIXME: the myriad2[.n] spellings are obsolete,
-    // but a grace period is needed to allow updating dependent builds.
-    {{"myriad2"}, E2KTargetInfo::CK_MYRIAD2x5x, E2KTargetInfo::CG_V8},
-    {{"myriad2.1"}, E2KTargetInfo::CK_MYRIAD2100, E2KTargetInfo::CG_V8},
-    {{"myriad2.2"}, E2KTargetInfo::CK_MYRIAD2x5x, E2KTargetInfo::CG_V8},
-    {{"myriad2.3"}, E2KTargetInfo::CK_MYRIAD2x8x, E2KTargetInfo::CG_V8},
+    {{"v1"}, E2KTargetInfo::CK_V1, E2KTargetInfo::CG_V1},
+    {{"v2"}, E2KTargetInfo::CK_V2, E2KTargetInfo::CG_V2},
+    {{"v3"}, E2KTargetInfo::CK_V3, E2KTargetInfo::CG_V3},
+    {{"v4"}, E2KTargetInfo::CK_V4, E2KTargetInfo::CG_V4},
+    {{"v5"}, E2KTargetInfo::CK_V5, E2KTargetInfo::CG_V5},
+    {{"v6"}, E2KTargetInfo::CK_V6, E2KTargetInfo::CG_V6},
+    {{"v7"}, E2KTargetInfo::CK_V7, E2KTargetInfo::CG_V7},
+
+    {{"s"}, E2KTargetInfo::CK_ElbrusS, E2KTargetInfo::CG_V2},
+    {{"3s"}, E2KTargetInfo::CK_Elbrus3S, E2KTargetInfo::CG_V2},
+    {{"2c"}, E2KTargetInfo::CK_Elbrus2C, E2KTargetInfo::CG_V2},
+    {{"2c1"}, E2KTargetInfo::CK_Elbrus2C1, E2KTargetInfo::CG_V2},
+
+    {{"1c+"}, E2KTargetInfo::CK_Elbrus1CPlus, E2KTargetInfo::CG_V4},
+    {{"4c1c+"}, E2KTargetInfo::CK_Elbrus4C1Plus, E2KTargetInfo::CG_V4},
+
+    {{"1ck"}, E2KTargetInfo::CK_Elbrus1CK, E2KTargetInfo::CG_V4},
+
+    {{"2c+"}, E2KTargetInfo::CK_Elbrus2CPlus, E2KTargetInfo::CG_V2},
+    {{"2c2"}, E2KTargetInfo::CK_Elbrus2C2, E2KTargetInfo::CG_V2},
+    {{"s2"}, E2KTargetInfo::CK_ElbrusS2, E2KTargetInfo::CG_V2},
+    {{"sx2"}, E2KTargetInfo::CK_ElbrusSX2, E2KTargetInfo::CG_V2},
+    {{"3s2"}, E2KTargetInfo::CK_Elbrus3S2, E2KTargetInfo::CG_V2},
+
+    {{"2cm"}, E2KTargetInfo::CK_Elbrus2CM, E2KTargetInfo::CG_V2},
+    {{"1c"}, E2KTargetInfo::CK_Elbrus1C, E2KTargetInfo::CG_V2},
+
+    {{"2s3"}, E2KTargetInfo::CK_Elbrus2S3, E2KTargetInfo::CG_V6},
+    {{"2c3"}, E2KTargetInfo::CK_Elbrus2C3, E2KTargetInfo::CG_V6},
+
+    {{"4c"}, E2KTargetInfo::CK_Elbrus4C, E2KTargetInfo::CG_V3},
+    {{"2s"}, E2KTargetInfo::CK_Elbrus2S, E2KTargetInfo::CG_V3},
+    {{"2s4m"}, E2KTargetInfo::CK_Elbrus2S4M, E2KTargetInfo::CG_V3},
+    {{"3c4"}, E2KTargetInfo::CK_Elbrus3C4, E2KTargetInfo::CG_V3},
+
+    {{"8c"}, E2KTargetInfo::CK_Elbrus8C, E2KTargetInfo::CG_V4},
+    {{"4c+"}, E2KTargetInfo::CK_Elbrus4CPlus, E2KTargetInfo::CG_V4},
+    {{"4c8"}, E2KTargetInfo::CK_Elbrus4C8, E2KTargetInfo::CG_V4},
+    {{"4s"}, E2KTargetInfo::CK_Elbrus4S, E2KTargetInfo::CG_V4},
+
+    {{"8c1"}, E2KTargetInfo::CK_Elbrus8C1, E2KTargetInfo::CG_V4},
+
+    {{"8sv"}, E2KTargetInfo::CK_Elbrus8SV, E2KTargetInfo::CG_V5},
+    {{"8c2"}, E2KTargetInfo::CK_Elbrus8C2, E2KTargetInfo::CG_V5},
+    {{"8cb"}, E2KTargetInfo::CK_Elbrus8CB, E2KTargetInfo::CG_V5},
+
+    {{"12s"}, E2KTargetInfo::CK_Elbrus12S, E2KTargetInfo::CG_V6},
+    {{"12c"}, E2KTargetInfo::CK_Elbrus12C, E2KTargetInfo::CG_V6},
+
+    {{"16s"}, E2KTargetInfo::CK_Elbrus16S, E2KTargetInfo::CG_V6},
+    {{"16c"}, E2KTargetInfo::CK_Elbrus16C, E2KTargetInfo::CG_V6},
+
+    {{"32s"}, E2KTargetInfo::CK_Elbrus32S, E2KTargetInfo::CG_V7},
+    {{"32c"}, E2KTargetInfo::CK_Elbrus32C, E2KTargetInfo::CG_V7},
 };
 
 E2KTargetInfo::CPUGeneration
 E2KTargetInfo::getCPUGeneration(CPUKind Kind) const {
   if (Kind == CK_GENERIC)
-    return CG_V8;
+    return CG_V1;
   const E2KCPUInfo *Item = llvm::find_if(
       CPUInfo, [Kind](const E2KCPUInfo &Info) { return Info.Kind == Kind; });
   if (Item == std::end(CPUInfo))
@@ -139,90 +159,6 @@ void E2KTargetInfo::getTargetDefines(const LangOptions &Opts,
 void E2KV8TargetInfo::getTargetDefines(const LangOptions &Opts,
                                          MacroBuilder &Builder) const {
   E2KTargetInfo::getTargetDefines(Opts, Builder);
-  if (getTriple().getOS() == llvm::Triple::Solaris)
-    Builder.defineMacro("__e2kv8");
-  else {
-    switch (getCPUGeneration(CPU)) {
-    case CG_V8:
-      Builder.defineMacro("__e2kv8");
-      Builder.defineMacro("__e2kv8__");
-      break;
-    case CG_V9:
-      Builder.defineMacro("__e2k_v9__");
-      break;
-    }
-  }
-  if (getTriple().getVendor() == llvm::Triple::Myriad) {
-    std::string MyriadArchValue, Myriad2Value;
-    Builder.defineMacro("__e2k_v8__");
-    switch (CPU) {
-    case CK_MYRIAD2100:
-      MyriadArchValue = "__ma2100";
-      Myriad2Value = "1";
-      break;
-    case CK_MYRIAD2150:
-      MyriadArchValue = "__ma2150";
-      Myriad2Value = "2";
-      break;
-    case CK_MYRIAD2155:
-      MyriadArchValue = "__ma2155";
-      Myriad2Value = "2";
-      break;
-    case CK_MYRIAD2450:
-      MyriadArchValue = "__ma2450";
-      Myriad2Value = "2";
-      break;
-    case CK_MYRIAD2455:
-      MyriadArchValue = "__ma2455";
-      Myriad2Value = "2";
-      break;
-    case CK_MYRIAD2x5x:
-      Myriad2Value = "2";
-      break;
-    case CK_MYRIAD2080:
-      MyriadArchValue = "__ma2080";
-      Myriad2Value = "3";
-      break;
-    case CK_MYRIAD2085:
-      MyriadArchValue = "__ma2085";
-      Myriad2Value = "3";
-      break;
-    case CK_MYRIAD2480:
-      MyriadArchValue = "__ma2480";
-      Myriad2Value = "3";
-      break;
-    case CK_MYRIAD2485:
-      MyriadArchValue = "__ma2485";
-      Myriad2Value = "3";
-      break;
-    case CK_MYRIAD2x8x:
-      Myriad2Value = "3";
-      break;
-    default:
-      MyriadArchValue = "__ma2100";
-      Myriad2Value = "1";
-      break;
-    }
-    if (!MyriadArchValue.empty()) {
-      Builder.defineMacro(MyriadArchValue, "1");
-      Builder.defineMacro(MyriadArchValue + "__", "1");
-    }
-    if (Myriad2Value == "2") {
-      Builder.defineMacro("__ma2x5x", "1");
-      Builder.defineMacro("__ma2x5x__", "1");
-    } else if (Myriad2Value == "3") {
-      Builder.defineMacro("__ma2x8x", "1");
-      Builder.defineMacro("__ma2x8x__", "1");
-    }
-    Builder.defineMacro("__myriad2__", Myriad2Value);
-    Builder.defineMacro("__myriad2", Myriad2Value);
-  }
-  if (getCPUGeneration(CPU) == CG_V9) {
-    Builder.defineMacro("__GCC_HAVE_SYNC_COMPARE_AND_SWAP_1");
-    Builder.defineMacro("__GCC_HAVE_SYNC_COMPARE_AND_SWAP_2");
-    Builder.defineMacro("__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4");
-    Builder.defineMacro("__GCC_HAVE_SYNC_COMPARE_AND_SWAP_8");
-  }
 }
 
 void E2KV9TargetInfo::getTargetDefines(const LangOptions &Opts,
@@ -230,12 +166,10 @@ void E2KV9TargetInfo::getTargetDefines(const LangOptions &Opts,
   E2KTargetInfo::getTargetDefines(Opts, Builder);
   Builder.defineMacro("__e2kv9");
   Builder.defineMacro("__arch64__");
-  // Solaris doesn't need these variants, but the BSDs do.
-  if (getTriple().getOS() != llvm::Triple::Solaris) {
-    Builder.defineMacro("__e2k64__");
-    Builder.defineMacro("__e2k_v9__");
-    Builder.defineMacro("__e2kv9__");
-  }
+
+  Builder.defineMacro("__e2k64__");
+  Builder.defineMacro("__e2k_v9__");
+  Builder.defineMacro("__e2kv9__");
 
   Builder.defineMacro("__GCC_HAVE_SYNC_COMPARE_AND_SWAP_1");
   Builder.defineMacro("__GCC_HAVE_SYNC_COMPARE_AND_SWAP_2");
@@ -245,7 +179,4 @@ void E2KV9TargetInfo::getTargetDefines(const LangOptions &Opts,
 
 void E2KV9TargetInfo::fillValidCPUList(
     SmallVectorImpl<StringRef> &Values) const {
-  for (const E2KCPUInfo &Info : CPUInfo)
-    if (Info.Generation == CG_V9)
-      Values.push_back(Info.Name);
 }
