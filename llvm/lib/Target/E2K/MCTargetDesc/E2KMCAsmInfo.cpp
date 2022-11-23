@@ -23,17 +23,17 @@ using namespace llvm;
 void E2KELFMCAsmInfo::anchor() {}
 
 E2KELFMCAsmInfo::E2KELFMCAsmInfo(const Triple &TheTriple) {
-  bool isV9 = (TheTriple.getArch() == Triple::e2kv9);
-  IsLittleEndian = (TheTriple.getArch() == Triple::e2kel);
+  bool Is64bit = (TheTriple.getArch() == Triple::e2k64);
+  IsLittleEndian = true;
 
-  if (isV9) {
+  if (Is64bit) {
     CodePointerSize = CalleeSaveStackSlotSize = 8;
   }
 
   Data16bitsDirective = "\t.half\t";
   Data32bitsDirective = "\t.word\t";
   // .xword is only supported by V9.
-  Data64bitsDirective = (isV9) ? "\t.xword\t" : nullptr;
+  Data64bitsDirective = (Is64bit) ? "\t.xword\t" : nullptr;
   ZeroDirective = "\t.skip\t";
   CommentString = "!";
   SupportsDebugInformation = true;
