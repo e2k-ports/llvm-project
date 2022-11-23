@@ -103,6 +103,7 @@ public:
     CK_Elbrus4C1Plus, // same as CK_Elbrus1CPlus
 
     CK_Elbrus1CK,
+    CK_Elbrus1CHK,    // same as CK_Elbrus1CK
 
     CK_Elbrus2CPlus,
     CK_Elbrus2C2,     // same as CK_Elbrus2CPlus
@@ -169,12 +170,12 @@ public:
   }
 };
 
-// E2K v8 is the 32-bit mode selected by Triple::e2k.
-class LLVM_LIBRARY_VISIBILITY E2KV8TargetInfo : public E2KTargetInfo {
+// E2K32 is the 32-bit mode selected by Triple::e2k32.
+class LLVM_LIBRARY_VISIBILITY E2K32TargetInfo : public E2KTargetInfo {
 public:
-  E2KV8TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
+  E2K32TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
       : E2KTargetInfo(Triple, Opts) {
-    resetDataLayout("E-m:e-p:32:32-i64:64-f128:64-n32-S64");
+    resetDataLayout("e-m:e-p:32:32-i64:64-f128:64-n32-S64");
 
     SizeType = UnsignedInt;
     IntPtrType = SignedInt;
@@ -191,22 +192,13 @@ public:
   bool hasBitIntType() const override { return true; }
 };
 
-// E2KV8el is the 32-bit little-endian mode selected by Triple::e2kel.
-class LLVM_LIBRARY_VISIBILITY E2KV8elTargetInfo : public E2KV8TargetInfo {
+// E2K64 is the 64-bit mode selected by Triple::e2k64.
+class LLVM_LIBRARY_VISIBILITY E2K64TargetInfo : public E2KTargetInfo {
 public:
-  E2KV8elTargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
-      : E2KV8TargetInfo(Triple, Opts) {
-    resetDataLayout("e-m:e-p:32:32-i64:64-f128:64-n32-S64");
-  }
-};
-
-// E2K v9 is the 64-bit mode selected by Triple::e2kv9.
-class LLVM_LIBRARY_VISIBILITY E2KV9TargetInfo : public E2KTargetInfo {
-public:
-  E2KV9TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
+  E2K64TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
       : E2KTargetInfo(Triple, Opts) {
     // FIXME: Support E2K quad-precision long double?
-    resetDataLayout("E-m:e-i64:64-n32:64-S128");
+    resetDataLayout("e-m:e-i64:64-n32:64-S128");
     // This is an LP64 platform.
     LongWidth = LongAlign = PointerWidth = PointerAlign = 64;
 
@@ -224,18 +216,6 @@ public:
 
   void getTargetDefines(const LangOptions &Opts,
                         MacroBuilder &Builder) const override;
-
-  bool isValidCPUName(StringRef Name) const override {
-    return false;
-  }
-
-  void fillValidCPUList(SmallVectorImpl<StringRef> &Values) const override;
-
-  bool setCPU(const std::string &Name) override {
-    if (!E2KTargetInfo::setCPU(Name))
-      return false;
-    return true;
-  }
 
   bool hasBitIntType() const override { return true; }
 };

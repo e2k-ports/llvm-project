@@ -133,9 +133,8 @@ namespace {
 
   public:
     E2KAsmBackend(const Target &T)
-        : MCAsmBackend(StringRef(T.getName()) == "e2kel" ? support::little
-                                                           : support::big),
-          TheTarget(T), Is64Bit(StringRef(TheTarget.getName()) == "e2kv9") {}
+        : MCAsmBackend(support::little),
+          TheTarget(T), Is64Bit(StringRef(TheTarget.getName()) == "e2kv64") {}
 
     unsigned getNumFixupKinds() const override {
       return E2K::NumTargetFixupKinds;
