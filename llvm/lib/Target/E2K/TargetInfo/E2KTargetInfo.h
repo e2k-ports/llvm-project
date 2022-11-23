@@ -13,9 +13,8 @@ namespace llvm {
 
 class Target;
 
-Target &getTheE2KTarget();
-Target &getTheE2KV9Target();
-Target &getTheE2KelTarget();
+Target &getTheE2K32Target();
+Target &getTheE2K64Target();
 
 } // namespace llvm
 

@@ -28,13 +28,6 @@ void E2KSubtarget::anchor() { }
 E2KSubtarget &E2KSubtarget::initializeSubtargetDependencies(StringRef CPU,
                                                                 StringRef FS) {
 
-  IsV1 = false;
-  IsV2 = false;
-  IsV3 = false;
-  IsV4 = false;
-  IsV5 = false;
-  IsV6 = false;
-  IsV7 = false;
   // Determine default and user specified characteristics
   std::string CPUName = std::string(CPU);
   if (CPUName.empty())

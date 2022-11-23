@@ -19,13 +19,16 @@ include "llvm/Target/Target.td"
 // E2K Subtarget features.
 //===----------------------------------------------------------------------===//
 
-def FeatureV1 : SubtargetFeature<"v1", "IsV1", "true", "Enable E2K-V1 instructions">;
-def FeatureV2 : SubtargetFeature<"v2", "IsV2", "true", "Enable E2K-V2 instructions">;
-def FeatureV3 : SubtargetFeature<"v3", "IsV3", "true", "Enable E2K-V3 instructions">;
-def FeatureV4 : SubtargetFeature<"v4", "IsV4", "true", "Enable E2K-V4 instructions">;
-def FeatureV5 : SubtargetFeature<"v5", "IsV5", "true", "Enable E2K-V5 instructions">;
-def FeatureV6 : SubtargetFeature<"v6", "IsV6", "true", "Enable E2K-V6 instructions">;
-def FeatureV7 : SubtargetFeature<"v7", "IsV7", "true", "Enable E2K-V7 instructions">;
+class Architecture<string fname, string aname, string desc, list<SubtargetFeature> features>
+  : SubtargetFeature<fname, "E2KArch", aname, desc, features>;
+
+def E2Kv1: Architecture<"e2kv1", "E2Kv1", "E2K-V1 architecture", []>;
+def E2Kv2: Architecture<"e2kv2", "E2Kv2", "E2K-V2 architecture", []>;
+def E2Kv3: Architecture<"e2kv3", "E2Kv3", "E2K-V3 architecture", []>;
+def E2Kv4: Architecture<"e2kv4", "E2Kv4", "E2K-V4 architecture", []>;
+def E2Kv5: Architecture<"e2kv5", "E2Kv5", "E2K-V5 architecture", []>;
+def E2Kv6: Architecture<"e2kv6", "E2Kv6", "E2K-V6 architecture", []>;
+def E2Kv7: Architecture<"e2kv7", "E2Kv7", "E2K-V7 architecture", []>;
 
 //===----------------------------------------------------------------------===//
 // Register File, Calling Conv, Instruction Descriptions
@@ -49,57 +52,59 @@ def E2KAsmParser : AsmParser {
 // https://wiki.elbrus.ru/Характеристики_процессоров_Эльбрус
 // https://wiki.elbrus.ru/Идентификаторы_процессоров
 
-class Proc<string Name, list<SubtargetFeature> Features>
- : Processor<Name, NoItineraries, Features>;
+def E2KModel : SchedMachineModel {
+  let CompleteModel = 0;
+}
 
-def : Proc<"elbrus",          [FeatureV1]>;
+def : ProcessorModel<"elbrus",          E2KModel, [E2Kv1]>;
 
-def : Proc<"elbrus-s",        [FeatureV2]>;
-def : Proc<"elbrus-3s",       [FeatureV2]>; // same as "elbrus-s"
-def : Proc<"elbrus-2c",       [FeatureV2]>; // same as "elbrus-s"
-def : Proc<"elbrus-2c1",      [FeatureV2]>; // same as "elbrus-s"
+def : ProcessorModel<"elbrus-s",        E2KModel, [E2Kv2]>;
+def : ProcessorModel<"elbrus-3s",       E2KModel, [E2Kv2]>; // same as "elbrus-s"
+def : ProcessorModel<"elbrus-2c",       E2KModel, [E2Kv2]>; // same as "elbrus-s"
+def : ProcessorModel<"elbrus-2c1",      E2KModel, [E2Kv2]>; // same as "elbrus-s"
 
-def : Proc<"elbrus-1c+",      [FeatureV4]>;
-def : Proc<"elbrus-4c1+",     [FeatureV4]>; // same as "elbrus-1c+"
+def : ProcessorModel<"elbrus-1c+",      E2KModel, [E2Kv4]>;
+def : ProcessorModel<"elbrus-4c1+",     E2KModel, [E2Kv4]>; // same as "elbrus-1c+"
 
-def : Proc<"elbrus-1ck",      [FeatureV4]>;
+def : ProcessorModel<"elbrus-1ck",      E2KModel, [E2Kv4]>;
+def : ProcessorModel<"elbrus-1chk",     E2KModel, [E2Kv4]>; // same as "elbrus-1ck"
 
-def : Proc<"elbrus-2c+",      [FeatureV2]>;
-def : Proc<"elbrus-2c2",      [FeatureV2]>; // same as "elbrus-2c+"
-def : Proc<"elbrus-s2",       [FeatureV2]>; // same as "elbrus-2c+"
-def : Proc<"elbrus-sx2",      [FeatureV2]>; // same as "elbrus-2c+"
-def : Proc<"elbrus-3s2",      [FeatureV2]>; // same as "elbrus-2c+"
+def : ProcessorModel<"elbrus-2c+",      E2KModel, [E2Kv2]>;
+def : ProcessorModel<"elbrus-2c2",      E2KModel, [E2Kv2]>; // same as "elbrus-2c+"
+def : ProcessorModel<"elbrus-s2",       E2KModel, [E2Kv2]>; // same as "elbrus-2c+"
+def : ProcessorModel<"elbrus-sx2",      E2KModel, [E2Kv2]>; // same as "elbrus-2c+"
+def : ProcessorModel<"elbrus-3s2",      E2KModel, [E2Kv2]>; // same as "elbrus-2c+"
 
-def : Proc<"elbrus-2cm",      [FeatureV2]>;
-def : Proc<"elbrus-1c",       [FeatureV2]>; // same as "elbrus-2cm"
+def : ProcessorModel<"elbrus-2cm",      E2KModel, [E2Kv2]>;
+def : ProcessorModel<"elbrus-1c",       E2KModel, [E2Kv2]>; // same as "elbrus-2cm"
 
-def : Proc<"elbrus-2s3",      [FeatureV6]>;
-def : Proc<"elbrus-2c3",      [FeatureV6]>; // same as "elbrus-2s3"
+def : ProcessorModel<"elbrus-2s3",      E2KModel, [E2Kv6]>;
+def : ProcessorModel<"elbrus-2c3",      E2KModel, [E2Kv6]>; // same as "elbrus-2s3"
 
-def : Proc<"elbrus-4c",       [FeatureV3]>;
-def : Proc<"elbrus-2s",       [FeatureV3]>; // same as "elbrus-4c"
-def : Proc<"elbrus-2s4m",     [FeatureV3]>; // same as "elbrus-4c"
-def : Proc<"elbrus-3c4",      [FeatureV3]>; // same as "elbrus-4c"
+def : ProcessorModel<"elbrus-4c",       E2KModel, [E2Kv3]>;
+def : ProcessorModel<"elbrus-2s",       E2KModel, [E2Kv3]>; // same as "elbrus-4c"
+def : ProcessorModel<"elbrus-2s4m",     E2KModel, [E2Kv3]>; // same as "elbrus-4c"
+def : ProcessorModel<"elbrus-3c4",      E2KModel, [E2Kv3]>; // same as "elbrus-4c"
 
-def : Proc<"elbrus-8c",       [FeatureV4]>;
-def : Proc<"elbrus-4c+",      [FeatureV4]>; // same as "elbrus-8c"
-def : Proc<"elbrus-4c8",      [FeatureV4]>; // same as "elbrus-8c"
-def : Proc<"elbrus-4s",       [FeatureV4]>; // same as "elbrus-8c"
+def : ProcessorModel<"elbrus-8c",       E2KModel, [E2Kv4]>;
+def : ProcessorModel<"elbrus-4c+",      E2KModel, [E2Kv4]>; // same as "elbrus-8c"
+def : ProcessorModel<"elbrus-4c8",      E2KModel, [E2Kv4]>; // same as "elbrus-8c"
+def : ProcessorModel<"elbrus-4s",       E2KModel, [E2Kv4]>; // same as "elbrus-8c"
 
-def : Proc<"elbrus-8c1",      [FeatureV4]>;
+def : ProcessorModel<"elbrus-8c1",      E2KModel, [E2Kv4]>;
 
-def : Proc<"elbrus-8sv",      [FeatureV5]>;
-def : Proc<"elbrus-8c2",      [FeatureV5]>; // same as "elbrus-8sv"
-def : Proc<"elbrus-8cb",      [FeatureV5]>; // same as "elbrus-8sv"
+def : ProcessorModel<"elbrus-8sv",      E2KModel, [E2Kv5]>;
+def : ProcessorModel<"elbrus-8c2",      E2KModel, [E2Kv5]>; // same as "elbrus-8sv"
+def : ProcessorModel<"elbrus-8cb",      E2KModel, [E2Kv5]>; // same as "elbrus-8sv"
 
-def : Proc<"elbrus-12s",      [FeatureV6]>;
-def : Proc<"elbrus-12c",      [FeatureV6]>; // same as "elbrus-12s"
+def : ProcessorModel<"elbrus-12s",      E2KModel, [E2Kv6]>;
+def : ProcessorModel<"elbrus-12c",      E2KModel, [E2Kv6]>; // same as "elbrus-12s"
 
-def : Proc<"elbrus-16s",      [FeatureV6]>;
-def : Proc<"elbrus-16c",      [FeatureV6]>; // same as "elbrus-16s"
+def : ProcessorModel<"elbrus-16s",      E2KModel, [E2Kv6]>;
+def : ProcessorModel<"elbrus-16c",      E2KModel, [E2Kv6]>; // same as "elbrus-16s"
 
-def : Proc<"elbrus-32s",      [FeatureV7]>;
-def : Proc<"elbrus-32c",      [FeatureV7]>; // same as "elbrus-32s"
+def : ProcessorModel<"elbrus-32s",      E2KModel, [E2Kv7]>;
+def : ProcessorModel<"elbrus-32c",      E2KModel, [E2Kv7]>; // same as "elbrus-32s"
 
 //===----------------------------------------------------------------------===//
 // Declare the target which we are implementing

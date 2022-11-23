@@ -82,6 +82,7 @@ static constexpr E2KCPUInfo CPUInfo[] = {
     {{"4c1c+"}, E2KTargetInfo::CK_Elbrus4C1Plus, E2KTargetInfo::CG_V4},
 
     {{"1ck"}, E2KTargetInfo::CK_Elbrus1CK, E2KTargetInfo::CG_V4},
+    {{"1chk"}, E2KTargetInfo::CK_Elbrus1CHK, E2KTargetInfo::CG_V4},
 
     {{"2c+"}, E2KTargetInfo::CK_Elbrus2CPlus, E2KTargetInfo::CG_V2},
     {{"2c2"}, E2KTargetInfo::CK_Elbrus2C2, E2KTargetInfo::CG_V2},
@@ -156,27 +157,14 @@ void E2KTargetInfo::getTargetDefines(const LangOptions &Opts,
     Builder.defineMacro("SOFT_FLOAT", "1");
 }
 
-void E2KV8TargetInfo::getTargetDefines(const LangOptions &Opts,
+void E2K32TargetInfo::getTargetDefines(const LangOptions &Opts,
                                          MacroBuilder &Builder) const {
   E2KTargetInfo::getTargetDefines(Opts, Builder);
 }
 
-void E2KV9TargetInfo::getTargetDefines(const LangOptions &Opts,
+void E2K64TargetInfo::getTargetDefines(const LangOptions &Opts,
                                          MacroBuilder &Builder) const {
   E2KTargetInfo::getTargetDefines(Opts, Builder);
-  Builder.defineMacro("__e2kv9");
-  Builder.defineMacro("__arch64__");
 
   Builder.defineMacro("__e2k64__");
-  Builder.defineMacro("__e2k_v9__");
-  Builder.defineMacro("__e2kv9__");
-
-  Builder.defineMacro("__GCC_HAVE_SYNC_COMPARE_AND_SWAP_1");
-  Builder.defineMacro("__GCC_HAVE_SYNC_COMPARE_AND_SWAP_2");
-  Builder.defineMacro("__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4");
-  Builder.defineMacro("__GCC_HAVE_SYNC_COMPARE_AND_SWAP_8");
-}
-
-void E2KV9TargetInfo::fillValidCPUList(
-    SmallVectorImpl<StringRef> &Values) const {
 }

@@ -105,11 +105,9 @@ public:
     renderscript32, // 32-bit RenderScript
     renderscript64, // 64-bit RenderScript
     ve,             // NEC SX-Aurora Vector Engine
-    // FIXME : define actual e2k targets
-    e2k,            // Elbrus 2000
-    e2kv9,
-    e2kel,
-    LastArchType = e2kel
+    e2k32,          // Elbrus 2000 (32-bit)
+    e2k64,          // Elbrus 2000 (64-bit)
+    LastArchType = e2k64
   };
   enum SubArchType {
     NoSubArch,
