@@ -32,11 +32,11 @@ public:
 } // namespace
 
 E2K::E2K() {
-  copyRel = R_E2K_COPY;
-  gotRel = R_E2K_GLOB_DAT;
-  pltRel = R_E2K_JMP_SLOT;
-  relativeRel = R_E2K_RELATIVE;
-  symbolicRel = R_E2K_64;
+  copyRel = R_E2K_64_COPY;
+  gotRel = R_E2K_GOT;
+  pltRel = R_E2K_64_JMP_SLOT;
+  relativeRel = R_E2K_64_RELATIVE;
+  symbolicRel = R_E2K_64_ABS;
   pltEntrySize = 32;
   pltHeaderSize = 4 * pltEntrySize;
 
@@ -48,35 +48,6 @@ E2K::E2K() {
 RelExpr E2K::getRelExpr(RelType type, const Symbol &s,
                             const uint8_t *loc) const {
   switch (type) {
-  case R_E2K_32:
-  case R_E2K_UA32:
-  case R_E2K_64:
-  case R_E2K_UA64:
-  case R_E2K_H44:
-  case R_E2K_M44:
-  case R_E2K_L44:
-  case R_E2K_HH22:
-  case R_E2K_HM10:
-  case R_E2K_LM22:
-  case R_E2K_HI22:
-  case R_E2K_LO10:
-    return R_ABS;
-  case R_E2K_PC10:
-  case R_E2K_PC22:
-  case R_E2K_DISP32:
-  case R_E2K_WDISP30:
-    return R_PC;
-  case R_E2K_GOT10:
-    return R_GOT_OFF;
-  case R_E2K_GOT22:
-    return R_GOT_OFF;
-  case R_E2K_WPLT30:
-    return R_PLT_PC;
-  case R_E2K_NONE:
-    return R_NONE;
-  case R_E2K_TLS_LE_HIX22:
-  case R_E2K_TLS_LE_LOX10:
-    return R_TPREL;
   default:
     error(getErrorLocation(loc) + "unknown relocation (" + Twine(type) +
           ") against symbol " + toString(s));
@@ -87,88 +58,6 @@ RelExpr E2K::getRelExpr(RelType type, const Symbol &s,
 void E2K::relocate(uint8_t *loc, const Relocation &rel,
                        uint64_t val) const {
   switch (rel.type) {
-  case R_E2K_32:
-  case R_E2K_UA32:
-    // V-word32
-    checkUInt(loc, val, 32, rel);
-    write32be(loc, val);
-    break;
-  case R_E2K_DISP32:
-    // V-disp32
-    checkInt(loc, val, 32, rel);
-    write32be(loc, val);
-    break;
-  case R_E2K_WDISP30:
-  case R_E2K_WPLT30:
-    // V-disp30
-    checkInt(loc, val, 32, rel);
-    write32be(loc, (read32be(loc) & ~0x3fffffff) | ((val >> 2) & 0x3fffffff));
-    break;
-  case R_E2K_22:
-    // V-imm22
-    checkUInt(loc, val, 22, rel);
-    write32be(loc, (read32be(loc) & ~0x003fffff) | (val & 0x003fffff));
-    break;
-  case R_E2K_GOT22:
-  case R_E2K_PC22:
-  case R_E2K_LM22:
-    // T-imm22
-    write32be(loc, (read32be(loc) & ~0x003fffff) | ((val >> 10) & 0x003fffff));
-    break;
-  case R_E2K_HI22:
-    // V-imm22
-    checkUInt(loc, val >> 10, 22, rel);
-    write32be(loc, (read32be(loc) & ~0x003fffff) | ((val >> 10) & 0x003fffff));
-    break;
-  case R_E2K_WDISP19:
-    // V-disp19
-    checkInt(loc, val, 21, rel);
-    write32be(loc, (read32be(loc) & ~0x0007ffff) | ((val >> 2) & 0x0007ffff));
-    break;
-  case R_E2K_GOT10:
-  case R_E2K_PC10:
-    // T-simm10
-    write32be(loc, (read32be(loc) & ~0x000003ff) | (val & 0x000003ff));
-    break;
-  case R_E2K_LO10:
-    // T-simm13
-    write32be(loc, (read32be(loc) & ~0x00001fff) | (val & 0x000003ff));
-    break;
-  case R_E2K_64:
-  case R_E2K_UA64:
-    // V-xword64
-    write64be(loc, val);
-    break;
-  case R_E2K_HH22:
-    // V-imm22
-    checkUInt(loc, val >> 42, 22, rel);
-    write32be(loc, (read32be(loc) & ~0x003fffff) | ((val >> 42) & 0x003fffff));
-    break;
-  case R_E2K_HM10:
-    // T-simm13
-    write32be(loc, (read32be(loc) & ~0x00001fff) | ((val >> 32) & 0x000003ff));
-    break;
-  case R_E2K_H44:
-    // V-imm22
-    checkUInt(loc, val >> 22, 22, rel);
-    write32be(loc, (read32be(loc) & ~0x003fffff) | ((val >> 22) & 0x003fffff));
-    break;
-  case R_E2K_M44:
-    // T-imm10
-    write32be(loc, (read32be(loc) & ~0x000003ff) | ((val >> 12) & 0x000003ff));
-    break;
-  case R_E2K_L44:
-    // T-imm13
-    write32be(loc, (read32be(loc) & ~0x00001fff) | (val & 0x00000fff));
-    break;
-  case R_E2K_TLS_LE_HIX22:
-    // T-imm22
-    write32be(loc, (read32be(loc) & ~0x003fffff) | ((~val >> 10) & 0x003fffff));
-    break;
-  case R_E2K_TLS_LE_LOX10:
-    // T-simm13
-    write32be(loc, (read32be(loc) & ~0x00001fff) | (val & 0x000003ff) | 0x1C00);
-    break;
   default:
     llvm_unreachable("unknown relocation");
   }
@@ -187,10 +76,6 @@ void E2K::writePlt(uint8_t *buf, const Symbol & /*sym*/,
       0x01, 0x00, 0x00, 0x00  // nop
   };
   memcpy(buf, pltData, sizeof(pltData));
-
-  uint64_t off = pltEntryAddr - in.plt->getVA();
-  relocateNoSym(buf, R_E2K_22, off);
-  relocateNoSym(buf + 4, R_E2K_WDISP19, -(off + 4 - pltEntrySize));
 }
 
 TargetInfo *elf::getE2KTargetInfo() {
