@@ -1552,6 +1552,8 @@ bool E2KAsmParser::matchE2KAsmModifiers(const MCExpr *&EVal,
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeE2KAsmParser() {
   RegisterMCAsmParser<E2KAsmParser> A(getTheE2K32Target());
   RegisterMCAsmParser<E2KAsmParser> B(getTheE2K64Target());
+  RegisterMCAsmParser<E2KAsmParser> C(getTheE2K128Target());
+  RegisterMCAsmParser<E2KAsmParser> D(getTheE2K12864Target());
 }
 
 #define GET_REGISTER_MATCHER

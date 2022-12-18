@@ -164,3 +164,17 @@ void E2K64TargetInfo::getTargetDefines(const LangOptions &Opts,
 
   Builder.defineMacro("__e2k64__");
 }
+
+void E2K128TargetInfo::getTargetDefines(const LangOptions &Opts,
+                                       MacroBuilder &Builder) const {
+  E2KTargetInfo::getTargetDefines(Opts, Builder);
+
+  Builder.defineMacro("__e2k128__");
+}
+
+void E2K12864TargetInfo::getTargetDefines(const LangOptions &Opts,
+                                       MacroBuilder &Builder) const {
+  E2KTargetInfo::getTargetDefines(Opts, Builder);
+
+  Builder.defineMacro("__e2k12864__");
+}

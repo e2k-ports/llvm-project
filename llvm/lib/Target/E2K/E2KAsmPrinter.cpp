@@ -444,4 +444,6 @@ bool E2KAsmPrinter::PrintAsmMemoryOperand(const MachineInstr *MI,
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeE2KAsmPrinter() {
   RegisterAsmPrinter<E2KAsmPrinter> X(getTheE2K32Target());
   RegisterAsmPrinter<E2KAsmPrinter> Y(getTheE2K64Target());
+  RegisterAsmPrinter<E2KAsmPrinter> Z(getTheE2K128Target());
+  RegisterAsmPrinter<E2KAsmPrinter> W(getTheE2K12864Target());
 }

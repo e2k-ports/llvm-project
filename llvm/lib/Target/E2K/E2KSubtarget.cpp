@@ -30,8 +30,8 @@ E2KSubtarget &E2KSubtarget::initializeSubtargetDependencies(StringRef CPU,
 
   // Determine default and user specified characteristics
   std::string CPUName = std::string(CPU);
-  if (CPUName.empty())
-    CPUName = (Is64Bit) ? "v9" : "v8";
+  if (CPUName.empty() || CPUName == "generic")
+    CPUName = "elbrus";
 
   // Parse features string.
   ParseSubtargetFeatures(CPUName, /*TuneCPU*/ CPUName, FS);
@@ -41,9 +41,9 @@ E2KSubtarget &E2KSubtarget::initializeSubtargetDependencies(StringRef CPU,
 
 E2KSubtarget::E2KSubtarget(const Triple &TT, const std::string &CPU,
                                const std::string &FS, const TargetMachine &TM,
-                               bool is64Bit)
+                               E2KBitness bitness)
     : E2KGenSubtargetInfo(TT, CPU, /*TuneCPU*/ CPU, FS), TargetTriple(TT),
-      Is64Bit(is64Bit), InstrInfo(initializeSubtargetDependencies(CPU, FS)),
+      Bitness(bitness), InstrInfo(initializeSubtargetDependencies(CPU, FS)),
       TLInfo(TM, *this), FrameLowering(*this) {}
 
 int E2KSubtarget::getAdjustedFrameSize(int frameSize) const {
