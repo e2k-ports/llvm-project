@@ -310,6 +310,8 @@ static const char *getLDMOption(const llvm::Triple &T, const ArgList &Args) {
   case llvm::Triple::e2k32:
     return "elf32e2k";
   case llvm::Triple::e2k64:
+  case llvm::Triple::e2k128:
+  case llvm::Triple::e2k128_64:
     return "elf64e2k";
   default:
     return nullptr;

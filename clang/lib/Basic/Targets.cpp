@@ -691,6 +691,10 @@ TargetInfo *AllocateTarget(const llvm::Triple &Triple,
     return new LinuxTargetInfo<E2K32TargetInfo>(Triple, Opts);
   case llvm::Triple::e2k64:
     return new LinuxTargetInfo<E2K64TargetInfo>(Triple, Opts);
+  case llvm::Triple::e2k128:
+    return new LinuxTargetInfo<E2K128TargetInfo>(Triple, Opts);
+  case llvm::Triple::e2k128_64:
+    return new LinuxTargetInfo<E2K12864TargetInfo>(Triple, Opts);
   }
 
 }

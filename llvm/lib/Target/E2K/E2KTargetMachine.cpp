@@ -23,15 +23,17 @@ extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeE2KTarget() {
   // Register the target.
   RegisterTargetMachine<E2K32TargetMachine> X(getTheE2K32Target());
   RegisterTargetMachine<E2K64TargetMachine> Y(getTheE2K64Target());
+  RegisterTargetMachine<E2K128TargetMachine> Z(getTheE2K128Target());
+  RegisterTargetMachine<E2K12864TargetMachine> W(getTheE2K12864Target());
 }
 
-static std::string computeDataLayout(const Triple &T, bool is64Bit) {
+static std::string computeDataLayout(const Triple &T, E2KBitness bitness) {
   // E2K is always little endian
   std::string Ret = "e";
   Ret += "-m:e";
 
   // Some ABIs have 32bit pointers.
-  if (!is64Bit)
+  if (bitness == E2K_32)
     Ret += "-p:32:32";
 
   // Alignments for 64 bit integers.
@@ -39,12 +41,12 @@ static std::string computeDataLayout(const Triple &T, bool is64Bit) {
 
   // On E2K64 128 floats are aligned to 128 bits, on others only to 64.
   // On E2K64 registers can hold 64 or 32 bits, on others only 32.
-  if (is64Bit)
+  if (bitness == E2K_64)
     Ret += "-n32:64";
   else
     Ret += "-f128:64-n32";
 
-  if (is64Bit)
+  if (bitness == E2K_64)
     Ret += "-S128";
   else
     Ret += "-S64";
@@ -68,7 +70,7 @@ static Reloc::Model getEffectiveRelocModel(std::optional<Reloc::Model> RM) {
 // All code models require that the text segment is smaller than 2GB.
 static CodeModel::Model
 getEffectiveE2KCodeModel(std::optional<CodeModel::Model> CM, Reloc::Model RM,
-                           bool Is64Bit, bool JIT) {
+                           E2KBitness bitness, bool JIT) {
   if (CM) {
     if (*CM == CodeModel::Tiny)
       report_fatal_error("Target does not support the tiny CodeModel", false);
@@ -76,7 +78,7 @@ getEffectiveE2KCodeModel(std::optional<CodeModel::Model> CM, Reloc::Model RM,
       report_fatal_error("Target does not support the kernel CodeModel", false);
     return *CM;
   }
-  if (Is64Bit) {
+  if (bitness == E2K_64) {
     if (JIT)
       return CodeModel::Large;
     return RM == Reloc::PIC_ ? CodeModel::Small : CodeModel::Medium;
@@ -88,15 +90,15 @@ getEffectiveE2KCodeModel(std::optional<CodeModel::Model> CM, Reloc::Model RM,
 E2KTargetMachine::E2KTargetMachine(
     const Target &T, const Triple &TT, StringRef CPU, StringRef FS,
     const TargetOptions &Options, std::optional<Reloc::Model> RM,
-    std::optional<CodeModel::Model> CM, CodeGenOpt::Level OL, bool JIT, bool is64bit)
-    : LLVMTargetMachine(T, computeDataLayout(TT, is64bit), TT, CPU, FS, Options,
+    std::optional<CodeModel::Model> CM, CodeGenOpt::Level OL, bool JIT, E2KBitness bitness)
+    : LLVMTargetMachine(T, computeDataLayout(TT, bitness), TT, CPU, FS, Options,
                         getEffectiveRelocModel(RM),
                         getEffectiveE2KCodeModel(
-                            CM, getEffectiveRelocModel(RM), is64bit, JIT),
+                            CM, getEffectiveRelocModel(RM), bitness, JIT),
                         OL),
       TLOF(std::make_unique<E2KELFTargetObjectFile>()),
-      Subtarget(TT, std::string(CPU), std::string(FS), *this, is64bit),
-      is64Bit(is64bit) {
+      Subtarget(TT, std::string(CPU), std::string(FS), *this, bitness),
+      Bitness(bitness) {
   initAsmInfo();
 }
 
@@ -119,7 +121,7 @@ E2KTargetMachine::getSubtargetImpl(const Function &F) const {
     // function that reside in TargetOptions.
     resetTargetOptions(F);
     I = std::make_unique<E2KSubtarget>(TargetTriple, CPU, FS, *this,
-                                          this->is64Bit);
+                                          this->Bitness);
   }
   return I.get();
 }
@@ -168,7 +170,7 @@ E2K32TargetMachine::E2K32TargetMachine(const Target &T, const Triple &TT,
                                            std::optional<Reloc::Model> RM,
                                            std::optional<CodeModel::Model> CM,
                                            CodeGenOpt::Level OL, bool JIT)
-    : E2KTargetMachine(T, TT, CPU, FS, Options, RM, CM, OL, JIT, false) {}
+    : E2KTargetMachine(T, TT, CPU, FS, Options, RM, CM, OL, JIT, E2K_32) {}
 
 void E2K64TargetMachine::anchor() { }
 
@@ -178,4 +180,24 @@ E2K64TargetMachine::E2K64TargetMachine(const Target &T, const Triple &TT,
                                            std::optional<Reloc::Model> RM,
                                            std::optional<CodeModel::Model> CM,
                                            CodeGenOpt::Level OL, bool JIT)
-    : E2KTargetMachine(T, TT, CPU, FS, Options, RM, CM, OL, JIT, true) {}
+    : E2KTargetMachine(T, TT, CPU, FS, Options, RM, CM, OL, JIT, E2K_64) {}
+
+void E2K128TargetMachine::anchor() { }
+
+E2K128TargetMachine::E2K128TargetMachine(const Target &T, const Triple &TT,
+                                       StringRef CPU, StringRef FS,
+                                       const TargetOptions &Options,
+                                       std::optional<Reloc::Model> RM,
+                                       std::optional<CodeModel::Model> CM,
+                                       CodeGenOpt::Level OL, bool JIT)
+    : E2KTargetMachine(T, TT, CPU, FS, Options, RM, CM, OL, JIT, E2K_128) {}
+
+void E2K12864TargetMachine::anchor() { }
+
+E2K12864TargetMachine::E2K12864TargetMachine(const Target &T, const Triple &TT,
+                                         StringRef CPU, StringRef FS,
+                                         const TargetOptions &Options,
+                                         std::optional<Reloc::Model> RM,
+                                         std::optional<CodeModel::Model> CM,
+                                         CodeGenOpt::Level OL, bool JIT)
+    : E2KTargetMachine(T, TT, CPU, FS, Options, RM, CM, OL, JIT, E2K_128_64) {}
