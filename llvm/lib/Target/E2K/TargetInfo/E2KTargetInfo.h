@@ -15,6 +15,8 @@ class Target;
 
 Target &getTheE2K32Target();
 Target &getTheE2K64Target();
+Target &getTheE2K128Target();
+Target &getTheE2K12864Target();
 
 } // namespace llvm
 

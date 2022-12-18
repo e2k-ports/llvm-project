@@ -53,6 +53,10 @@ extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeE2KDisassembler() {
                                          createE2KDisassembler);
   TargetRegistry::RegisterMCDisassembler(getTheE2K64Target(),
                                          createE2KDisassembler);
+  TargetRegistry::RegisterMCDisassembler(getTheE2K128Target(),
+                                         createE2KDisassembler);
+  TargetRegistry::RegisterMCDisassembler(getTheE2K12864Target(),
+                                         createE2KDisassembler);
 }
 
 static const unsigned IntRegDecoderTable[] = {

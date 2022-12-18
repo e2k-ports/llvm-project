@@ -215,6 +215,63 @@ public:
 
   bool hasBitIntType() const override { return true; }
 };
+
+// E2K128 is the 128-bit mode selected by Triple::e2k128.
+class LLVM_LIBRARY_VISIBILITY E2K128TargetInfo : public E2KTargetInfo {
+public:
+  E2K128TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
+      : E2KTargetInfo(Triple, Opts) {
+    // FIXME: Support E2K quad-precision long double?
+    resetDataLayout("e-m:e-i64:64-n32:64-S128");
+    // This is an LP64 platform.
+    LongWidth = LongAlign = PointerWidth = PointerAlign = 64;
+
+    IntMaxType = SignedLong;
+    Int64Type = IntMaxType;
+
+    // The E2Kv8 System V ABI has long double 128-bits in size, but 64-bit
+    // aligned. The E2Kv9 SCD 2.4.1 says 16-byte aligned.
+    LongDoubleWidth = 128;
+    LongDoubleAlign = 128;
+    SuitableAlign = 128;
+    LongDoubleFormat = &llvm::APFloat::IEEEquad();
+    MaxAtomicPromoteWidth = MaxAtomicInlineWidth = 64;
+  }
+
+  void getTargetDefines(const LangOptions &Opts,
+                        MacroBuilder &Builder) const override;
+
+  bool hasBitIntType() const override { return true; }
+};
+
+// E2K128_64 is the 64-bit/128-bit mixed mode selected by Triple::e2k128_64.
+class LLVM_LIBRARY_VISIBILITY E2K12864TargetInfo : public E2KTargetInfo {
+public:
+  E2K12864TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
+      : E2KTargetInfo(Triple, Opts) {
+    // FIXME: Support E2K quad-precision long double?
+    resetDataLayout("e-m:e-i64:64-n32:64-S128");
+    // This is an LP64 platform.
+    LongWidth = LongAlign = PointerWidth = PointerAlign = 64;
+
+    IntMaxType = SignedLong;
+    Int64Type = IntMaxType;
+
+    // The E2Kv8 System V ABI has long double 128-bits in size, but 64-bit
+    // aligned. The E2Kv9 SCD 2.4.1 says 16-byte aligned.
+    LongDoubleWidth = 128;
+    LongDoubleAlign = 128;
+    SuitableAlign = 128;
+    LongDoubleFormat = &llvm::APFloat::IEEEquad();
+    MaxAtomicPromoteWidth = MaxAtomicInlineWidth = 64;
+  }
+
+  void getTargetDefines(const LangOptions &Opts,
+                        MacroBuilder &Builder) const override;
+
+  bool hasBitIntType() const override { return true; }
+};
+
 } // namespace targets
 } // namespace clang
 #endif // LLVM_CLANG_LIB_BASIC_TARGETS_E2K_H

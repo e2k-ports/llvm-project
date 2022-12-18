@@ -28,7 +28,15 @@
 namespace llvm {
 class StringRef;
 
+enum E2KBitness {
+  E2K_32 = 32,
+  E2K_64 = 64,
+  E2K_128 = 128,
+  E2K_128_64 = 128 + 64,
+};
+
 class E2KSubtarget : public E2KGenSubtargetInfo {
+
   enum E2KArchEnum {
     E2Kv1,
     E2Kv2,
@@ -42,7 +50,7 @@ class E2KSubtarget : public E2KGenSubtargetInfo {
   Triple TargetTriple;
   virtual void anchor();
   E2KArchEnum E2KArch = E2Kv1;
-  bool Is64Bit;
+  E2KBitness Bitness;
 
   E2KInstrInfo InstrInfo;
   E2KTargetLowering TLInfo;
@@ -51,7 +59,7 @@ class E2KSubtarget : public E2KGenSubtargetInfo {
 
 public:
   E2KSubtarget(const Triple &TT, const std::string &CPU,
-                 const std::string &FS, const TargetMachine &TM, bool is64bit);
+                 const std::string &FS, const TargetMachine &TM, E2KBitness bitness);
 
   const E2KInstrInfo *getInstrInfo() const override { return &InstrInfo; }
   const TargetFrameLowering *getFrameLowering() const override {
@@ -74,7 +82,7 @@ public:
   void ParseSubtargetFeatures(StringRef CPU, StringRef TuneCPU, StringRef FS);
   E2KSubtarget &initializeSubtargetDependencies(StringRef CPU, StringRef FS);
 
-  bool is64Bit() const { return Is64Bit; }
+  bool is64Bit() const { return Bitness == E2K_64; }
 
   /// The 64-bit ABI uses biased stack and frame pointers, so the stack frame
   /// of the current function is the area from [%sp+BIAS] to [%fp+BIAS].
