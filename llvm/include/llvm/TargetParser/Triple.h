@@ -108,7 +108,9 @@ public:
     ve,             // NEC SX-Aurora Vector Engine
     e2k32,          // Elbrus 2000 (32-bit)
     e2k64,          // Elbrus 2000 (64-bit)
-    LastArchType = e2k64
+    e2k128,         // Elbrus 2000 (128-bit)
+    e2k128_64,      // Elbrus 2000 (mixed-mode 64-bit/128-bit)
+    LastArchType = e2k128_64
   };
   enum SubArchType {
     NoSubArch,

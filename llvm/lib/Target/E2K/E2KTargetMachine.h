@@ -22,13 +22,13 @@ namespace llvm {
 class E2KTargetMachine : public LLVMTargetMachine {
   std::unique_ptr<TargetLoweringObjectFile> TLOF;
   E2KSubtarget Subtarget;
-  bool is64Bit;
+  E2KBitness Bitness;
   mutable StringMap<std::unique_ptr<E2KSubtarget>> SubtargetMap;
 public:
   E2KTargetMachine(const Target &T, const Triple &TT, StringRef CPU,
                      StringRef FS, const TargetOptions &Options,
                      std::optional<Reloc::Model> RM, std::optional<CodeModel::Model> CM,
-                     CodeGenOpt::Level OL, bool JIT, bool is64bit);
+                     CodeGenOpt::Level OL, bool JIT, E2KBitness bitness);
   ~E2KTargetMachine() override;
 
   const E2KSubtarget *getSubtargetImpl() const { return &Subtarget; }
@@ -61,6 +61,28 @@ public:
                        StringRef FS, const TargetOptions &Options,
                        std::optional<Reloc::Model> RM, std::optional<CodeModel::Model> CM,
                        CodeGenOpt::Level OL, bool JIT);
+};
+
+/// E2K 128-bit target machine
+///
+class E2K128TargetMachine : public E2KTargetMachine {
+  virtual void anchor();
+public:
+  E2K128TargetMachine(const Target &T, const Triple &TT, StringRef CPU,
+                     StringRef FS, const TargetOptions &Options,
+                     std::optional<Reloc::Model> RM, std::optional<CodeModel::Model> CM,
+                     CodeGenOpt::Level OL, bool JIT);
+};
+
+/// E2K 128/64-bit target machine
+///
+class E2K12864TargetMachine : public E2KTargetMachine {
+  virtual void anchor();
+public:
+  E2K12864TargetMachine(const Target &T, const Triple &TT, StringRef CPU,
+                      StringRef FS, const TargetOptions &Options,
+                      std::optional<Reloc::Model> RM, std::optional<CodeModel::Model> CM,
+                      CodeGenOpt::Level OL, bool JIT);
 };
 
 } // end namespace llvm
