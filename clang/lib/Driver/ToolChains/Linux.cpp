@@ -568,7 +568,9 @@ std::string Linux::getDynamicLinker(const ArgList &Args) const {
     break;
   }
   case llvm::Triple::e2k32:
-  case llvm::Triple::e2k64: {
+  case llvm::Triple::e2k64:
+  case llvm::Triple::e2k128:
+  case llvm::Triple::e2k128_64: {
     LibDir = "lib64";
     Loader = "ld-linux.so.2";
     break;

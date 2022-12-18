@@ -53,6 +53,26 @@ static MCAsmInfo *createE2K64MCAsmInfo(const MCRegisterInfo &MRI,
   return MAI;
 }
 
+static MCAsmInfo *createE2K128MCAsmInfo(const MCRegisterInfo &MRI,
+                                       const Triple &TT,
+                                       const MCTargetOptions &Options) {
+  MCAsmInfo *MAI = new E2KELFMCAsmInfo(TT);
+  unsigned Reg = MRI.getDwarfRegNum(E2K::O6, true);
+  MCCFIInstruction Inst = MCCFIInstruction::cfiDefCfa(nullptr, Reg, 2047);
+  MAI->addInitialFrameState(Inst);
+  return MAI;
+}
+
+static MCAsmInfo *createE2K12864MCAsmInfo(const MCRegisterInfo &MRI,
+                                       const Triple &TT,
+                                       const MCTargetOptions &Options) {
+  MCAsmInfo *MAI = new E2KELFMCAsmInfo(TT);
+  unsigned Reg = MRI.getDwarfRegNum(E2K::O6, true);
+  MCCFIInstruction Inst = MCCFIInstruction::cfiDefCfa(nullptr, Reg, 2047);
+  MAI->addInitialFrameState(Inst);
+  return MAI;
+}
+
 static MCInstrInfo *createE2KMCInstrInfo() {
   MCInstrInfo *X = new MCInstrInfo();
   InitE2KMCInstrInfo(X);
@@ -100,9 +120,11 @@ extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeE2KTargetMC() {
   // Register the MC asm info.
   RegisterMCAsmInfoFn X(getTheE2K32Target(), createE2K32MCAsmInfo);
   RegisterMCAsmInfoFn Y(getTheE2K64Target(), createE2K64MCAsmInfo);
+  RegisterMCAsmInfoFn Z(getTheE2K128Target(), createE2K128MCAsmInfo);
+  RegisterMCAsmInfoFn W(getTheE2K12864Target(), createE2K12864MCAsmInfo);
 
   for (Target *T :
-       {&getTheE2K32Target(), &getTheE2K64Target()}) {
+       {&getTheE2K32Target(), &getTheE2K64Target(), &getTheE2K128Target(), &getTheE2K12864Target()}) {
     // Register the MC instruction info.
     TargetRegistry::RegisterMCInstrInfo(*T, createE2KMCInstrInfo);
 
