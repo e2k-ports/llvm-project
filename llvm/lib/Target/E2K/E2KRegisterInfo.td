@@ -10,10 +10,143 @@
 //  Declarations that describe the E2K register file
 //===----------------------------------------------------------------------===//
 
-class E2KReg<bits<16> Enc, string n> : Register<n> {
+class E2KReg<bits<16> Enc, string n, list<Register> subregs = []> : Register<n> {
   let HWEncoding = Enc;
   let Namespace = "E2K";
+  let SubRegs = subregs;
 }
+
+let Namespace = "E2K" in {
+  def sub_32 : SubRegIndex<32>;
+  def sub_64 : SubRegIndex<64>;
+}
+
+// current window registers, 0-63
+
+foreach Index = 0-63 in {
+  // current window registers, SR (single register)
+  def R#Index : E2KReg<Index, "r"#Index>, DwarfRegNum<[Index]>;
+  // current window registers, DR (double register)
+  let SubRegIndices = [sub_32] in {
+    def DR#Index : E2KReg<Index, "dr"#Index, [!cast<E2KReg>("R"#Index)]>, DwarfRegNum<[Index]>;
+  }
+  // current window registers, QR (quad register)
+  let SubRegIndices = [sub_64] in {
+    def QR#Index : E2KReg<Index, "qr"#Index, [!cast<E2KReg>("DR"#Index)]>, DwarfRegNum<[Index]>;
+  }
+}
+
+def SR : RegisterClass<"E2K", [i32], 32, (sequence "R%u", 0, 63)>;
+def DR : RegisterClass<"E2K", [i64], 64, (sequence "DR%u", 0, 63)>;
+def QR : RegisterClass<"E2K", [i128], 128, (sequence "QR%u", 0, 63)>;
+
+// based registers, 0-127
+
+foreach Index = 0-127 in {
+  // based registers, SR (single register)
+  def B#Index : E2KReg<Index, "b"#Index>, DwarfRegNum<[Index]>;
+  // based registers, DR (double register)
+  let SubRegIndices = [sub_32] in {
+    def DB#Index : E2KReg<Index, "db"#Index, [!cast<E2KReg>("B"#Index)]>, DwarfRegNum<[Index]>;
+  }
+  // based registers, QR (quad register)
+  let SubRegIndices = [sub_64] in {
+    def QB#Index : E2KReg<Index, "qb"#Index, [!cast<E2KReg>("DB"#Index)]>, DwarfRegNum<[Index]>;
+  }
+}
+
+def SB : RegisterClass<"E2K", [i32], 32, (sequence "B%u", 0, 127)>;
+def DB : RegisterClass<"E2K", [i64], 64, (sequence "DB%u", 0, 127)>;
+def QB : RegisterClass<"E2K", [i128], 128, (sequence "QB%u", 0, 127)>;
+
+// global registers, 0-31
+
+foreach Index = 0-31 in {
+  // global registers, SR (single register)
+  def G#Index : E2KReg<Index, "g"#Index>, DwarfRegNum<[Index]>;
+  // global registers, DR (double register)
+  let SubRegIndices = [sub_32] in {
+    def DG#Index : E2KReg<Index, "dg"#Index, [!cast<E2KReg>("G"#Index)]>, DwarfRegNum<[Index]>;
+  }
+  // global registers, QR (quad register)
+  let SubRegIndices = [sub_64] in {
+    def QG#Index : E2KReg<Index, "qg"#Index, [!cast<E2KReg>("DG"#Index)]>, DwarfRegNum<[Index]>;
+  }
+}
+
+def SG : RegisterClass<"E2K", [i32], 32, (sequence "G%u", 0, 31)>;
+def DG : RegisterClass<"E2K", [i64], 64, (sequence "DG%u", 0, 31)>;
+def QG : RegisterClass<"E2K", [i128], 128, (sequence "QG%u", 0, 31)>;
+
+// predicate registers, 0-31
+
+foreach Index = 0-31 in {
+  def PRED#Index : E2KReg<Index, "pred"#Index>, DwarfRegNum<[Index]>;
+}
+
+def PRED : RegisterClass<"E2K", [i1], 8, (sequence "PRED%u", 0, 31)>;
+
+// control registers, 1-3
+
+foreach Index = 1-3 in {
+  def CTPR#Index : E2KReg<Index, "ctpr"#Index>, DwarfRegNum<[Index]>;
+}
+
+def CTPR : RegisterClass<"E2K", [i128], 128, (sequence "CTPR%u", 1, 3)>;
+
+// current window description
+def WD: E2KReg<0, "WD">;
+
+// moving base
+def BR: E2KReg<0, "BR">;
+
+// current type
+def TR: E2KReg<0, "TR">;
+
+// processor state
+def PSR: E2KReg<0, "PSR">;
+
+// user processor state
+def UPSR: E2KReg<0, "UPSR">;
+
+// instruction pointer
+def IP: E2KReg<0, "IP">;
+
+// next instruction pointer
+def NIP: E2KReg<0, "NIP">;
+
+// packed floating point flags
+def PFPFR: E2KReg<0, "PFPFR">;
+
+// floating point flags
+def FPFR: E2KReg<0, "FPFR">;
+
+// loop status
+def LSR: E2KReg<0, "LSR">;
+
+// loop counter
+def ILCR: E2KReg<0, "ILCR">;
+
+// user stack pointer
+def USD: E2KReg<0, "USD">;
+
+// code segment
+def CUD: E2KReg<0, "CUD">;
+
+// data segment
+def GD: E2KReg<0, "GD">;
+
+// current module type
+def TSD: E2KReg<0, "TSD">;
+
+// current unit index
+def CUIR: E2KReg<0, "CUIR">;
+
+// more registers are listed in:
+// /usr/include/sys/user.h (struct user_regs_struct)
+// /usr/include/bits/sigcontext.h (struct sigcontext & struct extra_ucontext)
+// /usr/include/asm/kvm.h (struct kvm_regs)
+// but they are barely documented
 
 class E2KCtrlReg<bits<16> Enc, string n>: Register<n> {
   let HWEncoding = Enc;
@@ -103,7 +236,7 @@ def ASR30 : E2KCtrlReg<30, "ASR30">;
 def ASR31 : E2KCtrlReg<31, "ASR31">;
 
 // Note that PSR, WIM, and TBR don't exist on the E2KV9, only the V8.
-def PSR : E2KCtrlReg<0, "PSR">;
+//def PSR : E2KCtrlReg<0, "PSR">;
 def WIM : E2KCtrlReg<0, "WIM">;
 def TBR : E2KCtrlReg<0, "TBR">;
 // PC on the other hand is only available for E2KV9.
@@ -126,14 +259,14 @@ def OTHERWIN : E2KCtrlReg<13, "OTHERWIN">;
 def WSTATE : E2KCtrlReg<14, "WSTATE">;
 
 // Integer registers
-def G0 : Ri< 0, "G0">, DwarfRegNum<[0]>;
-def G1 : Ri< 1, "G1">, DwarfRegNum<[1]>;
-def G2 : Ri< 2, "G2">, DwarfRegNum<[2]>;
-def G3 : Ri< 3, "G3">, DwarfRegNum<[3]>;
-def G4 : Ri< 4, "G4">, DwarfRegNum<[4]>;
-def G5 : Ri< 5, "G5">, DwarfRegNum<[5]>;
-def G6 : Ri< 6, "G6">, DwarfRegNum<[6]>;
-def G7 : Ri< 7, "G7">, DwarfRegNum<[7]>;
+//def G0 : Ri< 0, "G0">, DwarfRegNum<[0]>;
+//def G1 : Ri< 1, "G1">, DwarfRegNum<[1]>;
+//def G2 : Ri< 2, "G2">, DwarfRegNum<[2]>;
+//def G3 : Ri< 3, "G3">, DwarfRegNum<[3]>;
+//def G4 : Ri< 4, "G4">, DwarfRegNum<[4]>;
+//def G5 : Ri< 5, "G5">, DwarfRegNum<[5]>;
+//def G6 : Ri< 6, "G6">, DwarfRegNum<[6]>;
+//def G7 : Ri< 7, "G7">, DwarfRegNum<[7]>;
 def O0 : Ri< 8, "O0">, DwarfRegNum<[8]>;
 def O1 : Ri< 9, "O1">, DwarfRegNum<[9]>;
 def O2 : Ri<10, "O2">, DwarfRegNum<[10]>;
