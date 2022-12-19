@@ -72,6 +72,7 @@ static constexpr E2KCPUInfo CPUInfo[] = {
     {{"v6"}, E2KTargetInfo::CK_V6, E2KTargetInfo::CG_V6},
     {{"v7"}, E2KTargetInfo::CK_V7, E2KTargetInfo::CG_V7},
 
+    {{""}, E2KTargetInfo::CK_Elbrus, E2KTargetInfo::CG_V1},
     {{"s"}, E2KTargetInfo::CK_ElbrusS, E2KTargetInfo::CG_V2},
     {{"3s"}, E2KTargetInfo::CK_Elbrus3S, E2KTargetInfo::CG_V2},
     {{"2c"}, E2KTargetInfo::CK_Elbrus2C, E2KTargetInfo::CG_V2},
@@ -132,6 +133,17 @@ E2KTargetInfo::getCPUGeneration(CPUKind Kind) const {
   return Item->Generation;
 }
 
+StringRef
+E2KTargetInfo::getCPUName(CPUKind Kind) const {
+  if (Kind < CK_Elbrus)
+    return "";
+  const E2KCPUInfo *Item = llvm::find_if(
+      CPUInfo, [Kind](const E2KCPUInfo &Info) { return Info.Kind == Kind; });
+  if (Item == std::end(CPUInfo))
+    llvm_unreachable("Unexpected CPU kind");
+  return Item->Name;
+}
+
 E2KTargetInfo::CPUKind E2KTargetInfo::getCPUKind(StringRef Name) const {
   const E2KCPUInfo *Item = llvm::find_if(
       CPUInfo, [Name](const E2KCPUInfo &Info) { return Info.Name == Name; });
@@ -150,31 +162,50 @@ void E2KTargetInfo::fillValidCPUList(
 void E2KTargetInfo::getTargetDefines(const LangOptions &Opts,
                                        MacroBuilder &Builder) const {
   DefineStd(Builder, "e2k", Opts);
+  DefineStd(Builder, "elbrus", Opts);
+  DefineStd(Builder, "ELBRUS", Opts);
+  Builder.defineMacro("_ARCH_E2K");
+  Builder.defineMacro("__iset__", std::to_string(getCPUGeneration(CPU)));
   Builder.defineMacro("__REGISTER_PREFIX__", "");
+  StringRef name = getCPUName(CPU);
+  if (!name.empty())
+    Builder.defineMacro("__elbrus_" + name + "__");
 }
 
 void E2K32TargetInfo::getTargetDefines(const LangOptions &Opts,
                                          MacroBuilder &Builder) const {
   E2KTargetInfo::getTargetDefines(Opts, Builder);
+
+  Builder.defineMacro("__ptr32__");
+  Builder.defineMacro("_ARCH_E2K32");
+  DefineStd(Builder, "elbrus32", Opts);
 }
 
 void E2K64TargetInfo::getTargetDefines(const LangOptions &Opts,
                                          MacroBuilder &Builder) const {
   E2KTargetInfo::getTargetDefines(Opts, Builder);
 
-  Builder.defineMacro("__e2k64__");
+  Builder.defineMacro("__ptr64__");
+  Builder.defineMacro("_ARCH_E2K64");
+  DefineStd(Builder, "elbrus64", Opts);
+
+  Builder.defineMacro("_LP64");
+  Builder.defineMacro("__LP64__");
 }
 
 void E2K128TargetInfo::getTargetDefines(const LangOptions &Opts,
                                        MacroBuilder &Builder) const {
   E2KTargetInfo::getTargetDefines(Opts, Builder);
 
-  Builder.defineMacro("__e2k128__");
+  Builder.defineMacro("__ptr128__");
+  Builder.defineMacro("_ARCH_E2K128");
+  DefineStd(Builder, "elbrus128", Opts);
+
+  Builder.defineMacro("_LP64");
+  Builder.defineMacro("__LP64__");
 }
 
 void E2K12864TargetInfo::getTargetDefines(const LangOptions &Opts,
                                        MacroBuilder &Builder) const {
-  E2KTargetInfo::getTargetDefines(Opts, Builder);
-
-  Builder.defineMacro("__e2k12864__");
+  E2K128TargetInfo::getTargetDefines(Opts, Builder);
 }
