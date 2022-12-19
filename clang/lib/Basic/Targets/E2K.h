@@ -141,7 +141,7 @@ public:
   } CPU = CK_GENERIC;
 
   enum CPUGeneration {
-    CG_V1,
+    CG_V1 = 1,
     CG_V2,
     CG_V3,
     CG_V4,
@@ -151,6 +151,7 @@ public:
   };
 
   CPUGeneration getCPUGeneration(CPUKind Kind) const;
+  StringRef getCPUName(CPUKind Kind) const;
 
   CPUKind getCPUKind(StringRef Name) const;
 
@@ -245,10 +246,10 @@ public:
 };
 
 // E2K128_64 is the 64-bit/128-bit mixed mode selected by Triple::e2k128_64.
-class LLVM_LIBRARY_VISIBILITY E2K12864TargetInfo : public E2KTargetInfo {
+class LLVM_LIBRARY_VISIBILITY E2K12864TargetInfo : public E2K128TargetInfo {
 public:
   E2K12864TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
-      : E2KTargetInfo(Triple, Opts) {
+      : E2K128TargetInfo(Triple, Opts) {
     // FIXME: Support E2K quad-precision long double?
     resetDataLayout("e-m:e-i64:64-n32:64-S128");
     // This is an LP64 platform.
