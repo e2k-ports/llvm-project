@@ -23,6 +23,7 @@ there are several good places to start getting familiar with the source code cha
 in **LLVM**:
 - [llvm/lib/Target/E2K](llvm/lib/Target/E2K) - the main subdirectory to define low-level E2K target information
 - [llvm/lib/Target/E2K/E2K.td](llvm/lib/Target/E2K/E2K.td) - defines E2K processors and their features
+- [llvm/lib/Target/E2K/E2KRegisterInfo.td](llvm/lib/Target/E2K/E2KRegisterInfo.td) - defines E2K registers
 - [llvm/lib/Target/E2K/E2KTargetMachine.cpp](llvm/lib/Target/E2K/E2KTargetMachine.cpp) - main definitions of E2K targets (llvm)
 - [llvm/lib/Target/E2K/E2KSubtarget.cpp](llvm/lib/Target/E2K/E2KSubtarget.cpp) - main definitions of E2K sub-targets, or flavours (llvm)
 
