@@ -30,26 +30,45 @@ extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeE2KTarget() {
 static std::string computeDataLayout(const Triple &T, E2KBitness bitness) {
   // E2K is always little endian
   std::string Ret = "e";
+  // E2K uses an ELF mangling
   Ret += "-m:e";
 
-  // Some ABIs have 32bit pointers.
-  if (bitness == E2K_32)
+  // pointer types
+  switch (bitness) {
+  case E2K_32: {
     Ret += "-p:32:32";
+  }
+    break;
+  case E2K_64: {
+    Ret += "-p:64:64";
+  }
+    break;
+  case E2K_128:
+  case E2K_128_64: {
+    Ret += "-p:128:128";
+    break;
+  }
+  }
 
-  // Alignments for 64 bit integers.
+  // boolean is 1 byte
+  Ret += "-i1:8:8";
+
+  // integer types
+  Ret += "-i8:8";
+  Ret += "-i16:16";
+  Ret += "-i32:32";
   Ret += "-i64:64";
+  Ret += "-i128:128";
 
-  // On E2K64 128 floats are aligned to 128 bits, on others only to 64.
-  // On E2K64 registers can hold 64 or 32 bits, on others only 32.
-  if (bitness == E2K_64)
-    Ret += "-n32:64";
-  else
-    Ret += "-f128:64-n32";
+  // floating point types
+  Ret += "-f32:32";
+  Ret += "-f64:64";
+  Ret += "-f128:128";
 
-  if (bitness == E2K_64)
-    Ret += "-S128";
-  else
-    Ret += "-S64";
+  // registers may hold bytes, half-words, words, double-words and quad-words
+  Ret += "-n8:16:32:64:128";
+  // stack is always aligned on 8 bytes
+  Ret += "-S64";
 
   return Ret;
 }
