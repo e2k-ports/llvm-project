@@ -25,7 +25,24 @@ class LLVM_LIBRARY_VISIBILITY E2KTargetInfo : public TargetInfo {
 
 public:
   E2KTargetInfo(const llvm::Triple &Triple, const TargetOptions &)
-      : TargetInfo(Triple) {}
+      : TargetInfo(Triple) {
+
+    // long double is always 8 byte length with 8 byte alignment (IEEE 754-1985)
+    LongDoubleWidth = 128;
+    LongDoubleAlign = 128;
+    LongDoubleFormat = &llvm::APFloat::IEEEdouble();
+
+    SizeType = UnsignedInt;
+    IntPtrType = SignedInt;
+    PtrDiffType = SignedInt;
+    IntMaxType = SignedLongLong;
+    Int64Type = IntMaxType;
+    WCharType = SignedInt;
+
+    SuitableAlign = 128;
+
+    MaxAtomicPromoteWidth = MaxAtomicInlineWidth = 64;
+  }
 
   int getEHDataRegisterNumber(unsigned RegNo) const override {
     if (RegNo == 0)
@@ -172,15 +189,10 @@ class LLVM_LIBRARY_VISIBILITY E2K32TargetInfo : public E2KTargetInfo {
 public:
   E2K32TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
       : E2KTargetInfo(Triple, Opts) {
-    resetDataLayout("e-m:e-p:32:32-i64:64-f128:64-n32-S64");
+    resetDataLayout("e-m:e-p:32:32-i1:8:8-i8:8-i16:16-i32:32-i64:64-i128:128-f32:32-f64:64-f128:128-n8:16:32:64:128-S64");
 
-    SizeType = UnsignedInt;
-    IntPtrType = SignedInt;
-    PtrDiffType = SignedInt;
-    // Up to 32 bits (V8) or 64 bits (V9) are lock-free atomic, but we're
-    // willing to do atomic ops on up to 64 bits.
-    MaxAtomicPromoteWidth = 64;
-    MaxAtomicInlineWidth = 64;
+    LongWidth = LongAlign = 32;
+    PointerWidth = PointerAlign = 32;
   }
 
   void getTargetDefines(const LangOptions &Opts,
@@ -194,21 +206,11 @@ class LLVM_LIBRARY_VISIBILITY E2K64TargetInfo : public E2KTargetInfo {
 public:
   E2K64TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
       : E2KTargetInfo(Triple, Opts) {
-    // FIXME: Support E2K quad-precision long double?
-    resetDataLayout("e-m:e-i64:64-n32:64-S128");
-    // This is an LP64 platform.
-    LongWidth = LongAlign = PointerWidth = PointerAlign = 64;
 
-    IntMaxType = SignedLong;
-    Int64Type = IntMaxType;
+    resetDataLayout("e-m:e-p:64:64-i1:8:8-i8:8-i16:16-i32:32-i64:64-i128:128-f32:32-f64:64-f128:128-n8:16:32:64:128-S64");
 
-    // The E2Kv8 System V ABI has long double 128-bits in size, but 64-bit
-    // aligned. The E2Kv9 SCD 2.4.1 says 16-byte aligned.
-    LongDoubleWidth = 128;
-    LongDoubleAlign = 128;
-    SuitableAlign = 128;
-    LongDoubleFormat = &llvm::APFloat::IEEEquad();
-    MaxAtomicPromoteWidth = MaxAtomicInlineWidth = 64;
+    LongWidth = LongAlign = 64;
+    PointerWidth = PointerAlign = 64;
   }
 
   void getTargetDefines(const LangOptions &Opts,
@@ -222,21 +224,10 @@ class LLVM_LIBRARY_VISIBILITY E2K128TargetInfo : public E2KTargetInfo {
 public:
   E2K128TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
       : E2KTargetInfo(Triple, Opts) {
-    // FIXME: Support E2K quad-precision long double?
-    resetDataLayout("e-m:e-i64:64-n32:64-S128");
-    // This is an LP64 platform.
-    LongWidth = LongAlign = PointerWidth = PointerAlign = 64;
+    resetDataLayout("e-m:e-p:128:128-i1:8:8-i8:8-i16:16-i32:32-i64:64-i128:128-f32:32-f64:64-f128:128-n8:16:32:64:128-S64");
 
-    IntMaxType = SignedLong;
-    Int64Type = IntMaxType;
-
-    // The E2Kv8 System V ABI has long double 128-bits in size, but 64-bit
-    // aligned. The E2Kv9 SCD 2.4.1 says 16-byte aligned.
-    LongDoubleWidth = 128;
-    LongDoubleAlign = 128;
-    SuitableAlign = 128;
-    LongDoubleFormat = &llvm::APFloat::IEEEquad();
-    MaxAtomicPromoteWidth = MaxAtomicInlineWidth = 64;
+    LongWidth = LongAlign = 64;
+    PointerWidth = PointerAlign = 128;
   }
 
   void getTargetDefines(const LangOptions &Opts,
@@ -250,21 +241,6 @@ class LLVM_LIBRARY_VISIBILITY E2K12864TargetInfo : public E2K128TargetInfo {
 public:
   E2K12864TargetInfo(const llvm::Triple &Triple, const TargetOptions &Opts)
       : E2K128TargetInfo(Triple, Opts) {
-    // FIXME: Support E2K quad-precision long double?
-    resetDataLayout("e-m:e-i64:64-n32:64-S128");
-    // This is an LP64 platform.
-    LongWidth = LongAlign = PointerWidth = PointerAlign = 64;
-
-    IntMaxType = SignedLong;
-    Int64Type = IntMaxType;
-
-    // The E2Kv8 System V ABI has long double 128-bits in size, but 64-bit
-    // aligned. The E2Kv9 SCD 2.4.1 says 16-byte aligned.
-    LongDoubleWidth = 128;
-    LongDoubleAlign = 128;
-    SuitableAlign = 128;
-    LongDoubleFormat = &llvm::APFloat::IEEEquad();
-    MaxAtomicPromoteWidth = MaxAtomicInlineWidth = 64;
   }
 
   void getTargetDefines(const LangOptions &Opts,
