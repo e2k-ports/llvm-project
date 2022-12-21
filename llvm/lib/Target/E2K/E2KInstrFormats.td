@@ -6,6 +6,40 @@
 //
 //===----------------------------------------------------------------------===//
 
+// regular ALS command
+class E2KInst<bits<7> opcode, dag outs, dag ins, string asmstr,
+              list<int> channels = [0, 1, 2, 3, 4, 5],
+              list<dag> pattern = []>: Instruction {
+
+  let Namespace = "E2K";
+  field bits<32> Inst;
+  dag OutOperandList = outs;
+  dag InOperandList = ins;
+  let AsmString = asmstr;
+  let Pattern = pattern;
+  list<int> Channels = channels;
+  bits<7> OpCode = opcode;
+  let Inst{30-24} = OpCode;
+}
+
+// ALS with CMP opcode extension
+class E2KCCInst<bits<7> opcode, bits<3> cc, dag outs, dag ins, string asmstr,
+              list<int> channels = [0, 1, 3, 4],
+              list<dag> pattern = []>: E2KInst<opcode, outs, ins, asmstr, channels, pattern> {
+
+  bits<3> CC = cc;
+  let Inst{7-5} = CC;
+}
+
+// ALS with opcode extension
+class E2KEXTInst<bits<7> opcode, bits<8> ext, dag outs, dag ins, string asmstr,
+              list<int> channels = [0, 1, 2, 3, 4, 5],
+              list<dag> pattern = []>: E2KInst<opcode, outs, ins, asmstr, channels, pattern> {
+
+  bits<8> Ext = ext;
+  let Inst{23-16} = Ext;
+}
+
 class InstSP<dag outs, dag ins, string asmstr, list<dag> pattern,
              InstrItinClass itin = NoItinerary>
    : Instruction {

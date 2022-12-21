@@ -65,3 +65,15 @@ there are several **must-have** (mandatory) options to use compiled *clang* exec
 - **fuse-ld=lld** - as your system linker probably knows nothing about E2K, it's needed to use compiled one
 - **fintegrated-as** - same for your assembler and binutils, it's needed to use compiled one
 - **target e2k64** - actually instructs compiler to generate code for E2K
+
+helpful resources and tools
+---------------------------
+
+microprocessor commands:
+
+- [**(ru) microprocessor commands**](http://ftp.altlinux.org/pub/people/mike/elbrus/docs/elbrus_prog/html/chapter10.html) - an official reference
+- [**elbrus-docs**](https://github.com/nrdmn/elbrus-docs) - describes instruction encoding
+- [**e2k-stuff**](https://github.com/OpenE2K/binutils-gdb/tree/binutils-mcst/opcodes/e2k-stuff) - opcode tables from the bintuils port
+- [**alops.inc**](https://github.com/OpenE2K/qemu-e2k/blob/e2k/target/e2k/alops.inc) - opcode tables from the QEMU-E2K port
+- **ldis** - MCST disassembler
+- **objdump** - disassembler, port to E2K
