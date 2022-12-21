@@ -142,6 +142,18 @@ def TSD: E2KReg<0, "TSD">;
 // current unit index
 def CUIR: E2KReg<0, "CUIR">;
 
+// procedure stack hardware top pointer
+def PSHTP: E2KReg<0, "PSHTP">;
+
+// procedure chain stack hardware top pointer
+def PCSHTP: E2KReg<0, "PCSHTP">;
+
+// procedure stack pointer
+def PSP: E2KReg<0, "PSP">;
+
+// user stack base pointer
+def USBR: E2KReg<0, "USBR">;
+
 // more registers are listed in:
 // /usr/include/sys/user.h (struct user_regs_struct)
 // /usr/include/bits/sigcontext.h (struct sigcontext & struct extra_ucontext)
