@@ -16,6 +16,509 @@
 
 include "E2KInstrFormats.td"
 
+// logical AND
+def ANDS : E2KInst<0x00, (outs), (ins), "ands">;
+def ANDD : E2KInst<0x01, (outs), (ins), "andd">;
+
+// logical AND, inverted operand 2
+def ANDNS : E2KInst<0x02, (outs), (ins), "andns">;
+def ANDND : E2KInst<0x03, (outs), (ins), "andnd">;
+
+// logical OR
+def ORS : E2KInst<0x04, (outs), (ins), "ors">;
+def ORD : E2KInst<0x05, (outs), (ins), "ord">;
+
+// logical OR, inverted operand 2
+def ORNS : E2KInst<0x06, (outs), (ins), "orns">;
+def ORND : E2KInst<0x07, (outs), (ins), "ornd">;
+
+// logical XOR
+def XORS : E2KInst<0x08, (outs), (ins), "xors">;
+def XORD : E2KInst<0x09, (outs), (ins), "xord">;
+
+// logical XOR, inverted operand 2
+def XORNS : E2KInst<0x0A, (outs), (ins), "xorns">;
+def XORND : E2KInst<0x0B, (outs), (ins), "xornd">;
+
+// sign-extend or zero-extend
+def SXT : E2KInst<0x0C, (outs), (ins), "sxt">;
+
+// 0x0D ???
+
+// merge, choose operand based on predicate (like ternary operator)
+def MERGES : E2KInst<0x0E, (outs), (ins), "merges">;
+def MERGED : E2KInst<0x0F, (outs), (ins), "merged">;
+
+// arithmetic ADD
+def ADDS : E2KInst<0x10, (outs), (ins), "adds">;
+def ADDD : E2KInst<0x11, (outs), (ins), "addd">;
+
+// arithmetic SUB
+def SUBS : E2KInst<0x12, (outs), (ins), "subs">;
+def SUBD : E2KInst<0x13, (outs), (ins), "subd">;
+
+// shift cyclic left
+def SCLS : E2KInst<0x14, (outs), (ins), "scls">;
+def SCLD : E2KInst<0x15, (outs), (ins), "scld">;
+
+// shift cyclic right
+def SCRS : E2KInst<0x16, (outs), (ins), "scrs">;
+def SCRD : E2KInst<0x17, (outs), (ins), "scrd">;
+
+// shift logical left
+def SHLS : E2KInst<0x18, (outs), (ins), "shls">;
+def SHLD : E2KInst<0x19, (outs), (ins), "shld">;
+
+// shift logical right
+def SHRS : E2KInst<0x1a, (outs), (ins), "shrs">;
+def SHRD : E2KInst<0x1b, (outs), (ins), "shrd">;
+
+// shift arithmetic right
+def SARS : E2KInst<0x1c, (outs), (ins), "sars">;
+def SARD : E2KInst<0x1d, (outs), (ins), "sard">;
+
+// get field of an arbitrary length
+def GETFS : E2KInst<0x1e, (outs), (ins), "getfs">;
+def GETFD : E2KInst<0x1f, (outs), (ins), "getfd">;
+
+// integer comparison
+// compare, overflow
+def CMPOSB : E2KCCInst<0x20, 0, (outs), (ins), "cmposb">;
+def CMPODB : E2KCCInst<0x21, 0, (outs), (ins), "cmpodb">;
+
+// compare, less (without sign)
+def CMPBSB : E2KCCInst<0x20, 1, (outs), (ins), "cmpbsb">;
+def CMPBDB : E2KCCInst<0x21, 1, (outs), (ins), "cmpbdb">;
+
+// compare, equal
+def CMPESB : E2KCCInst<0x20, 2, (outs), (ins), "cmpesb">;
+def CMPEDB : E2KCCInst<0x21, 2, (outs), (ins), "cmpedb">;
+
+// compare, below or equal (without sing)
+def CMPBESB : E2KCCInst<0x20, 3, (outs), (ins), "cmpbesb">;
+def CMPBEDB : E2KCCInst<0x21, 3, (outs), (ins), "cmpbedb">;
+
+// compare, negative
+def CMPSSB : E2KCCInst<0x20, 4, (outs), (ins), "cmpssb">;
+def CMPSDB : E2KCCInst<0x21, 4, (outs), (ins), "cmpsdb">;
+
+// compare, parity
+def CMPPSB : E2KCCInst<0x20, 5, (outs), (ins), "cmppsb">;
+def CMPPDB : E2KCCInst<0x21, 5, (outs), (ins), "cmppdb">;
+
+// compare, less (with sign)
+def CMPLSB : E2KCCInst<0x20, 6, (outs), (ins), "cmplsb">;
+def CMPLDB : E2KCCInst<0x21, 6, (outs), (ins), "cmpldb">;
+
+// compare, less or equal (with sign)
+def CMPLESB : E2KCCInst<0x20, 7, (outs), (ins), "cmplesb">;
+def CMPLEDB : E2KCCInst<0x21, 7, (outs), (ins), "cmpledb">;
+
+// 0x22 ???
+// 0x23 ???
+
+// store byte
+def STB : E2KInst<0x24, (outs), (ins), "stb", [2, 5]>;
+
+def CCTOPO  : E2KCCInst<0x24, 0, (outs), (ins), "cctopo", [0, 3]>;
+def CCTOPB  : E2KCCInst<0x24, 1, (outs), (ins), "cctopb", [0, 3]>;
+def CCTOPE  : E2KCCInst<0x24, 2, (outs), (ins), "cctope", [0, 3]>;
+def CCTOPBE : E2KCCInst<0x24, 3, (outs), (ins), "cctopbe", [0, 3]>;
+def CCTOPS  : E2KCCInst<0x24, 4, (outs), (ins), "cctops", [0, 3]>;
+def CCTOPP  : E2KCCInst<0x24, 5, (outs), (ins), "cctopp", [0, 3]>;
+def CCTOPL  : E2KCCInst<0x24, 6, (outs), (ins), "cctopl", [0, 3]>;
+def CCTOPLE : E2KCCInst<0x24, 7, (outs), (ins), "cctople", [0, 3]>;
+
+// store half-word
+def STH : E2KInst<0x25, (outs), (ins), "sth", [2, 5]>;
+
+// store word
+def STW : E2KInst<0x26, (outs), (ins), "stw", [2, 5]>;
+
+def BITREVS : E2KEXTInst<0x26, 0xC0, (outs), (ins), "bitrevs", [0, 1, 3, 4]>;
+
+// store double-word
+def STD : E2KInst<0x27, (outs), (ins), "std", [2, 5]>;
+
+def BITREVD : E2KEXTInst<0x27, 0xC0, (outs), (ins), "bitrevd", [0, 1, 3, 4]>;
+
+def STCSB : E2KInst<0x28, (outs), (ins), "stcsb", [2, 5]>;
+
+def FXCMPEQSB  : E2KCCInst<0x28, 0, (outs), (ins), "fxcmpeqsb">;
+def FXCMPLTSB  : E2KCCInst<0x28, 1, (outs), (ins), "fxcmpltsb">;
+def FXCMPLESB  : E2KCCInst<0x28, 2, (outs), (ins), "fxcmplesb">;
+def FXCMPUODSB : E2KCCInst<0x28, 3, (outs), (ins), "fxcmpuodsb">;
+def FXCMPNEQSB : E2KCCInst<0x28, 4, (outs), (ins), "fxcmpneqsb">;
+def FXCMPNLTSB : E2KCCInst<0x28, 5, (outs), (ins), "fxcmpnltsb">;
+def FXCMPNLESB : E2KCCInst<0x28, 6, (outs), (ins), "fxcmpnlesb">;
+def FXCMPODSB  : E2KCCInst<0x28, 7, (outs), (ins), "fxcmpodsb">;
+
+def STCSH : E2KInst<0x29, (outs), (ins), "stcsb", [2, 5]>;
+
+def FXCMPEQDB  : E2KCCInst<0x29, 0, (outs), (ins), "fxcmpeqdb">;
+def FXCMPLTDB  : E2KCCInst<0x29, 1, (outs), (ins), "fxcmpltdb">;
+def FXCMPLEDB  : E2KCCInst<0x29, 2, (outs), (ins), "fxcmpledb">;
+def FXCMPNEQDB : E2KCCInst<0x29, 4, (outs), (ins), "fxcmpneqdb">;
+def FXCMPNLTDB : E2KCCInst<0x29, 5, (outs), (ins), "fxcmpnltdb">;
+def FXCMPNLEDB : E2KCCInst<0x29, 6, (outs), (ins), "fxcmpnledb">;
+def FXCMPODDB  : E2KCCInst<0x29, 7, (outs), (ins), "fxcmpoddb">;
+
+def STCSW : E2KInst<0x2a, (outs), (ins), "stcsw", [2, 5]>;
+
+def STCSD : E2KInst<0x2b, (outs), (ins), "stcsd", [2, 5]>;
+
+def FXCMPEQXB  : E2KCCInst<0x2b, 0, (outs), (ins), "fxcmpeqxb">;
+def FXCMPLTXB  : E2KCCInst<0x2b, 1, (outs), (ins), "fxcmpltxb">;
+def FXCMPLEXB  : E2KCCInst<0x2b, 2, (outs), (ins), "fxcmplexb">;
+def FXCMPNEQXB : E2KCCInst<0x2b, 4, (outs), (ins), "fxcmpneqxb">;
+def FXCMPNLTXB : E2KCCInst<0x2b, 5, (outs), (ins), "fxcmpnltxb">;
+def FXCMPNLEXB : E2KCCInst<0x2b, 6, (outs), (ins), "fxcmpnlexb">;
+def FXCMPODXB  : E2KCCInst<0x2b, 7, (outs), (ins), "fxcmpodxb">;
+
+def STDSB : E2KInst<0x2c, (outs), (ins), "stdsb", [2, 5]>;
+
+def STDSH : E2KInst<0x2d, (outs), (ins), "stdsh", [2, 5]>;
+
+def STDSW : E2KInst<0x2e, (outs), (ins), "stdsw", [2, 5]>;
+
+def FCMPEQSB  : E2KCCInst<0x2e, 0, (outs), (ins), "fcmpeqsb">;
+def FCMPLTSB  : E2KCCInst<0x2e, 1, (outs), (ins), "fcmpltsb">;
+def FCMPLESB  : E2KCCInst<0x2e, 2, (outs), (ins), "fcmplesb">;
+def FCMPNEQSB : E2KCCInst<0x2e, 4, (outs), (ins), "fcmpneqsb">;
+def FCMPNLTSB : E2KCCInst<0x2e, 5, (outs), (ins), "fcmpnltsb">;
+def FCMPNLESB : E2KCCInst<0x2e, 6, (outs), (ins), "fcmpnlesb">;
+def FCMPODSB  : E2KCCInst<0x2e, 7, (outs), (ins), "fcmpodsb">;
+
+def STESB : E2KInst<0x30, (outs), (ins), "stesb", [2, 5]>;
+def STESH : E2KInst<0x31, (outs), (ins), "stesh", [2, 5]>;
+
+// floating-point ADD
+def FADDS : E2KInst<0x30, (outs), (ins), "fadds", [0, 1, 3, 4]>;
+def FADDD : E2KInst<0x31, (outs), (ins), "faddd", [0, 1, 3, 4]>;
+
+def STESW : E2KInst<0x32, (outs), (ins), "stesw", [2, 5]>;
+def STESD : E2KInst<0x33, (outs), (ins), "stesd", [2, 5]>;
+
+// floating-point SUB
+def FSUBS : E2KInst<0x32, (outs), (ins), "fsubs", [0, 1, 3, 4]>;
+def FSUBD : E2KInst<0x33, (outs), (ins), "fsubd", [0, 1, 3, 4]>;
+
+def STFSB : E2KInst<0x34, (outs), (ins), "stfsb", [2, 5]>;
+def STFSH : E2KInst<0x35, (outs), (ins), "stfsh", [2, 5]>;
+
+// floating-point MIN
+def FMINS : E2KInst<0x34, (outs), (ins), "fmins", [0, 1, 3, 4]>;
+def FMIND : E2KInst<0x35, (outs), (ins), "fmind", [0, 1, 3, 4]>;
+
+def STFSW : E2KInst<0x36, (outs), (ins), "stfsw", [2, 5]>;
+def STFSD : E2KInst<0x37, (outs), (ins), "stfsd", [2, 5]>;
+
+// floating-point MAX
+def FMAXS : E2KInst<0x36, (outs), (ins), "fmaxs", [0, 1, 3, 4]>;
+def FMAXD : E2KInst<0x37, (outs), (ins), "fmaxd", [0, 1, 3, 4]>;
+
+def STGSB : E2KInst<0x38, (outs), (ins), "stgsb", [2, 5]>;
+def STGSH : E2KInst<0x38, (outs), (ins), "stgsh", [2, 5]>;
+
+// floating-point MUL
+def FMULS : E2KInst<0x38, (outs), (ins), "fmuls", [0, 1, 3, 4]>;
+def FMULD : E2KInst<0x39, (outs), (ins), "fmuld", [0, 1, 3, 4]>;
+
+def STGSW : E2KInst<0x3a, (outs), (ins), "stgsw", [2, 5]>;
+def STGSD : E2KInst<0x3b, (outs), (ins), "stgsd", [2, 5]>;
+
+def STSSB : E2KInst<0x3c, (outs), (ins), "stssb", [2, 5]>;
+
+// convert fp32 to int32
+def FSTOIS : E2KEXTInst<0x3c, 0xC0, (outs), (ins), "fstois", [0, 1, 3, 4]>;
+
+// convert fp32 to int32 (with truncation)
+def FSTOISTR : E2KEXTInst<0x3c, 0xC2, (outs), (ins), "fstoistr", [0, 1, 3, 4]>;
+
+// convert int32 to fp32
+def ISTOFS : E2KEXTInst<0x3c, 0xC4, (outs), (ins), "istofs", [0, 1, 3, 4]>;
+
+def STSSH : E2KInst<0x3d, (outs), (ins), "stssh", [2, 5]>;
+
+// convert fp64 to int64
+def FDTOID : E2KEXTInst<0x3d, 0xC0, (outs), (ins), "fdtoid", [0, 1, 3, 4]>;
+
+// convert fp80 to int64
+def FXTOID : E2KEXTInst<0x3d, 0xC1, (outs), (ins), "fxtoid", [0, 1, 3, 4]>;
+
+// convert fp64 to int64 (with truncation)
+def FDTOIDTR : E2KEXTInst<0x3d, 0xC2, (outs), (ins), "fdtoidtr", [0, 1, 3, 4]>;
+
+// convert fp80 to int64 (with truncation)
+def FXTOIDTR : E2KEXTInst<0x3d, 0xC3, (outs), (ins), "fxtoidtr", [0, 1, 3, 4]>;
+
+// convert int64 to fp64
+def IDTOFD : E2KEXTInst<0x3d, 0xC4, (outs), (ins), "idtofd", [0, 1, 3, 4]>;
+
+// convert int64 to fp80
+def IDTOFX : E2KEXTInst<0x3d, 0xC5, (outs), (ins), "idtofx", [0, 1, 3, 4]>;
+
+// convert fp80 to fp64
+def FXTOFD : E2KEXTInst<0x3d, 0xC6, (outs), (ins), "fxtofd", [0, 1, 3, 4]>;
+
+// convert fp64 to fp80
+def FDTOFX : E2KEXTInst<0x3d, 0xC7, (outs), (ins), "fdtofx", [0, 1, 3, 4]>;
+
+// package convert fp32 to int32
+def PFSTOIS : E2KEXTInst<0x3d, 0xC8, (outs), (ins), "pfstois", [0, 1, 3, 4]>;
+
+// package convert fp32 to int32 (with truncation)
+def PFSTOISTR : E2KEXTInst<0x3d, 0xCA, (outs), (ins), "pfstoistr", [0, 1, 3, 4]>;
+
+// package convert int32 to fp32
+def PISTOFS : E2KEXTInst<0x3d, 0xCC, (outs), (ins), "pistofs", [0, 1, 3, 4]>;
+
+def STSSW : E2KInst<0x3e, (outs), (ins), "stssw", [2, 5]>;
+
+// convert fp32 to int64
+def FSTOID : E2KEXTInst<0x3e, 0xC0, (outs), (ins), "fstoid", [0, 1, 3, 4]>;
+
+// convert fp32 to int64 (with truncation)
+def FSTOIDTR : E2KEXTInst<0x3e, 0xC2, (outs), (ins), "fstoidtr", [0, 1, 3, 4]>;
+
+// convert int32 to fp64
+def ISTOFD : E2KEXTInst<0x3e, 0xC4, (outs), (ins), "istofd", [0, 1, 3, 4]>;
+
+// convert int32 to fp80
+def ISTOFX : E2KEXTInst<0x3e, 0xC5, (outs), (ins), "istofx", [0, 1, 3, 4]>;
+
+// convert fp32 to fp64
+def FSTOFD : E2KEXTInst<0x3e, 0xC6, (outs), (ins), "fstofd", [0, 1, 3, 4]>;
+
+// convert fp32 to fp80
+def FSTOFX : E2KEXTInst<0x3e, 0xC7, (outs), (ins), "fstofx", [0, 1, 3, 4]>;
+
+// package convert fp32 to fp64
+def PFSTOFD : E2KEXTInst<0x3e, 0xCE, (outs), (ins), "pfstofd", [0, 1, 3, 4]>;
+
+def STSSD : E2KInst<0x3f, (outs), (ins), "stssd", [2, 5]>;
+
+// convert fp64 to int32
+def FDTOIS : E2KEXTInst<0x3f, 0xC0, (outs), (ins), "fdtois", [0, 1, 3, 4]>;
+
+// convert fp80 to int32
+def FXTOIS : E2KEXTInst<0x3f, 0xC1, (outs), (ins), "fxtois", [0, 1, 3, 4]>;
+
+// convert fp64 to int32 (with truncation)
+def FDTOISTR : E2KEXTInst<0x3f, 0xC2, (outs), (ins), "fdtoistr", [0, 1, 3, 4]>;
+
+// convert fp80 to int32 (with truncation)
+def FXTOISTR : E2KEXTInst<0x3f, 0xC3, (outs), (ins), "fxtoistr", [0, 1, 3, 4]>;
+
+// convert int64 to fp32
+def IDTOFS : E2KEXTInst<0x3f, 0xC4, (outs), (ins), "idtofs", [0, 1, 3, 4]>;
+
+// convert fp64 to fp32
+def FDTOFS : E2KEXTInst<0x3f, 0xC6, (outs), (ins), "fdtofs", [0, 1, 3, 4]>;
+
+// convert fp80 to fp32
+def FXTOFS : E2KEXTInst<0x3f, 0xC7, (outs), (ins), "fxtofs", [0, 1, 3, 4]>;
+
+// packed convert fp64 to int32
+def PFDTOIS : E2KEXTInst<0x3f, 0xC8, (outs), (ins), "pfdtois", [0, 1, 3, 4]>;
+
+// packed convert fp64 to int32 (with truncation)
+def PFDTOISTR : E2KEXTInst<0x3f, 0xCA, (outs), (ins), "pfdtoistr", [0, 1, 3, 4]>;
+
+// packed convert fp64 to fp32
+def PFDTOFS : E2KEXTInst<0x3f, 0xCE, (outs), (ins), "pfdtofs", [0, 1, 3, 4]>;
+
+def FXADDSS : E2KInst<0x40, (outs), (ins), "fxaddss", [0, 1, 3, 4]>;
+def FXADDDD : E2KInst<0x41, (outs), (ins), "fxadddd", [0, 1, 3, 4]>;
+
+// unsigned integer DIV
+def UDIVS : E2KInst<0x40, (outs), (ins), "udivs", [5]>;
+def UDIVD : E2KInst<0x41, (outs), (ins), "udivd", [5]>;
+def UDIVX : E2KInst<0x44, (outs), (ins), "udivx", [5]>;
+
+def FXADDSX : E2KInst<0x42, (outs), (ins), "fxaddsx", [0, 1, 3, 4]>;
+def FXADDDX : E2KInst<0x43, (outs), (ins), "fxadddx", [0, 1, 3, 4]>;
+
+// signed integer DIV
+def SDIVS : E2KInst<0x42, (outs), (ins), "sdivs", [5]>;
+def SDIVD : E2KInst<0x43, (outs), (ins), "sdivd", [5]>;
+def SDIVX : E2KInst<0x46, (outs), (ins), "sdivx", [5]>;
+
+def FXADDXS : E2KInst<0x44, (outs), (ins), "fxaddxs", [0, 1, 3, 4]>;
+def FXADDXD : E2KInst<0x45, (outs), (ins), "fxaddxd", [0, 1, 3, 4]>;
+
+// unsigned modulo (remainder) of division
+def UMODX : E2KInst<0x45, (outs), (ins), "umodx", [5]>;
+
+def FXADDXX : E2KInst<0x47, (outs), (ins), "fxaddxx", [0, 1, 3, 4]>;
+
+// signed modulo (remainder) of division
+def SMODX : E2KInst<0x47, (outs), (ins), "smodx", [5]>;
+
+def FXSUBSS : E2KInst<0x48, (outs), (ins), "fxsubss", [0, 1, 3, 4]>;
+def FXDIVSS : E2KInst<0x48, (outs), (ins), "fxdivss", [5]>;
+
+def FXSUBDD : E2KInst<0x49, (outs), (ins), "fxsubdd", [0, 1, 3, 4]>;
+def FXDIVDD : E2KInst<0x49, (outs), (ins), "fxdivdd", [5]>;
+
+def FXSUBSX : E2KInst<0x4a, (outs), (ins), "fxsubsx", [0, 1, 3, 4]>;
+def FXDIVSX : E2KInst<0x4a, (outs), (ins), "fxdivsx", [5]>;
+
+def FXSUBDX : E2KInst<0x4b, (outs), (ins), "fxsubdx", [0, 1, 3, 4]>;
+def FXDIVDX : E2KInst<0x4b, (outs), (ins), "fxdivdx", [5]>;
+
+def FXSUBXS : E2KInst<0x4c, (outs), (ins), "fxsubxs", [0, 1, 3, 4]>;
+def FXDIVXS : E2KInst<0x4c, (outs), (ins), "fxdivxs", [5]>;
+
+def FXSUBXD : E2KInst<0x4d, (outs), (ins), "fxsubxd", [0, 1, 3, 4]>;
+def FXDIVXD : E2KInst<0x4d, (outs), (ins), "fxdivxd", [5]>;
+
+// 0x4e ???
+
+def FXSUBXX : E2KInst<0x4f, (outs), (ins), "fxsubxx", [0, 1, 3, 4]>;
+def FXDIVXX : E2KInst<0x4f, (outs), (ins), "fxdivxdx", [5]>;
+
+def FXMULSS : E2KInst<0x50, (outs), (ins), "fxmulss", [0, 1, 3, 4]>;
+def FXMULDD : E2KInst<0x51, (outs), (ins), "fxmuldd", [0, 1, 3, 4]>;
+def FXMULSX : E2KInst<0x52, (outs), (ins), "fxmulsx", [0, 1, 3, 4]>;
+def FXMULDX : E2KInst<0x53, (outs), (ins), "fxmuldx", [0, 1, 3, 4]>;
+
+def FXSQRTISX : E2KEXTInst<0x52, 0xC0, (outs), (ins), "fxsqrtisx", [5]>;
+def FXSQRTIDX : E2KEXTInst<0x53, 0xC0, (outs), (ins), "fxsqrtdsx", [5]>;
+
+def FXMULXS : E2KInst<0x54, (outs), (ins), "fxmulxs", [0, 1, 3, 4]>;
+def FXMULXD : E2KInst<0x55, (outs), (ins), "fxmulxd", [0, 1, 3, 4]>;
+
+// 0x56 ???
+
+def FXMULXX : E2KInst<0x57, (outs), (ins), "fxmulxx", [0, 1, 3, 4]>;
+
+def FXSQRTIXX : E2KEXTInst<0x57, 0xC0, (outs), (ins), "fxsqrtdxx", [5]>;
+
+def FXRSUBSS : E2KInst<0x58, (outs), (ins), "fxrsubss", [0, 1, 3, 4]>;
+def FXRSUBDD : E2KInst<0x59, (outs), (ins), "fxrsubdd", [0, 1, 3, 4]>;
+def FXRSUBSX : E2KInst<0x5a, (outs), (ins), "fxrsubsx", [0, 1, 3, 4]>;
+def FXRSUBDX : E2KInst<0x5b, (outs), (ins), "fxrsubdx", [0, 1, 3, 4]>;
+
+def FXSQRTUXX : E2KInst<0x59, (outs), (ins), "fxsqrtuxx", [5]>;
+def FXSQRTUSX : E2KInst<0x5a, (outs), (ins), "fxsqrtusx", [5]>;
+def FXSQRTUDX : E2KInst<0x5b, (outs), (ins), "fxsqrtudx", [5]>;
+
+def MOVFI : E2KEXTInst<0x5c, 0xC0, (outs), (ins), "movfi", [0, 1, 3, 4]>;
+
+def FXSQRTTXX : E2KInst<0x5d, (outs), (ins), "fxsqrttxx", [5]>;
+
+def MOVIF : E2KInst<0x5e, (outs), (ins), "movif", [0, 1, 3, 4]>;
+
+def FXSQRTTSX : E2KInst<0x5e, (outs), (ins), "fxsqrttsx", [5]>;
+
+def MOVX : E2KEXTInst<0x5f, 0xC0, (outs), (ins), "movx", [0, 1, 3, 4]>;
+def MOVXA : E2KEXTInst<0x5f, 0xC1, (outs), (ins), "movxa", [0, 1, 3, 4]>;
+def MOVXC : E2KEXTInst<0x5f, 0xC2, (outs), (ins), "movxc", [0, 1, 3, 4]>;
+
+def FXSQRTTDX : E2KInst<0x5f, (outs), (ins), "fxsqrttdx", [5]>;
+
+// move tagged value
+def MOVTS : E2KEXTInst<0x60, 0xC0, (outs), (ins), "movts", [0, 1, 3, 4]>;
+def MOVTCS : E2KEXTInst<0x60, 0xC1, (outs), (ins), "movtcs", [0, 1, 3, 4]>;
+def MOVTRS : E2KEXTInst<0x60, 0xC2, (outs), (ins), "movtrs", [0, 1, 3, 4]>;
+def MOVTRCS : E2KEXTInst<0x60, 0xC3, (outs), (ins), "movtrcs", [0, 1, 3, 4]>;
+
+def FXDIVTSS : E2KInst<0x60, (outs), (ins), "fxdivtss", [5]>;
+
+def MOVTD : E2KEXTInst<0x61, 0xC0, (outs), (ins), "movtd", [0, 1, 3, 4]>;
+def MOVTCD : E2KEXTInst<0x61, 0xC1, (outs), (ins), "movtcd", [0, 1, 3, 4]>;
+def MOVTRD : E2KEXTInst<0x61, 0xC2, (outs), (ins), "movtrd", [0, 1, 3, 4]>;
+def MOVTRCD : E2KEXTInst<0x61, 0xC3, (outs), (ins), "movtrcd", [0, 1, 3, 4]>;
+
+def FXDIVTDD : E2KInst<0x61, (outs), (ins), "fxdivtdd", [5]>;
+
+def GETSAP : E2KEXTInst<0x62, 0xEC, (outs), (ins), "getsap", [0, 1, 3, 4]>;
+def CUDTOAP : E2KEXTInst<0x62, 0xF0, (outs), (ins), "cudtoap", [0, 1, 3, 4]>;
+def GDTOAP : E2KEXTInst<0x62, 0xF2, (outs), (ins), "gdtoap", [0, 1, 3, 4]>;
+
+def FXDIVTSX : E2KInst<0x62, (outs), (ins), "fxdivtsx", [5]>;
+
+def GETPL : E2KEXTInst<0x63, 0xF0, (outs), (ins), "gdtoap", [0, 3]>;
+
+def VFSI : E2KInst<0x63, (outs), (ins), "gdtoap", [1, 4]>;
+
+def FXDIVTDX : E2KInst<0x63, (outs), (ins), "fxdivtdx", [5]>;
+
+// load unsigned byte
+def LDB : E2KInst<0x64, (outs), (ins), "ldb", [0, 2, 3, 5]>;
+
+// load unsigned half-word
+def LDH : E2KInst<0x65, (outs), (ins), "ldh", [0, 2, 3, 5]>;
+
+// count number of leading zeroes
+def LZCNTS : E2KEXTInst<0x64, 0xC0, (outs), (ins), "lzcnts", [1, 4]>;
+def LZCNTD : E2KEXTInst<0x65, 0xC0, (outs), (ins), "lzcntd", [1, 4]>;
+
+// load unsigned word
+def LDW : E2KInst<0x66, (outs), (ins), "ldw", [0, 2, 3, 5]>;
+
+// load unsigned double-word
+def LDD : E2KInst<0x67, (outs), (ins), "ldd", [0, 2, 3, 5]>;
+
+// count of bits set to one
+def POPCNTS : E2KEXTInst<0x66, 0xC0, (outs), (ins), "popcnts", [1, 4]>;
+def POPCNTD : E2KEXTInst<0x67, 0xC0, (outs), (ins), "popcntd", [1, 4]>;
+
+def LDCSB : E2KInst<0x68, (outs), (ins), "ldcsb", [0, 2, 3, 5]>;
+
+def VFBGV : E2KInst<0x68, (outs), (ins), "vfbgv", [1, 4]>;
+
+def LDCSH : E2KInst<0x69, (outs), (ins), "ldcsh", [0, 2, 3, 5]>;
+
+def MODBGV : E2KEXTInst<0x69, 0xC0, (outs), (ins), "modbgv", [1, 4]>;
+
+def LDCSW : E2KInst<0x6a, (outs), (ins), "ldcsw", [0, 2, 3, 5]>;
+
+def MKFSW : E2KInst<0x6a, (outs), (ins), "mkfsw", [1, 4]>;
+
+def LDCSD : E2KInst<0x6b, (outs), (ins), "ldcsd", [0, 2, 3, 5]>;
+
+def LDDSB : E2KInst<0x6c, (outs), (ins), "lddsb", [0, 2, 3, 5]>;
+
+def LDDSH : E2KInst<0x6d, (outs), (ins), "lddsh", [0, 2, 3, 5]>;
+
+def LDDSW : E2KInst<0x6e, (outs), (ins), "lddsw", [0, 2, 3, 5]>;
+
+def LDDSD : E2KInst<0x6f, (outs), (ins), "lddsd", [0, 2, 3, 5]>;
+
+def LDESB : E2KInst<0x70, (outs), (ins), "ldesb", [0, 2, 3, 5]>;
+
+def LDESH : E2KInst<0x71, (outs), (ins), "ldesh", [0, 2, 3, 5]>;
+
+def LDESW : E2KInst<0x72, (outs), (ins), "ldesw", [0, 2, 3, 5]>;
+
+def LDESD : E2KInst<0x73, (outs), (ins), "ldesd", [0, 2, 3, 5]>;
+
+def LDFSB : E2KInst<0x74, (outs), (ins), "ldfsb", [0, 2, 3, 5]>;
+
+def LDFSH : E2KInst<0x75, (outs), (ins), "ldfsh", [0, 2, 3, 5]>;
+
+def LDFSW : E2KInst<0x76, (outs), (ins), "ldfsw", [0, 2, 3, 5]>;
+
+def LDFSD : E2KInst<0x77, (outs), (ins), "ldfsd", [0, 2, 3, 5]>;
+
+def LDGSB : E2KInst<0x78, (outs), (ins), "ldgsb", [0, 2, 3, 5]>;
+
+def LDGSH : E2KInst<0x79, (outs), (ins), "ldgsh", [0, 2, 3, 5]>;
+
+def LDGSW : E2KInst<0x7a, (outs), (ins), "ldgsw", [0, 2, 3, 5]>;
+
+def LDGSD : E2KInst<0x7b, (outs), (ins), "ldgsd", [0, 2, 3, 5]>;
+
+def LDSSB : E2KInst<0x7c, (outs), (ins), "ldssb", [0, 2, 3, 5]>;
+
+def LDSSH : E2KInst<0x7d, (outs), (ins), "ldssh", [0, 2, 3, 5]>;
+
+def LDSSW : E2KInst<0x7e, (outs), (ins), "ldssw", [0, 2, 3, 5]>;
+
+def LDSSD : E2KInst<0x7f, (outs), (ins), "ldssw", [0, 2, 3, 5]>;
+
 //===----------------------------------------------------------------------===//
 // Feature predicates.
 //===----------------------------------------------------------------------===//
@@ -1233,7 +1736,7 @@ def FABSS : F3_3u<2, 0b110100, 0b000001001,
 
 
 
-
+/*
 // Floating-point Add and Subtract Instructions, p. 146
 def FADDS  : F3_3<2, 0b110100, 0b001000001,
                   (outs FPRegs:$rd), (ins FPRegs:$rs1, FPRegs:$rs2),
@@ -1310,7 +1813,7 @@ def FDIVQ  : F3_3<2, 0b110100, 0b001001111,
                  (outs QFPRegs:$rd), (ins QFPRegs:$rs1, QFPRegs:$rs2),
                  "fdivq $rs1, $rs2, $rd",
                  [(set f128:$rd, (fdiv f128:$rs1, f128:$rs2))]>;
-
+*/
 // Floating-point Compare Instructions, p. 148
 // Note: the 2nd template arg is different for these guys.
 // Note 2: the result of a FCMP is not available until the 2nd cycle
