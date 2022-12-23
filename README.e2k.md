@@ -22,8 +22,10 @@ there are several good places to start getting familiar with the source code cha
 
 in **LLVM**:
 - [llvm/lib/Target/E2K](llvm/lib/Target/E2K) - the main subdirectory to define low-level E2K target information
-- [llvm/lib/Target/E2K/E2K.td](llvm/lib/Target/E2K/E2K.td) - defines E2K processors and their features
-- [llvm/lib/Target/E2K/E2KRegisterInfo.td](llvm/lib/Target/E2K/E2KRegisterInfo.td) - defines E2K registers
+- [llvm/lib/Target/E2K/E2K.td](llvm/lib/Target/E2K/E2K.td) - defines E2K processors and their features (TableGen)
+- [llvm/lib/Target/E2K/E2KRegisterInfo.td](llvm/lib/Target/E2K/E2KRegisterInfo.td) - defines E2K registers (TableGen)
+- [llvm/lib/Target/E2K/E2KInstrFormats.td](llvm/lib/Target/E2K/E2KInstrFormats.td) - defines E2K instruction formats (TableGen)
+- [llvm/lib/Target/E2K/E2KInstrInfo.td](llvm/lib/Target/E2K/E2KInstrInfo.td) - defines E2K instructions (TableGen)
 - [llvm/lib/Target/E2K/E2KTargetMachine.cpp](llvm/lib/Target/E2K/E2KTargetMachine.cpp) - main definitions of E2K targets (llvm)
 - [llvm/lib/Target/E2K/E2KSubtarget.cpp](llvm/lib/Target/E2K/E2KSubtarget.cpp) - main definitions of E2K sub-targets, or flavours (llvm)
 
@@ -34,15 +36,14 @@ in **clang**:
 - [clang/lib/Basic/Targets.cpp](clang/lib/Basic/Targets.cpp) - major major E2K mappings (clang)
 
 in **lld**:
-- [lld/ELF/Arch/E2K.cpp](lld/ELF/Arch/E2K.cpp) - main defitions of E2K targets (lld)
+- [lld/ELF/Arch/E2K.cpp](lld/ELF/Arch/E2K.cpp) - main definitions of E2K targets (lld)
 - [lld/ELF/Driver.cpp](lld/ELF/Driver.cpp) - E2K mappings for ELF (lld)
 - [llvm/lib/Support/Triple.cpp](llvm/lib/Support/Triple.cpp) - major E2K mappings (lld)
 
 generic:
-- [llvm/include/llvm/ADT/Triple.h](llvm/include/llvm/ADT/Triple.h) - defines common E2K target identifiers
+- [llvm/include/llvm/TargetParser/Triple.h](llvm/include/llvm/TargetParser/Triple.h) - defines common E2K target identifiers
 - [llvm/include/llvm/BinaryFormat/ELFRelocs/E2K.def](llvm/include/llvm/BinaryFormat/ELFRelocs/E2K.def) - defines E2K relocations (from **/usr/include/elf.h**)
 - [llvm/lib/Support/Triple.cpp](llvm/lib/Support/Triple.cpp) - defines mappings for E2K triples
-
 
 compiling the project
 ---------------------
