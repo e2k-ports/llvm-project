@@ -6,9 +6,22 @@
 //
 //===----------------------------------------------------------------------===//
 
+def c {
+    list<int> all = [0, 1, 2, 3, 4, 5];
+    list<int> c01345 = [0, 1, 3, 4, 5];
+    list<int> c0134 = [0, 1, 3, 4];
+    list<int> c0235 = [0, 2, 3, 5];
+    list<int> c035 = [0, 3, 5];
+    list<int> c03 = [0, 3];
+    list<int> c14 = [1, 4];
+    list<int> c25 = [2, 5];
+    list<int> c0 = [0];
+    list<int> c5 = [5];
+}
+
 // regular ALS command
-class E2KInst<bits<7> opcode, dag outs, dag ins, string asmstr,
-              list<int> channels = [0, 1, 2, 3, 4, 5],
+class ALSInst<bits<7> opcode, dag outs, dag ins, string asmstr,
+              list<int> channels = c.all,
               list<dag> pattern = []>: Instruction {
 
   let Namespace = "E2K";
@@ -23,21 +36,39 @@ class E2KInst<bits<7> opcode, dag outs, dag ins, string asmstr,
 }
 
 // ALS with CMP opcode extension
-class E2KCCInst<bits<7> opcode, bits<3> cc, dag outs, dag ins, string asmstr,
-              list<int> channels = [0, 1, 3, 4],
-              list<dag> pattern = []>: E2KInst<opcode, outs, ins, asmstr, channels, pattern> {
+class ALSCCInst<bits<7> opcode, bits<3> cc, dag outs, dag ins, string asmstr,
+              list<int> channels = c.c0134,
+              list<dag> pattern = []>: ALSInst<opcode, outs, ins, asmstr, channels, pattern> {
 
   bits<3> CC = cc;
   let Inst{7-5} = CC;
 }
 
 // ALS with opcode extension
-class E2KEXTInst<bits<7> opcode, bits<8> ext, dag outs, dag ins, string asmstr,
-              list<int> channels = [0, 1, 2, 3, 4, 5],
-              list<dag> pattern = []>: E2KInst<opcode, outs, ins, asmstr, channels, pattern> {
+class ALSEXTInst<bits<7> opcode, bits<8> ext, dag outs, dag ins, string asmstr,
+              list<int> channels = c.all,
+              list<dag> pattern = []>: ALSInst<opcode, outs, ins, asmstr, channels, pattern> {
 
   bits<8> Ext = ext;
   let Inst{23-16} = Ext;
+}
+
+// ALES command command
+class ALESInst<bits<7> opcode, bits<8> opcode2, dag outs, dag ins, string asmstr,
+              list<int> channels = c.all,
+              list<dag> pattern = []>: Instruction {
+
+  let Namespace = "E2K";
+  field bits<48> Inst;
+  dag OutOperandList = outs;
+  dag InOperandList = ins;
+  let AsmString = asmstr;
+  let Pattern = pattern;
+  list<int> Channels = channels;
+  bits<7> OpCode = opcode;
+  bits<8> OpCode2 = opcode2;
+  let Inst{30-24} = OpCode;
+  let Inst{47-40} = OpCode2;
 }
 
 class InstSP<dag outs, dag ins, string asmstr, list<dag> pattern,
