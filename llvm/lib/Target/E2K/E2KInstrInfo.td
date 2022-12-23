@@ -16,508 +16,1344 @@
 
 include "E2KInstrFormats.td"
 
+//===----------------------------------------------------------------------===//
+// ALS opcodes
+//===----------------------------------------------------------------------===//
+
 // logical AND
-def ANDS : E2KInst<0x00, (outs), (ins), "ands">;
-def ANDD : E2KInst<0x01, (outs), (ins), "andd">;
+def ANDS : ALSInst<0x00, (outs), (ins), "ands">;
+def ANDD : ALSInst<0x01, (outs), (ins), "andd">;
 
 // logical AND, inverted operand 2
-def ANDNS : E2KInst<0x02, (outs), (ins), "andns">;
-def ANDND : E2KInst<0x03, (outs), (ins), "andnd">;
+def ANDNS : ALSInst<0x02, (outs), (ins), "andns">;
+def ANDND : ALSInst<0x03, (outs), (ins), "andnd">;
 
 // logical OR
-def ORS : E2KInst<0x04, (outs), (ins), "ors">;
-def ORD : E2KInst<0x05, (outs), (ins), "ord">;
+def ORS : ALSInst<0x04, (outs), (ins), "ors">;
+def ORD : ALSInst<0x05, (outs), (ins), "ord">;
 
 // logical OR, inverted operand 2
-def ORNS : E2KInst<0x06, (outs), (ins), "orns">;
-def ORND : E2KInst<0x07, (outs), (ins), "ornd">;
+def ORNS : ALSInst<0x06, (outs), (ins), "orns">;
+def ORND : ALSInst<0x07, (outs), (ins), "ornd">;
 
 // logical XOR
-def XORS : E2KInst<0x08, (outs), (ins), "xors">;
-def XORD : E2KInst<0x09, (outs), (ins), "xord">;
+def XORS : ALSInst<0x08, (outs), (ins), "xors">;
+def XORD : ALSInst<0x09, (outs), (ins), "xord">;
 
 // logical XOR, inverted operand 2
-def XORNS : E2KInst<0x0A, (outs), (ins), "xorns">;
-def XORND : E2KInst<0x0B, (outs), (ins), "xornd">;
+def XORNS : ALSInst<0x0A, (outs), (ins), "xorns">;
+def XORND : ALSInst<0x0B, (outs), (ins), "xornd">;
 
 // sign-extend or zero-extend
-def SXT : E2KInst<0x0C, (outs), (ins), "sxt">;
+def SXT : ALSInst<0x0C, (outs), (ins), "sxt">;
 
 // 0x0D ???
 
 // merge, choose operand based on predicate (like ternary operator)
-def MERGES : E2KInst<0x0E, (outs), (ins), "merges">;
-def MERGED : E2KInst<0x0F, (outs), (ins), "merged">;
+def MERGES : ALSInst<0x0E, (outs), (ins), "merges">;
+def MERGED : ALSInst<0x0F, (outs), (ins), "merged">;
 
 // arithmetic ADD
-def ADDS : E2KInst<0x10, (outs), (ins), "adds">;
-def ADDD : E2KInst<0x11, (outs), (ins), "addd">;
+def ADDS : ALSInst<0x10, (outs), (ins), "adds">;
+def ADDD : ALSInst<0x11, (outs), (ins), "addd">;
 
 // arithmetic SUB
-def SUBS : E2KInst<0x12, (outs), (ins), "subs">;
-def SUBD : E2KInst<0x13, (outs), (ins), "subd">;
+def SUBS : ALSInst<0x12, (outs), (ins), "subs">;
+def SUBD : ALSInst<0x13, (outs), (ins), "subd">;
 
 // shift cyclic left
-def SCLS : E2KInst<0x14, (outs), (ins), "scls">;
-def SCLD : E2KInst<0x15, (outs), (ins), "scld">;
+def SCLS : ALSInst<0x14, (outs), (ins), "scls">;
+def SCLD : ALSInst<0x15, (outs), (ins), "scld">;
 
 // shift cyclic right
-def SCRS : E2KInst<0x16, (outs), (ins), "scrs">;
-def SCRD : E2KInst<0x17, (outs), (ins), "scrd">;
+def SCRS : ALSInst<0x16, (outs), (ins), "scrs">;
+def SCRD : ALSInst<0x17, (outs), (ins), "scrd">;
 
 // shift logical left
-def SHLS : E2KInst<0x18, (outs), (ins), "shls">;
-def SHLD : E2KInst<0x19, (outs), (ins), "shld">;
+def SHLS : ALSInst<0x18, (outs), (ins), "shls">;
+def SHLD : ALSInst<0x19, (outs), (ins), "shld">;
 
 // shift logical right
-def SHRS : E2KInst<0x1a, (outs), (ins), "shrs">;
-def SHRD : E2KInst<0x1b, (outs), (ins), "shrd">;
+def SHRS : ALSInst<0x1a, (outs), (ins), "shrs">;
+def SHRD : ALSInst<0x1b, (outs), (ins), "shrd">;
 
 // shift arithmetic right
-def SARS : E2KInst<0x1c, (outs), (ins), "sars">;
-def SARD : E2KInst<0x1d, (outs), (ins), "sard">;
+def SARS : ALSInst<0x1c, (outs), (ins), "sars">;
+def SARD : ALSInst<0x1d, (outs), (ins), "sard">;
 
 // get field of an arbitrary length
-def GETFS : E2KInst<0x1e, (outs), (ins), "getfs">;
-def GETFD : E2KInst<0x1f, (outs), (ins), "getfd">;
+def GETFS : ALSInst<0x1e, (outs), (ins), "getfs">;
+def GETFD : ALSInst<0x1f, (outs), (ins), "getfd">;
 
 // integer comparison
 // compare, overflow
-def CMPOSB : E2KCCInst<0x20, 0, (outs), (ins), "cmposb">;
-def CMPODB : E2KCCInst<0x21, 0, (outs), (ins), "cmpodb">;
+def CMPOSB : ALSCCInst<0x20, 0, (outs), (ins), "cmposb">;
+def CMPODB : ALSCCInst<0x21, 0, (outs), (ins), "cmpodb">;
 
 // compare, less (without sign)
-def CMPBSB : E2KCCInst<0x20, 1, (outs), (ins), "cmpbsb">;
-def CMPBDB : E2KCCInst<0x21, 1, (outs), (ins), "cmpbdb">;
+def CMPBSB : ALSCCInst<0x20, 1, (outs), (ins), "cmpbsb">;
+def CMPBDB : ALSCCInst<0x21, 1, (outs), (ins), "cmpbdb">;
 
 // compare, equal
-def CMPESB : E2KCCInst<0x20, 2, (outs), (ins), "cmpesb">;
-def CMPEDB : E2KCCInst<0x21, 2, (outs), (ins), "cmpedb">;
+def CMPESB : ALSCCInst<0x20, 2, (outs), (ins), "cmpesb">;
+def CMPEDB : ALSCCInst<0x21, 2, (outs), (ins), "cmpedb">;
 
 // compare, below or equal (without sing)
-def CMPBESB : E2KCCInst<0x20, 3, (outs), (ins), "cmpbesb">;
-def CMPBEDB : E2KCCInst<0x21, 3, (outs), (ins), "cmpbedb">;
+def CMPBESB : ALSCCInst<0x20, 3, (outs), (ins), "cmpbesb">;
+def CMPBEDB : ALSCCInst<0x21, 3, (outs), (ins), "cmpbedb">;
 
 // compare, negative
-def CMPSSB : E2KCCInst<0x20, 4, (outs), (ins), "cmpssb">;
-def CMPSDB : E2KCCInst<0x21, 4, (outs), (ins), "cmpsdb">;
+def CMPSSB : ALSCCInst<0x20, 4, (outs), (ins), "cmpssb">;
+def CMPSDB : ALSCCInst<0x21, 4, (outs), (ins), "cmpsdb">;
 
 // compare, parity
-def CMPPSB : E2KCCInst<0x20, 5, (outs), (ins), "cmppsb">;
-def CMPPDB : E2KCCInst<0x21, 5, (outs), (ins), "cmppdb">;
+def CMPPSB : ALSCCInst<0x20, 5, (outs), (ins), "cmppsb">;
+def CMPPDB : ALSCCInst<0x21, 5, (outs), (ins), "cmppdb">;
 
 // compare, less (with sign)
-def CMPLSB : E2KCCInst<0x20, 6, (outs), (ins), "cmplsb">;
-def CMPLDB : E2KCCInst<0x21, 6, (outs), (ins), "cmpldb">;
+def CMPLSB : ALSCCInst<0x20, 6, (outs), (ins), "cmplsb">;
+def CMPLDB : ALSCCInst<0x21, 6, (outs), (ins), "cmpldb">;
 
 // compare, less or equal (with sign)
-def CMPLESB : E2KCCInst<0x20, 7, (outs), (ins), "cmplesb">;
-def CMPLEDB : E2KCCInst<0x21, 7, (outs), (ins), "cmpledb">;
+def CMPLESB : ALSCCInst<0x20, 7, (outs), (ins), "cmplesb">;
+def CMPLEDB : ALSCCInst<0x21, 7, (outs), (ins), "cmpledb">;
 
 // 0x22 ???
 // 0x23 ???
 
 // store byte
-def STB : E2KInst<0x24, (outs), (ins), "stb", [2, 5]>;
+def STB : ALSInst<0x24, (outs), (ins), "stb", c.c25>;
 
-def CCTOPO  : E2KCCInst<0x24, 0, (outs), (ins), "cctopo", [0, 3]>;
-def CCTOPB  : E2KCCInst<0x24, 1, (outs), (ins), "cctopb", [0, 3]>;
-def CCTOPE  : E2KCCInst<0x24, 2, (outs), (ins), "cctope", [0, 3]>;
-def CCTOPBE : E2KCCInst<0x24, 3, (outs), (ins), "cctopbe", [0, 3]>;
-def CCTOPS  : E2KCCInst<0x24, 4, (outs), (ins), "cctops", [0, 3]>;
-def CCTOPP  : E2KCCInst<0x24, 5, (outs), (ins), "cctopp", [0, 3]>;
-def CCTOPL  : E2KCCInst<0x24, 6, (outs), (ins), "cctopl", [0, 3]>;
-def CCTOPLE : E2KCCInst<0x24, 7, (outs), (ins), "cctople", [0, 3]>;
+def CCTOPO  : ALSCCInst<0x24, 0, (outs), (ins), "cctopo", c.c03>;
+def CCTOPB  : ALSCCInst<0x24, 1, (outs), (ins), "cctopb", c.c03>;
+def CCTOPE  : ALSCCInst<0x24, 2, (outs), (ins), "cctope", c.c03>;
+def CCTOPBE : ALSCCInst<0x24, 3, (outs), (ins), "cctopbe", c.c03>;
+def CCTOPS  : ALSCCInst<0x24, 4, (outs), (ins), "cctops", c.c03>;
+def CCTOPP  : ALSCCInst<0x24, 5, (outs), (ins), "cctopp", c.c03>;
+def CCTOPL  : ALSCCInst<0x24, 6, (outs), (ins), "cctopl", c.c03>;
+def CCTOPLE : ALSCCInst<0x24, 7, (outs), (ins), "cctople", c.c03>;
 
 // store half-word
-def STH : E2KInst<0x25, (outs), (ins), "sth", [2, 5]>;
+def STH : ALSInst<0x25, (outs), (ins), "sth", c.c25>;
 
 // store word
-def STW : E2KInst<0x26, (outs), (ins), "stw", [2, 5]>;
+def STW : ALSInst<0x26, (outs), (ins), "stw", c.c25>;
 
-def BITREVS : E2KEXTInst<0x26, 0xC0, (outs), (ins), "bitrevs", [0, 1, 3, 4]>;
+def BITREVS : ALSEXTInst<0x26, 0xC0, (outs), (ins), "bitrevs", c.c0134>;
 
 // store double-word
-def STD : E2KInst<0x27, (outs), (ins), "std", [2, 5]>;
+def STD : ALSInst<0x27, (outs), (ins), "std", c.c25>;
 
-def BITREVD : E2KEXTInst<0x27, 0xC0, (outs), (ins), "bitrevd", [0, 1, 3, 4]>;
+def BITREVD : ALSEXTInst<0x27, 0xC0, (outs), (ins), "bitrevd", c.c0134>;
 
-def STCSB : E2KInst<0x28, (outs), (ins), "stcsb", [2, 5]>;
+def STCSB : ALSInst<0x28, (outs), (ins), "stcsb", c.c25>;
 
-def FXCMPEQSB  : E2KCCInst<0x28, 0, (outs), (ins), "fxcmpeqsb">;
-def FXCMPLTSB  : E2KCCInst<0x28, 1, (outs), (ins), "fxcmpltsb">;
-def FXCMPLESB  : E2KCCInst<0x28, 2, (outs), (ins), "fxcmplesb">;
-def FXCMPUODSB : E2KCCInst<0x28, 3, (outs), (ins), "fxcmpuodsb">;
-def FXCMPNEQSB : E2KCCInst<0x28, 4, (outs), (ins), "fxcmpneqsb">;
-def FXCMPNLTSB : E2KCCInst<0x28, 5, (outs), (ins), "fxcmpnltsb">;
-def FXCMPNLESB : E2KCCInst<0x28, 6, (outs), (ins), "fxcmpnlesb">;
-def FXCMPODSB  : E2KCCInst<0x28, 7, (outs), (ins), "fxcmpodsb">;
+def FXCMPEQSB  : ALSCCInst<0x28, 0, (outs), (ins), "fxcmpeqsb">;
+def FXCMPLTSB  : ALSCCInst<0x28, 1, (outs), (ins), "fxcmpltsb">;
+def FXCMPLESB  : ALSCCInst<0x28, 2, (outs), (ins), "fxcmplesb">;
+def FXCMPUODSB : ALSCCInst<0x28, 3, (outs), (ins), "fxcmpuodsb">;
+def FXCMPNEQSB : ALSCCInst<0x28, 4, (outs), (ins), "fxcmpneqsb">;
+def FXCMPNLTSB : ALSCCInst<0x28, 5, (outs), (ins), "fxcmpnltsb">;
+def FXCMPNLESB : ALSCCInst<0x28, 6, (outs), (ins), "fxcmpnlesb">;
+def FXCMPODSB  : ALSCCInst<0x28, 7, (outs), (ins), "fxcmpodsb">;
 
-def STCSH : E2KInst<0x29, (outs), (ins), "stcsb", [2, 5]>;
+def STCSH : ALSInst<0x29, (outs), (ins), "stcsb", c.c25>;
 
-def FXCMPEQDB  : E2KCCInst<0x29, 0, (outs), (ins), "fxcmpeqdb">;
-def FXCMPLTDB  : E2KCCInst<0x29, 1, (outs), (ins), "fxcmpltdb">;
-def FXCMPLEDB  : E2KCCInst<0x29, 2, (outs), (ins), "fxcmpledb">;
-def FXCMPNEQDB : E2KCCInst<0x29, 4, (outs), (ins), "fxcmpneqdb">;
-def FXCMPNLTDB : E2KCCInst<0x29, 5, (outs), (ins), "fxcmpnltdb">;
-def FXCMPNLEDB : E2KCCInst<0x29, 6, (outs), (ins), "fxcmpnledb">;
-def FXCMPODDB  : E2KCCInst<0x29, 7, (outs), (ins), "fxcmpoddb">;
+def FXCMPEQDB  : ALSCCInst<0x29, 0, (outs), (ins), "fxcmpeqdb">;
+def FXCMPLTDB  : ALSCCInst<0x29, 1, (outs), (ins), "fxcmpltdb">;
+def FXCMPLEDB  : ALSCCInst<0x29, 2, (outs), (ins), "fxcmpledb">;
+def FXCMPNEQDB : ALSCCInst<0x29, 4, (outs), (ins), "fxcmpneqdb">;
+def FXCMPNLTDB : ALSCCInst<0x29, 5, (outs), (ins), "fxcmpnltdb">;
+def FXCMPNLEDB : ALSCCInst<0x29, 6, (outs), (ins), "fxcmpnledb">;
+def FXCMPODDB  : ALSCCInst<0x29, 7, (outs), (ins), "fxcmpoddb">;
 
-def STCSW : E2KInst<0x2a, (outs), (ins), "stcsw", [2, 5]>;
+def STCSW : ALSInst<0x2a, (outs), (ins), "stcsw", c.c25>;
 
-def STCSD : E2KInst<0x2b, (outs), (ins), "stcsd", [2, 5]>;
+def STCSD : ALSInst<0x2b, (outs), (ins), "stcsd", c.c25>;
 
-def FXCMPEQXB  : E2KCCInst<0x2b, 0, (outs), (ins), "fxcmpeqxb">;
-def FXCMPLTXB  : E2KCCInst<0x2b, 1, (outs), (ins), "fxcmpltxb">;
-def FXCMPLEXB  : E2KCCInst<0x2b, 2, (outs), (ins), "fxcmplexb">;
-def FXCMPNEQXB : E2KCCInst<0x2b, 4, (outs), (ins), "fxcmpneqxb">;
-def FXCMPNLTXB : E2KCCInst<0x2b, 5, (outs), (ins), "fxcmpnltxb">;
-def FXCMPNLEXB : E2KCCInst<0x2b, 6, (outs), (ins), "fxcmpnlexb">;
-def FXCMPODXB  : E2KCCInst<0x2b, 7, (outs), (ins), "fxcmpodxb">;
+def FXCMPEQXB  : ALSCCInst<0x2b, 0, (outs), (ins), "fxcmpeqxb">;
+def FXCMPLTXB  : ALSCCInst<0x2b, 1, (outs), (ins), "fxcmpltxb">;
+def FXCMPLEXB  : ALSCCInst<0x2b, 2, (outs), (ins), "fxcmplexb">;
+def FXCMPNEQXB : ALSCCInst<0x2b, 4, (outs), (ins), "fxcmpneqxb">;
+def FXCMPNLTXB : ALSCCInst<0x2b, 5, (outs), (ins), "fxcmpnltxb">;
+def FXCMPNLEXB : ALSCCInst<0x2b, 6, (outs), (ins), "fxcmpnlexb">;
+def FXCMPODXB  : ALSCCInst<0x2b, 7, (outs), (ins), "fxcmpodxb">;
 
-def STDSB : E2KInst<0x2c, (outs), (ins), "stdsb", [2, 5]>;
+def STDSB : ALSInst<0x2c, (outs), (ins), "stdsb", c.c25>;
 
-def STDSH : E2KInst<0x2d, (outs), (ins), "stdsh", [2, 5]>;
+def STDSH : ALSInst<0x2d, (outs), (ins), "stdsh", c.c25>;
 
-def STDSW : E2KInst<0x2e, (outs), (ins), "stdsw", [2, 5]>;
+def STDSW : ALSInst<0x2e, (outs), (ins), "stdsw", c.c25>;
 
-def FCMPEQSB  : E2KCCInst<0x2e, 0, (outs), (ins), "fcmpeqsb">;
-def FCMPLTSB  : E2KCCInst<0x2e, 1, (outs), (ins), "fcmpltsb">;
-def FCMPLESB  : E2KCCInst<0x2e, 2, (outs), (ins), "fcmplesb">;
-def FCMPNEQSB : E2KCCInst<0x2e, 4, (outs), (ins), "fcmpneqsb">;
-def FCMPNLTSB : E2KCCInst<0x2e, 5, (outs), (ins), "fcmpnltsb">;
-def FCMPNLESB : E2KCCInst<0x2e, 6, (outs), (ins), "fcmpnlesb">;
-def FCMPODSB  : E2KCCInst<0x2e, 7, (outs), (ins), "fcmpodsb">;
+def FCMPEQSB  : ALSCCInst<0x2e, 0, (outs), (ins), "fcmpeqsb">;
+def FCMPLTSB  : ALSCCInst<0x2e, 1, (outs), (ins), "fcmpltsb">;
+def FCMPLESB  : ALSCCInst<0x2e, 2, (outs), (ins), "fcmplesb">;
+def FCMPNEQSB : ALSCCInst<0x2e, 4, (outs), (ins), "fcmpneqsb">;
+def FCMPNLTSB : ALSCCInst<0x2e, 5, (outs), (ins), "fcmpnltsb">;
+def FCMPNLESB : ALSCCInst<0x2e, 6, (outs), (ins), "fcmpnlesb">;
+def FCMPODSB  : ALSCCInst<0x2e, 7, (outs), (ins), "fcmpodsb">;
 
-def STESB : E2KInst<0x30, (outs), (ins), "stesb", [2, 5]>;
-def STESH : E2KInst<0x31, (outs), (ins), "stesh", [2, 5]>;
+def STESB : ALSInst<0x30, (outs), (ins), "stesb", c.c25>;
+def STESH : ALSInst<0x31, (outs), (ins), "stesh", c.c25>;
 
 // floating-point ADD
-def FADDS : E2KInst<0x30, (outs), (ins), "fadds", [0, 1, 3, 4]>;
-def FADDD : E2KInst<0x31, (outs), (ins), "faddd", [0, 1, 3, 4]>;
+def FADDS : ALSInst<0x30, (outs), (ins), "fadds", c.c0134>;
+def FADDD : ALSInst<0x31, (outs), (ins), "faddd", c.c0134>;
 
-def STESW : E2KInst<0x32, (outs), (ins), "stesw", [2, 5]>;
-def STESD : E2KInst<0x33, (outs), (ins), "stesd", [2, 5]>;
+def STESW : ALSInst<0x32, (outs), (ins), "stesw", c.c25>;
+def STESD : ALSInst<0x33, (outs), (ins), "stesd", c.c25>;
 
 // floating-point SUB
-def FSUBS : E2KInst<0x32, (outs), (ins), "fsubs", [0, 1, 3, 4]>;
-def FSUBD : E2KInst<0x33, (outs), (ins), "fsubd", [0, 1, 3, 4]>;
+def FSUBS : ALSInst<0x32, (outs), (ins), "fsubs", c.c0134>;
+def FSUBD : ALSInst<0x33, (outs), (ins), "fsubd", c.c0134>;
 
-def STFSB : E2KInst<0x34, (outs), (ins), "stfsb", [2, 5]>;
-def STFSH : E2KInst<0x35, (outs), (ins), "stfsh", [2, 5]>;
+def STFSB : ALSInst<0x34, (outs), (ins), "stfsb", c.c25>;
+def STFSH : ALSInst<0x35, (outs), (ins), "stfsh", c.c25>;
 
 // floating-point MIN
-def FMINS : E2KInst<0x34, (outs), (ins), "fmins", [0, 1, 3, 4]>;
-def FMIND : E2KInst<0x35, (outs), (ins), "fmind", [0, 1, 3, 4]>;
+def FMINS : ALSInst<0x34, (outs), (ins), "fmins", c.c0134>;
+def FMIND : ALSInst<0x35, (outs), (ins), "fmind", c.c0134>;
 
-def STFSW : E2KInst<0x36, (outs), (ins), "stfsw", [2, 5]>;
-def STFSD : E2KInst<0x37, (outs), (ins), "stfsd", [2, 5]>;
+def STFSW : ALSInst<0x36, (outs), (ins), "stfsw", c.c25>;
+def STFSD : ALSInst<0x37, (outs), (ins), "stfsd", c.c25>;
 
 // floating-point MAX
-def FMAXS : E2KInst<0x36, (outs), (ins), "fmaxs", [0, 1, 3, 4]>;
-def FMAXD : E2KInst<0x37, (outs), (ins), "fmaxd", [0, 1, 3, 4]>;
+def FMAXS : ALSInst<0x36, (outs), (ins), "fmaxs", c.c0134>;
+def FMAXD : ALSInst<0x37, (outs), (ins), "fmaxd", c.c0134>;
 
-def STGSB : E2KInst<0x38, (outs), (ins), "stgsb", [2, 5]>;
-def STGSH : E2KInst<0x38, (outs), (ins), "stgsh", [2, 5]>;
+def STGSB : ALSInst<0x38, (outs), (ins), "stgsb", c.c25>;
+def STGSH : ALSInst<0x38, (outs), (ins), "stgsh", c.c25>;
 
 // floating-point MUL
-def FMULS : E2KInst<0x38, (outs), (ins), "fmuls", [0, 1, 3, 4]>;
-def FMULD : E2KInst<0x39, (outs), (ins), "fmuld", [0, 1, 3, 4]>;
+def FMULS : ALSInst<0x38, (outs), (ins), "fmuls", c.c0134>;
+def FMULD : ALSInst<0x39, (outs), (ins), "fmuld", c.c0134>;
 
-def STGSW : E2KInst<0x3a, (outs), (ins), "stgsw", [2, 5]>;
-def STGSD : E2KInst<0x3b, (outs), (ins), "stgsd", [2, 5]>;
+def STGSW : ALSInst<0x3a, (outs), (ins), "stgsw", c.c25>;
+def STGSD : ALSInst<0x3b, (outs), (ins), "stgsd", c.c25>;
 
-def STSSB : E2KInst<0x3c, (outs), (ins), "stssb", [2, 5]>;
+def STSSB : ALSInst<0x3c, (outs), (ins), "stssb", c.c25>;
 
 // convert fp32 to int32
-def FSTOIS : E2KEXTInst<0x3c, 0xC0, (outs), (ins), "fstois", [0, 1, 3, 4]>;
+def FSTOIS : ALSEXTInst<0x3c, 0xC0, (outs), (ins), "fstois", c.c0134>;
 
 // convert fp32 to int32 (with truncation)
-def FSTOISTR : E2KEXTInst<0x3c, 0xC2, (outs), (ins), "fstoistr", [0, 1, 3, 4]>;
+def FSTOISTR : ALSEXTInst<0x3c, 0xC2, (outs), (ins), "fstoistr", c.c0134>;
 
 // convert int32 to fp32
-def ISTOFS : E2KEXTInst<0x3c, 0xC4, (outs), (ins), "istofs", [0, 1, 3, 4]>;
+def ISTOFS : ALSEXTInst<0x3c, 0xC4, (outs), (ins), "istofs", c.c0134>;
 
-def STSSH : E2KInst<0x3d, (outs), (ins), "stssh", [2, 5]>;
+def STSSH : ALSInst<0x3d, (outs), (ins), "stssh", c.c25>;
 
 // convert fp64 to int64
-def FDTOID : E2KEXTInst<0x3d, 0xC0, (outs), (ins), "fdtoid", [0, 1, 3, 4]>;
+def FDTOID : ALSEXTInst<0x3d, 0xC0, (outs), (ins), "fdtoid", c.c0134>;
 
 // convert fp80 to int64
-def FXTOID : E2KEXTInst<0x3d, 0xC1, (outs), (ins), "fxtoid", [0, 1, 3, 4]>;
+def FXTOID : ALSEXTInst<0x3d, 0xC1, (outs), (ins), "fxtoid", c.c0134>;
 
 // convert fp64 to int64 (with truncation)
-def FDTOIDTR : E2KEXTInst<0x3d, 0xC2, (outs), (ins), "fdtoidtr", [0, 1, 3, 4]>;
+def FDTOIDTR : ALSEXTInst<0x3d, 0xC2, (outs), (ins), "fdtoidtr", c.c0134>;
 
 // convert fp80 to int64 (with truncation)
-def FXTOIDTR : E2KEXTInst<0x3d, 0xC3, (outs), (ins), "fxtoidtr", [0, 1, 3, 4]>;
+def FXTOIDTR : ALSEXTInst<0x3d, 0xC3, (outs), (ins), "fxtoidtr", c.c0134>;
 
 // convert int64 to fp64
-def IDTOFD : E2KEXTInst<0x3d, 0xC4, (outs), (ins), "idtofd", [0, 1, 3, 4]>;
+def IDTOFD : ALSEXTInst<0x3d, 0xC4, (outs), (ins), "idtofd", c.c0134>;
 
 // convert int64 to fp80
-def IDTOFX : E2KEXTInst<0x3d, 0xC5, (outs), (ins), "idtofx", [0, 1, 3, 4]>;
+def IDTOFX : ALSEXTInst<0x3d, 0xC5, (outs), (ins), "idtofx", c.c0134>;
 
 // convert fp80 to fp64
-def FXTOFD : E2KEXTInst<0x3d, 0xC6, (outs), (ins), "fxtofd", [0, 1, 3, 4]>;
+def FXTOFD : ALSEXTInst<0x3d, 0xC6, (outs), (ins), "fxtofd", c.c0134>;
 
 // convert fp64 to fp80
-def FDTOFX : E2KEXTInst<0x3d, 0xC7, (outs), (ins), "fdtofx", [0, 1, 3, 4]>;
+def FDTOFX : ALSEXTInst<0x3d, 0xC7, (outs), (ins), "fdtofx", c.c0134>;
 
 // package convert fp32 to int32
-def PFSTOIS : E2KEXTInst<0x3d, 0xC8, (outs), (ins), "pfstois", [0, 1, 3, 4]>;
+def PFSTOIS : ALSEXTInst<0x3d, 0xC8, (outs), (ins), "pfstois", c.c0134>;
 
 // package convert fp32 to int32 (with truncation)
-def PFSTOISTR : E2KEXTInst<0x3d, 0xCA, (outs), (ins), "pfstoistr", [0, 1, 3, 4]>;
+def PFSTOISTR : ALSEXTInst<0x3d, 0xCA, (outs), (ins), "pfstoistr", c.c0134>;
 
 // package convert int32 to fp32
-def PISTOFS : E2KEXTInst<0x3d, 0xCC, (outs), (ins), "pistofs", [0, 1, 3, 4]>;
+def PISTOFS : ALSEXTInst<0x3d, 0xCC, (outs), (ins), "pistofs", c.c0134>;
 
-def STSSW : E2KInst<0x3e, (outs), (ins), "stssw", [2, 5]>;
+def STSSW : ALSInst<0x3e, (outs), (ins), "stssw", c.c25>;
 
 // convert fp32 to int64
-def FSTOID : E2KEXTInst<0x3e, 0xC0, (outs), (ins), "fstoid", [0, 1, 3, 4]>;
+def FSTOID : ALSEXTInst<0x3e, 0xC0, (outs), (ins), "fstoid", c.c0134>;
 
 // convert fp32 to int64 (with truncation)
-def FSTOIDTR : E2KEXTInst<0x3e, 0xC2, (outs), (ins), "fstoidtr", [0, 1, 3, 4]>;
+def FSTOIDTR : ALSEXTInst<0x3e, 0xC2, (outs), (ins), "fstoidtr", c.c0134>;
 
 // convert int32 to fp64
-def ISTOFD : E2KEXTInst<0x3e, 0xC4, (outs), (ins), "istofd", [0, 1, 3, 4]>;
+def ISTOFD : ALSEXTInst<0x3e, 0xC4, (outs), (ins), "istofd", c.c0134>;
 
 // convert int32 to fp80
-def ISTOFX : E2KEXTInst<0x3e, 0xC5, (outs), (ins), "istofx", [0, 1, 3, 4]>;
+def ISTOFX : ALSEXTInst<0x3e, 0xC5, (outs), (ins), "istofx", c.c0134>;
 
 // convert fp32 to fp64
-def FSTOFD : E2KEXTInst<0x3e, 0xC6, (outs), (ins), "fstofd", [0, 1, 3, 4]>;
+def FSTOFD : ALSEXTInst<0x3e, 0xC6, (outs), (ins), "fstofd", c.c0134>;
 
 // convert fp32 to fp80
-def FSTOFX : E2KEXTInst<0x3e, 0xC7, (outs), (ins), "fstofx", [0, 1, 3, 4]>;
+def FSTOFX : ALSEXTInst<0x3e, 0xC7, (outs), (ins), "fstofx", c.c0134>;
 
 // package convert fp32 to fp64
-def PFSTOFD : E2KEXTInst<0x3e, 0xCE, (outs), (ins), "pfstofd", [0, 1, 3, 4]>;
+def PFSTOFD : ALSEXTInst<0x3e, 0xCE, (outs), (ins), "pfstofd", c.c0134>;
 
-def STSSD : E2KInst<0x3f, (outs), (ins), "stssd", [2, 5]>;
+def STSSD : ALSInst<0x3f, (outs), (ins), "stssd", c.c25>;
 
 // convert fp64 to int32
-def FDTOIS : E2KEXTInst<0x3f, 0xC0, (outs), (ins), "fdtois", [0, 1, 3, 4]>;
+def FDTOIS : ALSEXTInst<0x3f, 0xC0, (outs), (ins), "fdtois", c.c0134>;
 
 // convert fp80 to int32
-def FXTOIS : E2KEXTInst<0x3f, 0xC1, (outs), (ins), "fxtois", [0, 1, 3, 4]>;
+def FXTOIS : ALSEXTInst<0x3f, 0xC1, (outs), (ins), "fxtois", c.c0134>;
 
 // convert fp64 to int32 (with truncation)
-def FDTOISTR : E2KEXTInst<0x3f, 0xC2, (outs), (ins), "fdtoistr", [0, 1, 3, 4]>;
+def FDTOISTR : ALSEXTInst<0x3f, 0xC2, (outs), (ins), "fdtoistr", c.c0134>;
 
 // convert fp80 to int32 (with truncation)
-def FXTOISTR : E2KEXTInst<0x3f, 0xC3, (outs), (ins), "fxtoistr", [0, 1, 3, 4]>;
+def FXTOISTR : ALSEXTInst<0x3f, 0xC3, (outs), (ins), "fxtoistr", c.c0134>;
 
 // convert int64 to fp32
-def IDTOFS : E2KEXTInst<0x3f, 0xC4, (outs), (ins), "idtofs", [0, 1, 3, 4]>;
+def IDTOFS : ALSEXTInst<0x3f, 0xC4, (outs), (ins), "idtofs", c.c0134>;
 
 // convert fp64 to fp32
-def FDTOFS : E2KEXTInst<0x3f, 0xC6, (outs), (ins), "fdtofs", [0, 1, 3, 4]>;
+def FDTOFS : ALSEXTInst<0x3f, 0xC6, (outs), (ins), "fdtofs", c.c0134>;
 
 // convert fp80 to fp32
-def FXTOFS : E2KEXTInst<0x3f, 0xC7, (outs), (ins), "fxtofs", [0, 1, 3, 4]>;
+def FXTOFS : ALSEXTInst<0x3f, 0xC7, (outs), (ins), "fxtofs", c.c0134>;
 
 // packed convert fp64 to int32
-def PFDTOIS : E2KEXTInst<0x3f, 0xC8, (outs), (ins), "pfdtois", [0, 1, 3, 4]>;
+def PFDTOIS : ALSEXTInst<0x3f, 0xC8, (outs), (ins), "pfdtois", c.c0134>;
 
 // packed convert fp64 to int32 (with truncation)
-def PFDTOISTR : E2KEXTInst<0x3f, 0xCA, (outs), (ins), "pfdtoistr", [0, 1, 3, 4]>;
+def PFDTOISTR : ALSEXTInst<0x3f, 0xCA, (outs), (ins), "pfdtoistr", c.c0134>;
 
 // packed convert fp64 to fp32
-def PFDTOFS : E2KEXTInst<0x3f, 0xCE, (outs), (ins), "pfdtofs", [0, 1, 3, 4]>;
+def PFDTOFS : ALSEXTInst<0x3f, 0xCE, (outs), (ins), "pfdtofs", c.c0134>;
 
-def FXADDSS : E2KInst<0x40, (outs), (ins), "fxaddss", [0, 1, 3, 4]>;
-def FXADDDD : E2KInst<0x41, (outs), (ins), "fxadddd", [0, 1, 3, 4]>;
+def FXADDSS : ALSInst<0x40, (outs), (ins), "fxaddss", c.c0134>;
+def FXADDDD : ALSInst<0x41, (outs), (ins), "fxadddd", c.c0134>;
 
 // unsigned integer DIV
-def UDIVS : E2KInst<0x40, (outs), (ins), "udivs", [5]>;
-def UDIVD : E2KInst<0x41, (outs), (ins), "udivd", [5]>;
-def UDIVX : E2KInst<0x44, (outs), (ins), "udivx", [5]>;
+def UDIVS : ALSInst<0x40, (outs), (ins), "udivs", c.c5>;
+def UDIVD : ALSInst<0x41, (outs), (ins), "udivd", c.c5>;
+def UDIVX : ALSInst<0x44, (outs), (ins), "udivx", c.c5>;
 
-def FXADDSX : E2KInst<0x42, (outs), (ins), "fxaddsx", [0, 1, 3, 4]>;
-def FXADDDX : E2KInst<0x43, (outs), (ins), "fxadddx", [0, 1, 3, 4]>;
+def FXADDSX : ALSInst<0x42, (outs), (ins), "fxaddsx", c.c0134>;
+def FXADDDX : ALSInst<0x43, (outs), (ins), "fxadddx", c.c0134>;
 
 // signed integer DIV
-def SDIVS : E2KInst<0x42, (outs), (ins), "sdivs", [5]>;
-def SDIVD : E2KInst<0x43, (outs), (ins), "sdivd", [5]>;
-def SDIVX : E2KInst<0x46, (outs), (ins), "sdivx", [5]>;
+def SDIVS : ALSInst<0x42, (outs), (ins), "sdivs", c.c5>;
+def SDIVD : ALSInst<0x43, (outs), (ins), "sdivd", c.c5>;
+def SDIVX : ALSInst<0x46, (outs), (ins), "sdivx", c.c5>;
 
-def FXADDXS : E2KInst<0x44, (outs), (ins), "fxaddxs", [0, 1, 3, 4]>;
-def FXADDXD : E2KInst<0x45, (outs), (ins), "fxaddxd", [0, 1, 3, 4]>;
+def FXADDXS : ALSInst<0x44, (outs), (ins), "fxaddxs", c.c0134>;
+def FXADDXD : ALSInst<0x45, (outs), (ins), "fxaddxd", c.c0134>;
 
 // unsigned modulo (remainder) of division
-def UMODX : E2KInst<0x45, (outs), (ins), "umodx", [5]>;
+def UMODX : ALSInst<0x45, (outs), (ins), "umodx", c.c5>;
 
-def FXADDXX : E2KInst<0x47, (outs), (ins), "fxaddxx", [0, 1, 3, 4]>;
+def FXADDXX : ALSInst<0x47, (outs), (ins), "fxaddxx", c.c0134>;
 
 // signed modulo (remainder) of division
-def SMODX : E2KInst<0x47, (outs), (ins), "smodx", [5]>;
+def SMODX : ALSInst<0x47, (outs), (ins), "smodx", c.c5>;
 
-def FXSUBSS : E2KInst<0x48, (outs), (ins), "fxsubss", [0, 1, 3, 4]>;
-def FXDIVSS : E2KInst<0x48, (outs), (ins), "fxdivss", [5]>;
+def FXSUBSS : ALSInst<0x48, (outs), (ins), "fxsubss", c.c0134>;
+def FXDIVSS : ALSInst<0x48, (outs), (ins), "fxdivss", c.c5>;
 
-def FXSUBDD : E2KInst<0x49, (outs), (ins), "fxsubdd", [0, 1, 3, 4]>;
-def FXDIVDD : E2KInst<0x49, (outs), (ins), "fxdivdd", [5]>;
+def FXSUBDD : ALSInst<0x49, (outs), (ins), "fxsubdd", c.c0134>;
+def FXDIVDD : ALSInst<0x49, (outs), (ins), "fxdivdd", c.c5>;
 
-def FXSUBSX : E2KInst<0x4a, (outs), (ins), "fxsubsx", [0, 1, 3, 4]>;
-def FXDIVSX : E2KInst<0x4a, (outs), (ins), "fxdivsx", [5]>;
+def FXSUBSX : ALSInst<0x4a, (outs), (ins), "fxsubsx", c.c0134>;
+def FXDIVSX : ALSInst<0x4a, (outs), (ins), "fxdivsx", c.c5>;
 
-def FXSUBDX : E2KInst<0x4b, (outs), (ins), "fxsubdx", [0, 1, 3, 4]>;
-def FXDIVDX : E2KInst<0x4b, (outs), (ins), "fxdivdx", [5]>;
+def FXSUBDX : ALSInst<0x4b, (outs), (ins), "fxsubdx", c.c0134>;
+def FXDIVDX : ALSInst<0x4b, (outs), (ins), "fxdivdx", c.c5>;
 
-def FXSUBXS : E2KInst<0x4c, (outs), (ins), "fxsubxs", [0, 1, 3, 4]>;
-def FXDIVXS : E2KInst<0x4c, (outs), (ins), "fxdivxs", [5]>;
+def FXSUBXS : ALSInst<0x4c, (outs), (ins), "fxsubxs", c.c0134>;
+def FXDIVXS : ALSInst<0x4c, (outs), (ins), "fxdivxs", c.c5>;
 
-def FXSUBXD : E2KInst<0x4d, (outs), (ins), "fxsubxd", [0, 1, 3, 4]>;
-def FXDIVXD : E2KInst<0x4d, (outs), (ins), "fxdivxd", [5]>;
+def FXSUBXD : ALSInst<0x4d, (outs), (ins), "fxsubxd", c.c0134>;
+def FXDIVXD : ALSInst<0x4d, (outs), (ins), "fxdivxd", c.c5>;
 
 // 0x4e ???
 
-def FXSUBXX : E2KInst<0x4f, (outs), (ins), "fxsubxx", [0, 1, 3, 4]>;
-def FXDIVXX : E2KInst<0x4f, (outs), (ins), "fxdivxdx", [5]>;
+def FXSUBXX : ALSInst<0x4f, (outs), (ins), "fxsubxx", c.c0134>;
+def FXDIVXX : ALSInst<0x4f, (outs), (ins), "fxdivxdx", c.c5>;
 
-def FXMULSS : E2KInst<0x50, (outs), (ins), "fxmulss", [0, 1, 3, 4]>;
-def FXMULDD : E2KInst<0x51, (outs), (ins), "fxmuldd", [0, 1, 3, 4]>;
-def FXMULSX : E2KInst<0x52, (outs), (ins), "fxmulsx", [0, 1, 3, 4]>;
-def FXMULDX : E2KInst<0x53, (outs), (ins), "fxmuldx", [0, 1, 3, 4]>;
+def FXMULSS : ALSInst<0x50, (outs), (ins), "fxmulss", c.c0134>;
+def FXMULDD : ALSInst<0x51, (outs), (ins), "fxmuldd", c.c0134>;
+def FXMULSX : ALSInst<0x52, (outs), (ins), "fxmulsx", c.c0134>;
+def FXMULDX : ALSInst<0x53, (outs), (ins), "fxmuldx", c.c0134>;
 
-def FXSQRTISX : E2KEXTInst<0x52, 0xC0, (outs), (ins), "fxsqrtisx", [5]>;
-def FXSQRTIDX : E2KEXTInst<0x53, 0xC0, (outs), (ins), "fxsqrtdsx", [5]>;
+def FXSQRTISX : ALSEXTInst<0x52, 0xC0, (outs), (ins), "fxsqrtisx", c.c5>;
+def FXSQRTIDX : ALSEXTInst<0x53, 0xC0, (outs), (ins), "fxsqrtdsx", c.c5>;
 
-def FXMULXS : E2KInst<0x54, (outs), (ins), "fxmulxs", [0, 1, 3, 4]>;
-def FXMULXD : E2KInst<0x55, (outs), (ins), "fxmulxd", [0, 1, 3, 4]>;
+def FXMULXS : ALSInst<0x54, (outs), (ins), "fxmulxs", c.c0134>;
+def FXMULXD : ALSInst<0x55, (outs), (ins), "fxmulxd", c.c0134>;
 
 // 0x56 ???
 
-def FXMULXX : E2KInst<0x57, (outs), (ins), "fxmulxx", [0, 1, 3, 4]>;
+def FXMULXX : ALSInst<0x57, (outs), (ins), "fxmulxx", c.c0134>;
 
-def FXSQRTIXX : E2KEXTInst<0x57, 0xC0, (outs), (ins), "fxsqrtdxx", [5]>;
+def FXSQRTIXX : ALSEXTInst<0x57, 0xC0, (outs), (ins), "fxsqrtdxx", c.c5>;
 
-def FXRSUBSS : E2KInst<0x58, (outs), (ins), "fxrsubss", [0, 1, 3, 4]>;
-def FXRSUBDD : E2KInst<0x59, (outs), (ins), "fxrsubdd", [0, 1, 3, 4]>;
-def FXRSUBSX : E2KInst<0x5a, (outs), (ins), "fxrsubsx", [0, 1, 3, 4]>;
-def FXRSUBDX : E2KInst<0x5b, (outs), (ins), "fxrsubdx", [0, 1, 3, 4]>;
+def FXRSUBSS : ALSInst<0x58, (outs), (ins), "fxrsubss", c.c0134>;
+def FXRSUBDD : ALSInst<0x59, (outs), (ins), "fxrsubdd", c.c0134>;
+def FXRSUBSX : ALSInst<0x5a, (outs), (ins), "fxrsubsx", c.c0134>;
+def FXRSUBDX : ALSInst<0x5b, (outs), (ins), "fxrsubdx", c.c0134>;
 
-def FXSQRTUXX : E2KInst<0x59, (outs), (ins), "fxsqrtuxx", [5]>;
-def FXSQRTUSX : E2KInst<0x5a, (outs), (ins), "fxsqrtusx", [5]>;
-def FXSQRTUDX : E2KInst<0x5b, (outs), (ins), "fxsqrtudx", [5]>;
+def FXSQRTUXX : ALSInst<0x59, (outs), (ins), "fxsqrtuxx", c.c5>;
+def FXSQRTUSX : ALSInst<0x5a, (outs), (ins), "fxsqrtusx", c.c5>;
+def FXSQRTUDX : ALSInst<0x5b, (outs), (ins), "fxsqrtudx", c.c5>;
 
-def MOVFI : E2KEXTInst<0x5c, 0xC0, (outs), (ins), "movfi", [0, 1, 3, 4]>;
+def MOVFI : ALSEXTInst<0x5c, 0xC0, (outs), (ins), "movfi", c.c0134>;
 
-def FXSQRTTXX : E2KInst<0x5d, (outs), (ins), "fxsqrttxx", [5]>;
+def FXSQRTTXX : ALSInst<0x5d, (outs), (ins), "fxsqrttxx", c.c5>;
 
-def MOVIF : E2KInst<0x5e, (outs), (ins), "movif", [0, 1, 3, 4]>;
+def MOVIF : ALSInst<0x5e, (outs), (ins), "movif", c.c0134>;
 
-def FXSQRTTSX : E2KInst<0x5e, (outs), (ins), "fxsqrttsx", [5]>;
+def FXSQRTTSX : ALSInst<0x5e, (outs), (ins), "fxsqrttsx", c.c5>;
 
-def MOVX : E2KEXTInst<0x5f, 0xC0, (outs), (ins), "movx", [0, 1, 3, 4]>;
-def MOVXA : E2KEXTInst<0x5f, 0xC1, (outs), (ins), "movxa", [0, 1, 3, 4]>;
-def MOVXC : E2KEXTInst<0x5f, 0xC2, (outs), (ins), "movxc", [0, 1, 3, 4]>;
+def MOVX : ALSEXTInst<0x5f, 0xC0, (outs), (ins), "movx", c.c0134>;
+def MOVXA : ALSEXTInst<0x5f, 0xC1, (outs), (ins), "movxa", c.c0134>;
+def MOVXC : ALSEXTInst<0x5f, 0xC2, (outs), (ins), "movxc", c.c0134>;
 
-def FXSQRTTDX : E2KInst<0x5f, (outs), (ins), "fxsqrttdx", [5]>;
+def FXSQRTTDX : ALSInst<0x5f, (outs), (ins), "fxsqrttdx", c.c5>;
 
 // move tagged value
-def MOVTS : E2KEXTInst<0x60, 0xC0, (outs), (ins), "movts", [0, 1, 3, 4]>;
-def MOVTCS : E2KEXTInst<0x60, 0xC1, (outs), (ins), "movtcs", [0, 1, 3, 4]>;
-def MOVTRS : E2KEXTInst<0x60, 0xC2, (outs), (ins), "movtrs", [0, 1, 3, 4]>;
-def MOVTRCS : E2KEXTInst<0x60, 0xC3, (outs), (ins), "movtrcs", [0, 1, 3, 4]>;
+def MOVTS : ALSEXTInst<0x60, 0xC0, (outs), (ins), "movts", c.c0134>;
+def MOVTCS : ALSEXTInst<0x60, 0xC1, (outs), (ins), "movtcs", c.c0134>;
+def MOVTRS : ALSEXTInst<0x60, 0xC2, (outs), (ins), "movtrs", c.c0134>;
+def MOVTRCS : ALSEXTInst<0x60, 0xC3, (outs), (ins), "movtrcs", c.c0134>;
 
-def FXDIVTSS : E2KInst<0x60, (outs), (ins), "fxdivtss", [5]>;
+def FXDIVTSS : ALSInst<0x60, (outs), (ins), "fxdivtss", c.c5>;
 
-def MOVTD : E2KEXTInst<0x61, 0xC0, (outs), (ins), "movtd", [0, 1, 3, 4]>;
-def MOVTCD : E2KEXTInst<0x61, 0xC1, (outs), (ins), "movtcd", [0, 1, 3, 4]>;
-def MOVTRD : E2KEXTInst<0x61, 0xC2, (outs), (ins), "movtrd", [0, 1, 3, 4]>;
-def MOVTRCD : E2KEXTInst<0x61, 0xC3, (outs), (ins), "movtrcd", [0, 1, 3, 4]>;
+def MOVTD : ALSEXTInst<0x61, 0xC0, (outs), (ins), "movtd", c.c0134>;
+def MOVTCD : ALSEXTInst<0x61, 0xC1, (outs), (ins), "movtcd", c.c0134>;
+def MOVTRD : ALSEXTInst<0x61, 0xC2, (outs), (ins), "movtrd", c.c0134>;
+def MOVTRCD : ALSEXTInst<0x61, 0xC3, (outs), (ins), "movtrcd", c.c0134>;
 
-def FXDIVTDD : E2KInst<0x61, (outs), (ins), "fxdivtdd", [5]>;
+def FXDIVTDD : ALSInst<0x61, (outs), (ins), "fxdivtdd", c.c5>;
 
-def GETSAP : E2KEXTInst<0x62, 0xEC, (outs), (ins), "getsap", [0, 1, 3, 4]>;
-def CUDTOAP : E2KEXTInst<0x62, 0xF0, (outs), (ins), "cudtoap", [0, 1, 3, 4]>;
-def GDTOAP : E2KEXTInst<0x62, 0xF2, (outs), (ins), "gdtoap", [0, 1, 3, 4]>;
+def GETSAP : ALSEXTInst<0x62, 0xEC, (outs), (ins), "getsap", c.c0134>;
+def CUDTOAP : ALSEXTInst<0x62, 0xF0, (outs), (ins), "cudtoap", c.c0134>;
+def GDTOAP : ALSEXTInst<0x62, 0xF2, (outs), (ins), "gdtoap", c.c0134>;
 
-def FXDIVTSX : E2KInst<0x62, (outs), (ins), "fxdivtsx", [5]>;
+def FXDIVTSX : ALSInst<0x62, (outs), (ins), "fxdivtsx", c.c5>;
 
-def GETPL : E2KEXTInst<0x63, 0xF0, (outs), (ins), "gdtoap", [0, 3]>;
+def GETPL : ALSEXTInst<0x63, 0xF0, (outs), (ins), "gdtoap", c.c03>;
 
-def VFSI : E2KInst<0x63, (outs), (ins), "gdtoap", [1, 4]>;
+def VFSI : ALSInst<0x63, (outs), (ins), "gdtoap", c.c14>;
 
-def FXDIVTDX : E2KInst<0x63, (outs), (ins), "fxdivtdx", [5]>;
+def FXDIVTDX : ALSInst<0x63, (outs), (ins), "fxdivtdx", c.c5>;
 
 // load unsigned byte
-def LDB : E2KInst<0x64, (outs), (ins), "ldb", [0, 2, 3, 5]>;
+def LDB : ALSInst<0x64, (outs), (ins), "ldb", c.c0235>;
 
 // load unsigned half-word
-def LDH : E2KInst<0x65, (outs), (ins), "ldh", [0, 2, 3, 5]>;
+def LDH : ALSInst<0x65, (outs), (ins), "ldh", c.c0235>;
 
 // count number of leading zeroes
-def LZCNTS : E2KEXTInst<0x64, 0xC0, (outs), (ins), "lzcnts", [1, 4]>;
-def LZCNTD : E2KEXTInst<0x65, 0xC0, (outs), (ins), "lzcntd", [1, 4]>;
+def LZCNTS : ALSEXTInst<0x64, 0xC0, (outs), (ins), "lzcnts", c.c14>;
+def LZCNTD : ALSEXTInst<0x65, 0xC0, (outs), (ins), "lzcntd", c.c14>;
 
 // load unsigned word
-def LDW : E2KInst<0x66, (outs), (ins), "ldw", [0, 2, 3, 5]>;
+def LDW : ALSInst<0x66, (outs), (ins), "ldw", c.c0235>;
 
 // load unsigned double-word
-def LDD : E2KInst<0x67, (outs), (ins), "ldd", [0, 2, 3, 5]>;
+def LDD : ALSInst<0x67, (outs), (ins), "ldd", c.c0235>;
 
 // count of bits set to one
-def POPCNTS : E2KEXTInst<0x66, 0xC0, (outs), (ins), "popcnts", [1, 4]>;
-def POPCNTD : E2KEXTInst<0x67, 0xC0, (outs), (ins), "popcntd", [1, 4]>;
+def POPCNTS : ALSEXTInst<0x66, 0xC0, (outs), (ins), "popcnts", c.c14>;
+def POPCNTD : ALSEXTInst<0x67, 0xC0, (outs), (ins), "popcntd", c.c14>;
 
-def LDCSB : E2KInst<0x68, (outs), (ins), "ldcsb", [0, 2, 3, 5]>;
+def LDCSB : ALSInst<0x68, (outs), (ins), "ldcsb", c.c0235>;
 
-def VFBGV : E2KInst<0x68, (outs), (ins), "vfbgv", [1, 4]>;
+def VFBGV : ALSInst<0x68, (outs), (ins), "vfbgv", c.c14>;
 
-def LDCSH : E2KInst<0x69, (outs), (ins), "ldcsh", [0, 2, 3, 5]>;
+def LDCSH : ALSInst<0x69, (outs), (ins), "ldcsh", c.c0235>;
 
-def MODBGV : E2KEXTInst<0x69, 0xC0, (outs), (ins), "modbgv", [1, 4]>;
+def MODBGV : ALSEXTInst<0x69, 0xC0, (outs), (ins), "modbgv", c.c14>;
 
-def LDCSW : E2KInst<0x6a, (outs), (ins), "ldcsw", [0, 2, 3, 5]>;
+def LDCSW : ALSInst<0x6a, (outs), (ins), "ldcsw", c.c0235>;
 
-def MKFSW : E2KInst<0x6a, (outs), (ins), "mkfsw", [1, 4]>;
+def MKFSW : ALSInst<0x6a, (outs), (ins), "mkfsw", c.c14>;
 
-def LDCSD : E2KInst<0x6b, (outs), (ins), "ldcsd", [0, 2, 3, 5]>;
+def LDCSD : ALSInst<0x6b, (outs), (ins), "ldcsd", c.c0235>;
 
-def LDDSB : E2KInst<0x6c, (outs), (ins), "lddsb", [0, 2, 3, 5]>;
+def LDDSB : ALSInst<0x6c, (outs), (ins), "lddsb", c.c0235>;
 
-def LDDSH : E2KInst<0x6d, (outs), (ins), "lddsh", [0, 2, 3, 5]>;
+def LDDSH : ALSInst<0x6d, (outs), (ins), "lddsh", c.c0235>;
 
-def LDDSW : E2KInst<0x6e, (outs), (ins), "lddsw", [0, 2, 3, 5]>;
+def LDDSW : ALSInst<0x6e, (outs), (ins), "lddsw", c.c0235>;
 
-def LDDSD : E2KInst<0x6f, (outs), (ins), "lddsd", [0, 2, 3, 5]>;
+def LDDSD : ALSInst<0x6f, (outs), (ins), "lddsd", c.c0235>;
 
-def LDESB : E2KInst<0x70, (outs), (ins), "ldesb", [0, 2, 3, 5]>;
+def LDESB : ALSInst<0x70, (outs), (ins), "ldesb", c.c0235>;
 
-def LDESH : E2KInst<0x71, (outs), (ins), "ldesh", [0, 2, 3, 5]>;
+def LDESH : ALSInst<0x71, (outs), (ins), "ldesh", c.c0235>;
 
-def LDESW : E2KInst<0x72, (outs), (ins), "ldesw", [0, 2, 3, 5]>;
+def LDESW : ALSInst<0x72, (outs), (ins), "ldesw", c.c0235>;
 
-def LDESD : E2KInst<0x73, (outs), (ins), "ldesd", [0, 2, 3, 5]>;
+def LDESD : ALSInst<0x73, (outs), (ins), "ldesd", c.c0235>;
 
-def LDFSB : E2KInst<0x74, (outs), (ins), "ldfsb", [0, 2, 3, 5]>;
+def LDFSB : ALSInst<0x74, (outs), (ins), "ldfsb", c.c0235>;
 
-def LDFSH : E2KInst<0x75, (outs), (ins), "ldfsh", [0, 2, 3, 5]>;
+def LDFSH : ALSInst<0x75, (outs), (ins), "ldfsh", c.c0235>;
 
-def LDFSW : E2KInst<0x76, (outs), (ins), "ldfsw", [0, 2, 3, 5]>;
+def LDFSW : ALSInst<0x76, (outs), (ins), "ldfsw", c.c0235>;
 
-def LDFSD : E2KInst<0x77, (outs), (ins), "ldfsd", [0, 2, 3, 5]>;
+def LDFSD : ALSInst<0x77, (outs), (ins), "ldfsd", c.c0235>;
 
-def LDGSB : E2KInst<0x78, (outs), (ins), "ldgsb", [0, 2, 3, 5]>;
+def LDGSB : ALSInst<0x78, (outs), (ins), "ldgsb", c.c0235>;
 
-def LDGSH : E2KInst<0x79, (outs), (ins), "ldgsh", [0, 2, 3, 5]>;
+def LDGSH : ALSInst<0x79, (outs), (ins), "ldgsh", c.c0235>;
 
-def LDGSW : E2KInst<0x7a, (outs), (ins), "ldgsw", [0, 2, 3, 5]>;
+def LDGSW : ALSInst<0x7a, (outs), (ins), "ldgsw", c.c0235>;
 
-def LDGSD : E2KInst<0x7b, (outs), (ins), "ldgsd", [0, 2, 3, 5]>;
+def LDGSD : ALSInst<0x7b, (outs), (ins), "ldgsd", c.c0235>;
 
-def LDSSB : E2KInst<0x7c, (outs), (ins), "ldssb", [0, 2, 3, 5]>;
+def LDSSB : ALSInst<0x7c, (outs), (ins), "ldssb", c.c0235>;
 
-def LDSSH : E2KInst<0x7d, (outs), (ins), "ldssh", [0, 2, 3, 5]>;
+def LDSSH : ALSInst<0x7d, (outs), (ins), "ldssh", c.c0235>;
 
-def LDSSW : E2KInst<0x7e, (outs), (ins), "ldssw", [0, 2, 3, 5]>;
+def LDSSW : ALSInst<0x7e, (outs), (ins), "ldssw", c.c0235>;
 
-def LDSSD : E2KInst<0x7f, (outs), (ins), "ldssw", [0, 2, 3, 5]>;
+def LDSSD : ALSInst<0x7f, (outs), (ins), "ldssw", c.c0235>;
+
+//===----------------------------------------------------------------------===//
+// ALES opcodes, opcode2 = 1
+//===----------------------------------------------------------------------===//
+
+def PMINUB : ALESInst<0x00, 0x01, (outs), (ins), "pminub", c.c03>;
+
+def PUNPCKHBH : ALESInst<0x00, 0x01, (outs), (ins), "punpckhbh", c.c14>;
+
+def PMINSH : ALESInst<0x01, 0x01, (outs), (ins), "pminsh", c.c03>;
+
+def PUNPCKLBH : ALESInst<0x01, 0x01, (outs), (ins), "punpcklbh", c.c14>;
+
+def STQ : ALESInst<0x01, 0x01, (outs), (ins), "stq", c.c5>;
+
+def PMAXUB : ALESInst<0x02, 0x01, (outs), (ins), "pmaxub", c.c03>;
+
+def PUNPCKHHW : ALESInst<0x02, 0x01, (outs), (ins), "punpckhhw", c.c14>;
+
+def PMAXSH : ALESInst<0x03, 0x01, (outs), (ins), "pmaxsh", c.c03>;
+
+def PUNPCKLHW : ALESInst<0x03, 0x01, (outs), (ins), "punpcklhw", c.c14>;
+
+def PMINSB : ALESInst<0x04, 0x01, (outs), (ins), "pminsb", c.c03>;
+
+def PUNPCKHWD : ALESInst<0x04, 0x01, (outs), (ins), "punpckhwd", c.c14>;
+
+def PMINUH : ALESInst<0x05, 0x01, (outs), (ins), "pminuh", c.c03>;
+
+def PUNPCKLWD : ALESInst<0x05, 0x01, (outs), (ins), "punpcklwd", c.c14>;
+
+def PMAXSB : ALESInst<0x06, 0x01, (outs), (ins), "pmaxsb", c.c03>;
+
+def PMOVMSKPS : ALESInst<0x06, 0x01, (outs), (ins), "pmovmskps", c.c14>;
+
+def PMAXUH : ALESInst<0x07, 0x01, (outs), (ins), "pmaxuh", c.c03>;
+
+def PMOVMSKPD : ALESInst<0x07, 0x01, (outs), (ins), "pmovmskpd", c.c14>;
+
+def PADDB : ALESInst<0x08, 0x01, (outs), (ins), "paddb", c.c03>;
+
+def PACKSSHB : ALESInst<0x08, 0x01, (outs), (ins), "packsshb", c.c14>;
+
+def PADDH : ALESInst<0x09, 0x01, (outs), (ins), "paddh", c.c03>;
+
+def PACKUSHB : ALESInst<0x09, 0x01, (outs), (ins), "packushb", c.c14>;
+
+def PADDSB : ALESInst<0x0a, 0x01, (outs), (ins), "paddsb", c.c03>;
+
+def PACKSSWH : ALESInst<0x0a, 0x01, (outs), (ins), "packsswh", c.c14>;
+
+def PUTTAGS : ALESInst<0x0a, 0x01, (outs), (ins), "puttags", c.c5>;
+
+def PADDSH : ALESInst<0x0b, 0x01, (outs), (ins), "paddsh", c.c03>;
+
+def PMOVMSKB : ALESInst<0x0b, 0x01, (outs), (ins), "pmovmskb", c.c14>;
+
+def PUTTAGD : ALESInst<0x0b, 0x01, (outs), (ins), "puttagd", c.c5>;
+
+def PADDUSB : ALESInst<0x0c, 0x01, (outs), (ins), "paddusb", c.c03>;
+
+def PSRLQH : ALESInst<0x0c, 0x01, (outs), (ins), "psrlqh", c.c14>;
+
+def PADDUSH : ALESInst<0x0d, 0x01, (outs), (ins), "paddush", c.c03>;
+
+def PSRLQL : ALESInst<0x0d, 0x01, (outs), (ins), "psrlql", c.c14>;
+
+def PADDW : ALESInst<0x0e, 0x01, (outs), (ins), "paddw", c.c03>;
+
+def PSLLQH : ALESInst<0x0e, 0x01, (outs), (ins), "psllqh", c.c14>;
+
+def PADDD : ALESInst<0x0f, 0x01, (outs), (ins), "paddd", c.c03>;
+
+def PSLLQL : ALESInst<0x0f, 0x01, (outs), (ins), "psllql", c.c14>;
+
+def PSUBB : ALESInst<0x10, 0x01, (outs), (ins), "psubb", c.c03>;
+
+def PSRLW : ALESInst<0x10, 0x01, (outs), (ins), "psrlw", c.c14>;
+
+def PSUBH : ALESInst<0x11, 0x01, (outs), (ins), "psubh", c.c03>;
+
+def PSRLH : ALESInst<0x11, 0x01, (outs), (ins), "psrlh", c.c14>;
+
+def PSUBSB : ALESInst<0x12, 0x01, (outs), (ins), "psubsb", c.c03>;
+
+def PSRAW : ALESInst<0x12, 0x01, (outs), (ins), "psraw", c.c14>;
+
+def PSUBSH : ALESInst<0x13, 0x01, (outs), (ins), "psubsh", c.c03>;
+
+def PSRAH : ALESInst<0x13, 0x01, (outs), (ins), "psrah", c.c14>;
+
+def PSUBUSB : ALESInst<0x14, 0x01, (outs), (ins), "psubusb", c.c03>;
+
+def PSLLW : ALESInst<0x14, 0x01, (outs), (ins), "psllw", c.c14>;
+
+def PSUBUSH : ALESInst<0x15, 0x01, (outs), (ins), "psubush", c.c03>;
+
+def PSLLH : ALESInst<0x15, 0x01, (outs), (ins), "psllh", c.c14>;
+
+def PSUBW : ALESInst<0x16, 0x01, (outs), (ins), "psubw", c.c03>;
+
+def PSHUFW : ALESInst<0x16, 0x01, (outs), (ins), "pshufw", c.c14>;
+
+def PSUBD : ALESInst<0x17, 0x01, (outs), (ins), "psubd", c.c03>;
+
+def PCMPEQB : ALESInst<0x18, 0x01, (outs), (ins), "pcmpeqb", c.c03>;
+
+def PMULHH : ALESInst<0x18, 0x01, (outs), (ins), "pmulhh", c.c14>;
+
+def PCMPEQH : ALESInst<0x19, 0x01, (outs), (ins), "pcmpeqh", c.c03>;
+
+def PMULLH : ALESInst<0x19, 0x01, (outs), (ins), "pmullh", c.c14>;
+
+def PCMPEQW : ALESInst<0x1a, 0x01, (outs), (ins), "pcmpeqw", c.c03>;
+
+def PMADDH : ALESInst<0x1a, 0x01, (outs), (ins), "pmaddh", c.c14>;
+
+def PCMPGTB : ALESInst<0x1b, 0x01, (outs), (ins), "pcmpgtb", c.c03>;
+
+def PMULHUH : ALESInst<0x1b, 0x01, (outs), (ins), "pmulhuh", c.c14>;
+
+def STRD : ALESInst<0x1b, 0x01, (outs), (ins), "strd", c.c5>;
+
+def PCMPGTH : ALESInst<0x1c, 0x01, (outs), (ins), "pcmpgth", c.c03>;
+
+def PSADBW : ALESInst<0x1c, 0x01, (outs), (ins), "psadbw", c.c14>;
+
+/* store array byte */
+def STAAB : ALESInst<0x1c, 0x01, (outs), (ins), "staab", c.c5>;
+
+def PCMPGTW : ALESInst<0x1d, 0x01, (outs), (ins), "pcmpgtw", c.c03>;
+
+def PMULUBHH : ALESInst<0x1d, 0x01, (outs), (ins), "pmulubhh", c.c14>;
+
+/* store array half-word */
+def STAAH : ALESInst<0x1d, 0x01, (outs), (ins), "staah", c.c5>;
+
+def PAVGUSB : ALESInst<0x1e, 0x01, (outs), (ins), "pavgusb", c.c03>;
+
+def PEXTRH : ALESInst<0x1e, 0x01, (outs), (ins), "pextrh", c.c14>;
+
+// store array word
+def STAAW : ALESInst<0x1e, 0x01, (outs), (ins), "staaw", c.c5>;
+
+def PAVGUSH : ALESInst<0x1f, 0x01, (outs), (ins), "pavgush", c.c03>;
+
+def PINSH : ALESInst<0x1f, 0x01, (outs), (ins), "pinsh", c.c14>;
+
+// store array double-word
+def STAAD : ALESInst<0x1f, 0x01, (outs), (ins), "staad", c.c5>;
+
+// integer MUL
+def MULS : ALESInst<0x20, 0x01, (outs), (ins), "muls", c.c0134>;
+def MULD : ALESInst<0x21, 0x01, (outs), (ins), "muld", c.c0134>;
+
+// integer MUL (without sign)
+def UMULX : ALESInst<0x22, 0x01, (outs), (ins), "umulx", c.c0134>;
+
+// integer MUL (with sign)
+def SMULX : ALESInst<0x23, 0x01, (outs), (ins), "smulx", c.c0134>;
+
+// multiply by integer power of two
+def FSCALES : ALESInst<0x24, 0x01, (outs), (ins), "fscales", c.c14>;
+def FSCALED : ALESInst<0x25, 0x01, (outs), (ins), "fscaled", c.c14>;
+
+// store byte (guarded)
+def STGDB : ALESInst<0x24, 0x01, (outs), (ins), "stgdb", c.c5>;
+
+def PUTTC : ALESInst<0x25, 0x01, (outs), (ins), "puttc", c.c0>;
+
+// store half-word (guarded)
+def STGDH : ALESInst<0x25, 0x01, (outs), (ins), "stgdh", c.c5>;
+
+def PMULLW : ALESInst<0x26, 0x01, (outs), (ins), "pmullw", c.c14>;
+
+// store word (guarded)
+def STGDW : ALESInst<0x26, 0x01, (outs), (ins), "stgdw", c.c5>;
+
+def FXSCALESX : ALESInst<0x27, 0x01, (outs), (ins), "fxscalesx", c.c14>;
+
+// store double-word (guarded)
+def STGDD : ALESInst<0x27, 0x01, (outs), (ins), "stgdd", c.c5>;
+
+def STAPB : ALESInst<0x28, 0x01, (outs), (ins), "stapb", c.c5>;
+def STAPH : ALESInst<0x29, 0x01, (outs), (ins), "staph", c.c5>;
+def STAPW : ALESInst<0x2a, 0x01, (outs), (ins), "stapw", c.c5>;
+def STAPD : ALESInst<0x2b, 0x01, (outs), (ins), "stapd", c.c5>;
+
+// floating-point compare, equal
+def FCMPEQS : ALESInst<0x2c, 0x01, (outs), (ins), "fcmpeqs", c.c0134>;
+def FCMPEQD : ALESInst<0x2d, 0x01, (outs), (ins), "fcmpeqd", c.c0134>;
+
+def PFADDS : ALESInst<0x30, 0x01, (outs), (ins), "pfadds", c.c0134>;
+def PFADDD : ALESInst<0x31, 0x01, (outs), (ins), "pfaddd", c.c0134>;
+
+def PFSUBS : ALESInst<0x32, 0x01, (outs), (ins), "pfsubs", c.c0134>;
+def PFSUBD : ALESInst<0x33, 0x01, (outs), (ins), "pfsubd", c.c0134>;
+
+def PFMINS : ALESInst<0x34, 0x01, (outs), (ins), "pfmins", c.c0134>;
+def PFMIND : ALESInst<0x35, 0x01, (outs), (ins), "pfmind", c.c0134>;
+
+def PFMAXS : ALESInst<0x36, 0x01, (outs), (ins), "pfmaxs", c.c0134>;
+def PFMAXD : ALESInst<0x37, 0x01, (outs), (ins), "pfmaxd", c.c0134>;
+
+def PFMULS : ALESInst<0x38, 0x01, (outs), (ins), "pfmuls", c.c0134>;
+def PFMULD : ALESInst<0x39, 0x01, (outs), (ins), "pfmuld", c.c0134>;
+
+def PFCMPEQS : ALESInst<0x3a, 0x01, (outs), (ins), "pfcmpeqs", c.c0134>;
+def PFCMPEQD : ALESInst<0x3b, 0x01, (outs), (ins), "pfcmpeqd", c.c0134>;
+
+// write control register
+def RWS : ALESInst<0x3c, 0x01, (outs), (ins), "rws", c.c0>;
+def RWD : ALESInst<0x3d, 0x01, (outs), (ins), "rwd", c.c0>;
+
+// read control register
+def RRS : ALESInst<0x3e, 0x01, (outs), (ins), "rrs", c.c0>;
+def RRD : ALESInst<0x3f, 0x01, (outs), (ins), "rrd", c.c0>;
+
+def PMRGP : ALESInst<0x40, 0x01, (outs), (ins), "pmrgp", c.c0134>;
+
+def LDQ : ALESInst<0x41, 0x01, (outs), (ins), "ldq", c.c03>;
+
+def LDCSQ : ALESInst<0x42, 0x01, (outs), (ins), "ldcsq", c.c03>;
+
+def LDDSQ : ALESInst<0x43, 0x01, (outs), (ins), "lddsq", c.c03>;
+
+def LDESQ : ALESInst<0x44, 0x01, (outs), (ins), "ldesq", c.c03>;
+
+def LDFSQ : ALESInst<0x45, 0x01, (outs), (ins), "ldfsq", c.c03>;
+
+def LDGSQ : ALESInst<0x46, 0x01, (outs), (ins), "lddsq", c.c03>;
+
+def LDSSQ : ALESInst<0x47, 0x01, (outs), (ins), "ldssq", c.c03>;
+
+def PANDD : ALESInst<0x48, 0x01, (outs), (ins), "pandd", c.c0134>;
+def PANDND : ALESInst<0x49, 0x01, (outs), (ins), "pandnd", c.c0134>;
+
+// floating-point DIV
+def FDIVS : ALESInst<0x48, 0x01, (outs), (ins), "fdivs", c.c5>;
+def FDIVD : ALESInst<0x49, 0x01, (outs), (ins), "fdivd", c.c5>;
+
+def PORD : ALESInst<0x4a, 0x01, (outs), (ins), "pord", c.c0134>;
+def PXORD : ALESInst<0x4b, 0x01, (outs), (ins), "pxord", c.c0134>;
+
+def PFDIVS : ALESInst<0x4a, 0x01, (outs), (ins), "pfdivs", c.c5>;
+def PFDIVD : ALESInst<0x4b, 0x01, (outs), (ins), "pfdivd", c.c5>;
+
+def PSRLD : ALESInst<0x4c, 0x01, (outs), (ins), "psrld", c.c14>;
+
+def PCMPEQD : ALESInst<0x4d, 0x01, (outs), (ins), "pcmpeqd", c.c03>;
+
+def PSLLD : ALESInst<0x4e, 0x01, (outs), (ins), "pslld", c.c14>;
+
+def PCMPGTD : ALESInst<0x4f, 0x01, (outs), (ins), "pcmpgtd", c.c03>;
+
+def APTOAP : ALESInst<0x50, 0x01, (outs), (ins), "aptoap", c.c03>;
+def APTOAPB : ALESInst<0x51, 0x01, (outs), (ins), "aptoapb", c.c03>;
+
+// square root, final command
+def FSQRTTD : ALESInst<0x51, 0x01, (outs), (ins), "fsqrttd", c.c5>;
+
+def GETVA : ALESInst<0x52, 0x01, (outs), (ins), "getva", c.c03>;
+
+def PFSQRTTD : ALESInst<0x53, 0x01, (outs), (ins), "pfsqrttd", c.c5>;
+
+def ICALLD : ALESInst<0x54, 0x01, (outs), (ins), "icalld", c.c0>;
+
+def MPSADBH : ALESInst<0x58, 0x01, (outs), (ins), "mpsadbh", c.c14>;
+
+def LDRD : ALESInst<0x5b, 0x01, (outs), (ins), "ldrd", c.c035>;
+
+// read AAU register
+def AAURR : ALESInst<0x5e, 0x01, (outs), (ins), "aaurr", c.c5>;
+def AAURRD : ALESInst<0x5f, 0x01, (outs), (ins), "aaurrd", c.c5>;
+
+def LDCUDB : ALESInst<0x60, 0x01, (outs), (ins), "ldcudb", c.c035>;
+def LDCUDH : ALESInst<0x61, 0x01, (outs), (ins), "ldcudh", c.c035>;
+def LDCUDW : ALESInst<0x62, 0x01, (outs), (ins), "ldcudw", c.c035>;
+def LDCUDD : ALESInst<0x63, 0x01, (outs), (ins), "ldcudd", c.c035>;
+
+def ADDCD : ALESInst<0x60, 0x01, (outs), (ins), "addcd", c.c14>;
+def ADDCD_C : ALESInst<0x61, 0x01, (outs), (ins), "addcd_c", c.c14>;
+def SUBCD : ALESInst<0x62, 0x01, (outs), (ins), "subcd", c.c14>;
+def SUBCD_C : ALESInst<0x63, 0x01, (outs), (ins), "subcd_c", c.c14>;
+
+// load byte (guarded)
+def LDGDB : ALESInst<0x64, 0x01, (outs), (ins), "ldgdb", c.c035>;
+
+// load half-word (guarded)
+def LDGDH : ALESInst<0x65, 0x01, (outs), (ins), "ldgdh", c.c035>;
+
+// load word (guarded)
+def LDGDW : ALESInst<0x66, 0x01, (outs), (ins), "ldgdw", c.c035>;
+
+// load double-word (guarded)
+def LDGDD : ALESInst<0x67, 0x01, (outs), (ins), "ldgdd", c.c035>;
+
+def LDAPB : ALESInst<0x68, 0x01, (outs), (ins), "ldapb", c.c035>;
+def LDAPH : ALESInst<0x69, 0x01, (outs), (ins), "ldaph", c.c035>;
+def LDAPW : ALESInst<0x6a, 0x01, (outs), (ins), "ldapw", c.c035>;
+def LDAPD : ALESInst<0x6b, 0x01, (outs), (ins), "ldapd", c.c035>;
+
+def PBADDUBSH : ALESInst<0x68, 0x01, (outs), (ins), "pmaddubsh", c.c14>;
+
+def PMULHRSH : ALESInst<0x69, 0x01, (outs), (ins), "pmulhrsh", c.c14>;
+
+def PHMINPOSUH : ALESInst<0x6a, 0x01, (outs), (ins), "phminposuh", c.c14>;
+
+def PACKUSWH : ALESInst<0x6b, 0x01, (outs), (ins), "packuswh", c.c14>;
+
+// convert fp32 to fp32 (integer part)
+def FSTOIFS : ALESInst<0x6c, 0x01, (outs), (ins), "fstoifs", c.c0134>;
+
+// convert fp64 to fp64 (integer part)
+def FDTOIFD : ALESInst<0x6d, 0x01, (outs), (ins), "fdtoifd", c.c0134>;
+
+// packed convert fp32 to fp32 (integer part)
+def PFSTOIFS : ALESInst<0x6e, 0x01, (outs), (ins), "pfstoifs", c.c0134>;
+
+// packed convert fp64 to fp64 (integer part)
+def PFDTOIFD : ALESInst<0x6f, 0x01, (outs), (ins), "pfdtoifd", c.c0134>;
+
+// integer MUL (without sign, int64 * int64, high part)
+def UMULHD : ALESInst<0x70, 0x01, (outs), (ins), "umulhd", c.c0134>;
+
+// integer MUL (with sign, int64 * int64, high part)
+def SMULHD : ALESInst<0x71, 0x01, (outs), (ins), "smulhd", c.c0134>;
+
+def PFHADDS : ALESInst<0x72, 0x01, (outs), (ins), "pfhadds", c.c01345>;
+
+def PFHSUBS : ALESInst<0x73, 0x01, (outs), (ins), "pfhsubs", c.c01345>;
+
+def GETFZS : ALESInst<0x74, 0x01, (outs), (ins), "getfzs", c.c01345>;
+
+def GETFZD : ALESInst<0x75, 0x01, (outs), (ins), "getfzd", c.c01345>;
+
+def PFADDSUBS : ALESInst<0x77, 0x01, (outs), (ins), "pfaddsubs", c.c01345>;
+
+def LDCUDQ : ALESInst<0x78, 0x01, (outs), (ins), "ldqudq", c.c03>;
+
+// load quad-word (guarded)
+def LDGDQ : ALESInst<0x79, 0x01, (outs), (ins), "ldgdq", c.c03>;
+
+def LDAPQ : ALESInst<0x7a, 0x01, (outs), (ins), "ldapq", c.c03>;
+
+//===----------------------------------------------------------------------===//
+// ALES opcodes, opcode2 = 2
+//===----------------------------------------------------------------------===//
+
+def QPSRLW : ALESInst<0x00, 0x02, (outs), (ins), "qpsrlw", c.c0134>;
+def QPSRLH : ALESInst<0x01, 0x02, (outs), (ins), "qpsrlh", c.c0134>;
+
+def QPSRAW : ALESInst<0x02, 0x02, (outs), (ins), "qpsraw", c.c0134>;
+def QPSRAH : ALESInst<0x03, 0x02, (outs), (ins), "qpsrah", c.c0134>;
+
+def QPSLLW : ALESInst<0x04, 0x04, (outs), (ins), "qpsllw", c.c0134>;
+def QPSLLH : ALESInst<0x05, 0x05, (outs), (ins), "qpsllh", c.c0134>;
+
+def QPSRLD : ALESInst<0x06, 0x02, (outs), (ins), "qpsrld", c.c0134>;
+def QPSLLD : ALESInst<0x07, 0x02, (outs), (ins), "qpslld", c.c0134>;
+
+def QPAND : ALESInst<0x08, 0x02, (outs), (ins), "qpand", c.c0134>;
+
+def QPANDN : ALESInst<0x09, 0x02, (outs), (ins), "qpandn", c.c0134>;
+
+def QPOR : ALESInst<0x0a, 0x02, (outs), (ins), "qpor", c.c0134>;
+
+def QPXOR : ALESInst<0x0b, 0x02, (outs), (ins), "qpxor", c.c0134>;
+
+def QPMINUW : ALESInst<0x0c, 0x02, (outs), (ins), "qpminuw", c.c03>;
+def QPMINSW : ALESInst<0x0d, 0x02, (outs), (ins), "qpminsw", c.c03>;
+
+def QPMAXUW : ALESInst<0x0e, 0x02, (outs), (ins), "qpmaxuw", c.c03>;
+def QPMAXSW : ALESInst<0x0f, 0x02, (outs), (ins), "qpmaxsw", c.c03>;
+
+def PSRLW2 : ALESInst<0x10, 0x02, (outs), (ins), "psrlw", c.c03>;
+
+def PSRLH2 : ALESInst<0x11, 0x02, (outs), (ins), "psrlh", c.c03>;
+
+def STMQP : ALESInst<0x11, 0x02, (outs), (ins), "stmqp", c.c5>;
+
+def PSRAW2 : ALESInst<0x12, 0x02, (outs), (ins), "psraw", c.c03>;
+
+def STCSMQP : ALESInst<0x12, 0x02, (outs), (ins), "stcsmqp", c.c5>;
+
+def PSRAH2 : ALESInst<0x13, 0x02, (outs), (ins), "psrah", c.c03>;
+
+def PSLLW2 : ALESInst<0x14, 0x02, (outs), (ins), "psllw", c.c03>;
+
+def STESMQP : ALESInst<0x14, 0x02, (outs), (ins), "stesmqp", c.c5>;
+
+def PSLLH2 : ALESInst<0x15, 0x02, (outs), (ins), "psllh", c.c03>;
+
+def STFSMQP : ALESInst<0x15, 0x02, (outs), (ins), "stfsmqp", c.c5>;
+
+def PSRCW : ALESInst<0x16, 0x02, (outs), (ins), "psrcw", c.c0134>;
+
+def STGSMQP : ALESInst<0x16, 0x02, (outs), (ins), "stgsmqp", c.c5>;
+
+def PSRCD : ALESInst<0x17, 0x02, (outs), (ins), "psrcd", c.c0134>;
+
+def STSSMQP : ALESInst<0x17, 0x02, (outs), (ins), "stssmqp", c.c5>;
+
+def QPCMPEQD : ALESInst<0x18, 0x02, (outs), (ins), "qpcmpeqd", c.c03>;
+
+def QPHADDH : ALESInst<0x19, 0x02, (outs), (ins), "qphaddh", c.c03>;
+
+def STGDMQP : ALESInst<0x19, 0x02, (outs), (ins), "stgdmqp", c.c5>;
+
+def QPHADDW : ALESInst<0x1a, 0x02, (outs), (ins), "qphaddw", c.c03>;
+
+def STAPMQP : ALESInst<0x1a, 0x02, (outs), (ins), "stapmqp", c.c5>;
+
+def QPHADDSH : ALESInst<0x1b, 0x02, (outs), (ins), "qphaddsh", c.c03>;
+
+def QPCMPGTD : ALESInst<0x1c, 0x02, (outs), (ins), "qpcmpgtd", c.c03>;
+
+def QPHSUBH : ALESInst<0x1d, 0x02, (outs), (ins), "qphsubh", c.c03>;
+
+def QPHSUBW : ALESInst<0x1e, 0x02, (outs), (ins), "qphsubw", c.c03>;
+
+def QPHSUBSH : ALESInst<0x1f, 0x02, (outs), (ins), "qphsubsh", c.c03>;
+
+def PMINUW : ALESInst<0x20, 0x02, (outs), (ins), "pminuw", c.c03>;
+
+def STAAQP : ALESInst<0x20, 0x02, (outs), (ins), "staaqp", c.c5>;
+
+def PMINSW : ALESInst<0x21, 0x02, (outs), (ins), "pminsw", c.c03>;
+
+def STQP : ALESInst<0x21, 0x02, (outs), (ins), "stqp", c.c5>;
+
+def PMAXUW : ALESInst<0x22, 0x02, (outs), (ins), "pmaxuw", c.c03>;
+
+def STCSQP : ALESInst<0x22, 0x02, (outs), (ins), "stcsqp", c.c5>;
+
+def PMAXSW : ALESInst<0x23, 0x02, (outs), (ins), "pmaxsw", c.c03>;
+
+def STDSQP : ALESInst<0x23, 0x02, (outs), (ins), "stdsqp", c.c5>;
+
+def STESQP : ALESInst<0x24, 0x02, (outs), (ins), "stesqp", c.c5>;
+
+def QPSRAD : ALESInst<0x25, 0x02, (outs), (ins), "qpsrad", c.c0134>;
+
+def STFSQP : ALESInst<0x25, 0x02, (outs), (ins), "stfsqp", c.c5>;
+
+def QPSRCW : ALESInst<0x26, 0x02, (outs), (ins), "qpsrcw", c.c0134>;
+
+def STGSQP : ALESInst<0x26, 0x02, (outs), (ins), "stgsqp", c.c5>;
+
+def QPSRCD : ALESInst<0x27, 0x02, (outs), (ins), "qpsrcd", c.c0134>;
+
+def STSSQP : ALESInst<0x27, 0x02, (outs), (ins), "stssqp", c.c5>;
+
+def PCMPEQBOP : ALESInst<0x28, 0x02, (outs), (ins), "pcmpeqbop", c.c03>;
+
+def PHADDH : ALESInst<0x29, 0x02, (outs), (ins), "phaddh", c.c03>;
+
+def STGDQP : ALESInst<0x29, 0x02, (outs), (ins), "stgdqp", c.c5>;
+
+def PHADDW : ALESInst<0x2a, 0x02, (outs), (ins), "phaddw", c.c03>;
+
+def STAPQP : ALESInst<0x2a, 0x02, (outs), (ins), "stapqp", c.c5>;
+
+def PHADDSH : ALESInst<0x2b, 0x02, (outs), (ins), "phaddsh", c.c03>;
+
+def STRQP : ALESInst<0x2b, 0x02, (outs), (ins), "strqp", c.c5>;
+
+def QPCMPEQBOP : ALESInst<0x2c, 0x02, (outs), (ins), "qpcmpeqbop", c.c03>;
+
+def PHSUBH : ALESInst<0x2d, 0x02, (outs), (ins), "phsubh", c.c03>;
+def PHSUBW : ALESInst<0x2e, 0x02, (outs), (ins), "phsubw", c.c03>;
+def PHSUBSH : ALESInst<0x2f, 0x02, (outs), (ins), "phsubsh", c.c03>;
+
+def PSIGNB : ALESInst<0x30, 0x02, (outs), (ins), "psignb", c.c03>;
+def PSIGNH : ALESInst<0x31, 0x02, (outs), (ins), "psignh", c.c03>;
+def PSIGNW : ALESInst<0x32, 0x02, (outs), (ins), "psignw", c.c03>;
+
+def QPCHECKS : ALESInst<0x33, 0x02, (outs), (ins), "qpchecks", c.c03>;
+
+// floating-point ADD
+def FADDS2 : ALESInst<0x30, 0x02, (outs), (ins), "fadds", c.c5>;
+def FADDD2 : ALESInst<0x31, 0x02, (outs), (ins), "faddd", c.c5>;
+
+// floating-point SUB
+def FSUBS2 : ALESInst<0x32, 0x02, (outs), (ins), "fsubs", c.c5>;
+def FSUBD2 : ALESInst<0x33, 0x02, (outs), (ins), "fsubd", c.c5>;
+
+def QPMSK2SGNB : ALESInst<0x34, 0x02, (outs), (ins), "qpmsk2sgnb", c.c0134>;
+
+def QPSIGNB : ALESInst<0x38, 0x02, (outs), (ins), "qpsignb", c.c03>;
+def QPSIGNH : ALESInst<0x39, 0x02, (outs), (ins), "qpsignh", c.c03>;
+def QPSIGNW : ALESInst<0x3a, 0x02, (outs), (ins), "qpsignw", c.c03>;
+
+// floating-point MUL
+def FMULS2 : ALESInst<0x38, 0x02, (outs), (ins), "fmuls", c.c5>;
+def FMULD2 : ALESInst<0x39, 0x02, (outs), (ins), "fmuld", c.c5>;
+
+def QPPACKDL : ALESInst<0x3d, 0x02, (outs), (ins), "qppackdl", c.c0134>;
+
+def QPMINUB : ALESInst<0x40, 0x02, (outs), (ins), "qpminub", c.c03>;
+
+def QPMINSH : ALESInst<0x41, 0x02, (outs), (ins), "qpminsh", c.c03>;
+
+def QPMAXUB : ALESInst<0x42, 0x02, (outs), (ins), "qpmaxub", c.c03>;
+
+def QPMAXSH : ALESInst<0x43, 0x02, (outs), (ins), "qpmaxsh", c.c03>;
+
+def QPMINSB : ALESInst<0x44, 0x02, (outs), (ins), "qpminsb", c.c03>;
+
+def QPMINUH : ALESInst<0x45, 0x02, (outs), (ins), "qpminuh", c.c03>;
+
+def QPMAXSB : ALESInst<0x46, 0x02, (outs), (ins), "qpmaxsb", c.c03>;
+
+def QPMAXUH : ALESInst<0x47, 0x02, (outs), (ins), "qpmaxuh", c.c03>;
+
+def QPADDB : ALESInst<0x48, 0x02, (outs), (ins), "qpaddb", c.c03>;
+
+def QPACKSSHB : ALESInst<0x48, 0x02, (outs), (ins), "qpacksshb", c.c14>;
+
+def QPADDH : ALESInst<0x49, 0x02, (outs), (ins), "qpaddh", c.c03>;
+
+def QPACKUSHB : ALESInst<0x49, 0x02, (outs), (ins), "qpackushb", c.c14>;
+
+def QPADDSB : ALESInst<0x4a, 0x02, (outs), (ins), "qpaddsb", c.c03>;
+
+def QPACKSSWH : ALESInst<0x4a, 0x02, (outs), (ins), "qpacksswh", c.c14>;
+
+def QPADDSH : ALESInst<0x4b, 0x02, (outs), (ins), "qpaddsh", c.c03>;
+
+def QPACKUSWH : ALESInst<0x4b, 0x02, (outs), (ins), "qpackuswh", c.c14>;
+
+def QPADDUSB : ALESInst<0x4c, 0x02, (outs), (ins), "qpaddusb", c.c03>;
+
+def QPADDUSH : ALESInst<0x4d, 0x02, (outs), (ins), "qpaddush", c.c03>;
+
+def QPADDW : ALESInst<0x4e, 0x02, (outs), (ins), "qpaddw", c.c03>;
+
+def QPADDD : ALESInst<0x4f, 0x02, (outs), (ins), "qpaddd", c.c03>;
+
+def QPSUBB : ALESInst<0x50, 0x02, (outs), (ins), "qpsubb", c.c03>;
+
+def QPSUBH : ALESInst<0x51, 0x02, (outs), (ins), "qpsubh", c.c03>;
+
+def QPSUBSB : ALESInst<0x52, 0x02, (outs), (ins), "qpsubsb", c.c03>;
+
+def QPSUBSH : ALESInst<0x53, 0x02, (outs), (ins), "qpsubsh", c.c03>;
+
+def QPSUBUSB : ALESInst<0x54, 0x02, (outs), (ins), "qpsubusb", c.c03>;
+
+def QPSUBUSH : ALESInst<0x55, 0x02, (outs), (ins), "qpsubush", c.c03>;
+
+def QPSUBW : ALESInst<0x56, 0x02, (outs), (ins), "qpsubw", c.c03>;
+
+def QPSUBD : ALESInst<0x57, 0x02, (outs), (ins), "qpsubd", c.c03>;
+
+def QPCMPEQB : ALESInst<0x58, 0x02, (outs), (ins), "qpcmpeqb", c.c03>;
+
+def QPMULHH : ALESInst<0x58, 0x02, (outs), (ins), "qpmulhh", c.c14>;
+
+def QPCMPEQH : ALESInst<0x59, 0x02, (outs), (ins), "qpcmpeqh", c.c03>;
+
+def QPMULLH : ALESInst<0x59, 0x02, (outs), (ins), "qpmullh", c.c14>;
+
+def QPCMPEQW : ALESInst<0x5a, 0x02, (outs), (ins), "qpcmpeqw", c.c03>;
+
+def QPMADDH : ALESInst<0x5a, 0x02, (outs), (ins), "qpmaddh", c.c14>;
+
+def QPCMPGTB : ALESInst<0x5b, 0x02, (outs), (ins), "qpcmpgtb", c.c03>;
+
+def QPMULHUH : ALESInst<0x5b, 0x02, (outs), (ins), "qpmulhuh", c.c14>;
+
+def QPCMPGTH : ALESInst<0x5c, 0x02, (outs), (ins), "qpcmpgth", c.c03>;
+
+def QPSADBW : ALESInst<0x5c, 0x02, (outs), (ins), "qpsadbw", c.c14>;
+
+def QPCMPGTW : ALESInst<0x5d, 0x02, (outs), (ins), "qpcmpgtw", c.c03>;
+
+def QPMULUBHH : ALESInst<0x5d, 0x02, (outs), (ins), "qpmulubhh", c.c14>;
+
+def QPAVGUSB : ALESInst<0x5e, 0x02, (outs), (ins), "qpavgusb", c.c03>;
+
+def QPMULLW : ALESInst<0x5e, 0x02, (outs), (ins), "qpmull", c.c14>;
+
+def QPAVGUSH : ALESInst<0x5f, 0x02, (outs), (ins), "qpavgush", c.c03>;
+
+def QPMRGP : ALESInst<0x60, 0x02, (outs), (ins), "qpmrgp", c.c0134>;
+
+def LDQP : ALESInst<0x61, 0x02, (outs), (ins), "ldqp", c.c035>;
+
+def LDCSQP : ALESInst<0x62, 0x02, (outs), (ins), "ldcsqp", c.c035>;
+
+def LDDSQP : ALESInst<0x63, 0x02, (outs), (ins), "lddsqp", c.c035>;
+
+def LDESQP : ALESInst<0x64, 0x02, (outs), (ins), "ldesqp", c.c035>;
+
+def LDFSQP : ALESInst<0x65, 0x02, (outs), (ins), "ldfsqp", c.c035>;
+
+def LDGSQP : ALESInst<0x66, 0x02, (outs), (ins), "ldgsqp", c.c035>;
+
+def LDSSQP : ALESInst<0x67, 0x02, (outs), (ins), "ldssqp", c.c035>;
+
+def LDCUDQP : ALESInst<0x68, 0x02, (outs), (ins), "ldcudqp", c.c035>;
+
+def QPMADDUBSH : ALESInst<0x68, 0x02, (outs), (ins), "qpmaddubsh", c.c14>;
+
+def LDGDQP : ALESInst<0x69, 0x02, (outs), (ins), "ldgdqp", c.c035>;
+
+def QPMULHRSH : ALESInst<0x69, 0x02, (outs), (ins), "qpmulhrsh", c.c14>;
+
+def LDAPQP : ALESInst<0x6a, 0x02, (outs), (ins), "ldapqp", c.c035>;
+
+def QPHMINPOSUH : ALESInst<0x6a, 0x02, (outs), (ins), "qphminposuh", c.c14>;
+
+def LDRQP : ALESInst<0x6b, 0x02, (outs), (ins), "ldrqp", c.c035>;
+
+def QPMPSADBH : ALESInst<0x6b, 0x02, (outs), (ins), "qpmpsadbh", c.c14>;
+
+def PUTTAGQP : ALESInst<0x6c, 0x02, (outs), (ins), "puttagqp", c.c0134>;
+
+def QPFSTOIFS : ALESInst<0x6e, 0x02, (outs), (ins), "qpfstoifs", c.c0134>;
+
+def QPFDTOIFD : ALESInst<0x6f, 0x02, (outs), (ins), "qpfdtoifd", c.c0134>;
+
+def QPFADDS : ALESInst<0x70, 0x02, (outs), (ins), "qpfadds", c.c01345>;
+def QPFADDD : ALESInst<0x71, 0x02, (outs), (ins), "qpfaddd", c.c01345>;
+
+def QPFSUBS : ALESInst<0x72, 0x02, (outs), (ins), "qpfsubs", c.c01345>;
+def QPFSUBD : ALESInst<0x73, 0x02, (outs), (ins), "qpfsubd", c.c01345>;
+
+def QPFMINS : ALESInst<0x74, 0x02, (outs), (ins), "qpfmind", c.c0134>;
+def QPFMIND : ALESInst<0x75, 0x02, (outs), (ins), "qpfmind", c.c0134>;
+
+def QPFMAXS : ALESInst<0x76, 0x02, (outs), (ins), "qpfmaxd", c.c0134>;
+def QPFMAXD : ALESInst<0x77, 0x02, (outs), (ins), "qpfmaxd", c.c0134>;
+
+def QPFMULS : ALESInst<0x78, 0x02, (outs), (ins), "qpfmuls", c.c01345>;
+def QPFMULD : ALESInst<0x79, 0x02, (outs), (ins), "qpfmuld", c.c01345>;
+
+def QPFCMPEQS : ALESInst<0x7a, 0x02, (outs), (ins), "qpfcmpeqs", c.c0134>;
+def QPFCMPEQD : ALESInst<0x7b, 0x02, (outs), (ins), "qpfcmpeqd", c.c0134>;
+
+def QPFHADDS : ALESInst<0x7c, 0x02, (outs), (ins), "qpfhadds", c.c01345>;
+
+def QPFHSUBS : ALESInst<0x7d, 0x02, (outs), (ins), "qpfhsubs", c.c01345>;
+
+def QPFADDSUBS : ALESInst<0x7e, 0x02, (outs), (ins), "qpfaddsubs", c.c01345>;
+def QPFADDSUBD : ALESInst<0x7f, 0x02, (outs), (ins), "qpfaddsubd", c.c01345>;
+
+//===----------------------------------------------------------------------===//
+// ALES opcodes, opcode2 = 3
+//===----------------------------------------------------------------------===//
+
+def FMAS : ALESInst<0x00, 0x03, (outs), (ins), "fmas", c.c01345>;
+def FMAD : ALESInst<0x01, 0x03, (outs), (ins), "fmad", c.c01345>;
+
+def FMSS : ALESInst<0x02, 0x03, (outs), (ins), "fmss", c.c01345>;
+def FMSD : ALESInst<0x03, 0x03, (outs), (ins), "fmsd", c.c01345>;
+
+def FNMAS : ALESInst<0x04, 0x03, (outs), (ins), "fnmas", c.c01345>;
+def FNMAD : ALESInst<0x05, 0x03, (outs), (ins), "fnmad", c.c01345>;
+
+def FNMSS : ALESInst<0x06, 0x03, (outs), (ins), "fnmss", c.c01345>;
+def FNMSD : ALESInst<0x07, 0x03, (outs), (ins), "fnmsd", c.c01345>;
+
+def QPFMAS : ALESInst<0x08, 0x03, (outs), (ins), "qpfmas", c.c01345>;
+def QPFMAD : ALESInst<0x09, 0x03, (outs), (ins), "qpfmad", c.c01345>;
+
+def QPFMSS : ALESInst<0x0a, 0x03, (outs), (ins), "qpfmss", c.c01345>;
+def QPFMSD : ALESInst<0x0b, 0x03, (outs), (ins), "qpfmsd", c.c01345>;
+
+def QPFNMAS : ALESInst<0x0c, 0x03, (outs), (ins), "qpfnmas", c.c01345>;
+def QPFNMAD : ALESInst<0x0d, 0x03, (outs), (ins), "qpfnmad", c.c01345>;
+
+def QPFNMSS : ALESInst<0x0e, 0x03, (outs), (ins), "qpfnmss", c.c01345>;
+def QPFNMSD : ALESInst<0x0f, 0x03, (outs), (ins), "qpfnmsd", c.c01345>;
+
+def QPFMASS : ALESInst<0x10, 0x03, (outs), (ins), "qpfmass", c.c01345>;
+def QPFMASD : ALESInst<0x11, 0x03, (outs), (ins), "qpfmasd", c.c01345>;
+
+def QPFMSAS : ALESInst<0x12, 0x03, (outs), (ins), "qpfmsas", c.c01345>;
+def QPFMSAD : ALESInst<0x13, 0x03, (outs), (ins), "qpfmsad", c.c01345>;
+
+def CLMULL : ALESInst<0x14, 0x03, (outs), (ins), "clmull", c.c0134>;
+def CLMULH : ALESInst<0x15, 0x03, (outs), (ins), "clmulh", c.c0134>;
+
+//===----------------------------------------------------------------------===//
+// ALES opcodes, opcode2 = 4
+//===----------------------------------------------------------------------===//
+
+def ANDD_FB : ALESInst<0x00, 0x04, (outs), (ins), "andd_fb", c.c03>;
+
+def ANDND_FB : ALESInst<0x02, 0x04, (outs), (ins), "andnd_fb", c.c03>;
+
+def ORD_FB : ALESInst<0x04, 0x04, (outs), (ins), "ord_fb", c.c03>;
+
+def ORND_FB : ALESInst<0x06, 0x04, (outs), (ins), "ornd_fb", c.c03>;
+
+def XORD_FB : ALESInst<0x08, 0x04, (outs), (ins), "xord_fb", c.c03>;
+
+def XORND_FB : ALESInst<0x0a, 0x04, (outs), (ins), "xornd_fb", c.c03>;
+
+def ADDD_FB : ALESInst<0x10, 0x04, (outs), (ins), "addd_fb", c.c03>;
+
+def SUBD_FB : ALESInst<0x12, 0x04, (outs), (ins), "subd_fb", c.c03>;
+
+def SCLD_FB : ALESInst<0x14, 0x04, (outs), (ins), "scld_fb", c.c03>;
+
+def SCRD_FB : ALESInst<0x16, 0x04, (outs), (ins), "scrd_fb", c.c03>;
+
+def SHLD_FB : ALESInst<0x18, 0x04, (outs), (ins), "shld_fb", c.c03>;
+
+def SHRD_FB : ALESInst<0x1a, 0x04, (outs), (ins), "shrd_fb", c.c03>;
+
+def SARD_FB : ALESInst<0x1c, 0x04, (outs), (ins), "sard_fb", c.c03>;
+
+def UMULX_FB : ALESInst<0x22, 0x04, (outs), (ins), "umulx_fb", c.c03>;
+
+def SMULX_FB : ALESInst<0x23, 0x04, (outs), (ins), "smulx_fb", c.c03>;
+
+def INCD_FB : ALESInst<0x30, 0x04, (outs), (ins), "incd_fb", c.c03>;
+
+def DECD_FB : ALESInst<0x32, 0x04, (outs), (ins), "decd_fb", c.c03>;
+
+//===----------------------------------------------------------------------===//
+// ALES opcodes, opcode2 = 5
+//===----------------------------------------------------------------------===//
+
+def ANDD_FH : ALESInst<0x00, 0x05, (outs), (ins), "andd_fh", c.c03>;
+
+def ANDND_FH : ALESInst<0x02, 0x05, (outs), (ins), "andnd_fh", c.c03>;
+
+def ORD_FH : ALESInst<0x04, 0x05, (outs), (ins), "ord_fh", c.c03>;
+
+def ORND_FH : ALESInst<0x06, 0x05, (outs), (ins), "ornd_fh", c.c03>;
+
+def XORD_FH : ALESInst<0x08, 0x05, (outs), (ins), "xord_fh", c.c03>;
+
+def XORND_FH : ALESInst<0x0a, 0x05, (outs), (ins), "xornd_fh", c.c03>;
+
+def ADDD_FH : ALESInst<0x10, 0x05, (outs), (ins), "addd_fh", c.c03>;
+
+def SUBD_FH : ALESInst<0x12, 0x05, (outs), (ins), "subd_fh", c.c03>;
+
+def SCLD_FH : ALESInst<0x14, 0x05, (outs), (ins), "scld_fh", c.c03>;
+
+def SCRD_FH : ALESInst<0x16, 0x05, (outs), (ins), "scrd_fh", c.c03>;
+
+def SHLD_FH : ALESInst<0x18, 0x05, (outs), (ins), "shld_fh", c.c03>;
+
+def SHRD_FH : ALESInst<0x1a, 0x05, (outs), (ins), "shrd_fh", c.c03>;
+
+def SARD_FH : ALESInst<0x1c, 0x05, (outs), (ins), "sard_fh", c.c03>;
+
+def UMULX_FH : ALESInst<0x22, 0x05, (outs), (ins), "umulx_fh", c.c03>;
+
+def SMULX_FH : ALESInst<0x23, 0x05, (outs), (ins), "smulx_fh", c.c03>;
+
+def INCD_FH : ALESInst<0x30, 0x05, (outs), (ins), "incd_fh", c.c03>;
+
+def DECD_FH : ALESInst<0x32, 0x05, (outs), (ins), "decd_fh", c.c03>;
+
+//===----------------------------------------------------------------------===//
+// ALES opcodes, opcode2 = 6
+//===----------------------------------------------------------------------===//
+
+def ANDD_FW : ALESInst<0x00, 0x06, (outs), (ins), "andd_fw", c.c03>;
+
+def ANDND_FW : ALESInst<0x02, 0x06, (outs), (ins), "andnd_fw", c.c03>;
+
+def ORD_FW : ALESInst<0x04, 0x06, (outs), (ins), "ord_fw", c.c03>;
+
+def ORND_FW : ALESInst<0x06, 0x06, (outs), (ins), "ornd_fw", c.c03>;
+
+def XORD_FW : ALESInst<0x08, 0x06, (outs), (ins), "xord_fw", c.c03>;
+
+def XORND_FW : ALESInst<0x0a, 0x06, (outs), (ins), "xornd_fw", c.c03>;
+
+def ADDD_FW : ALESInst<0x10, 0x06, (outs), (ins), "addd_fw", c.c03>;
+
+def SUBD_FW : ALESInst<0x12, 0x06, (outs), (ins), "subd_fw", c.c03>;
+
+def SCLD_FW : ALESInst<0x14, 0x06, (outs), (ins), "scld_fw", c.c03>;
+
+def SCRD_FW : ALESInst<0x16, 0x06, (outs), (ins), "scrd_fw", c.c03>;
+
+def SHLD_FW : ALESInst<0x18, 0x06, (outs), (ins), "shld_fw", c.c03>;
+
+def SHRD_FW : ALESInst<0x1a, 0x06, (outs), (ins), "shrd_fw", c.c03>;
+
+def SARD_FW : ALESInst<0x1c, 0x06, (outs), (ins), "sard_fw", c.c03>;
+
+def UMULX_FW : ALESInst<0x22, 0x06, (outs), (ins), "umulx_fw", c.c03>;
+
+def SMULX_FW : ALESInst<0x23, 0x06, (outs), (ins), "smulx_fw", c.c03>;
+
+def INCD_FW : ALESInst<0x30, 0x06, (outs), (ins), "incd_fw", c.c03>;
+
+def DECD_FW : ALESInst<0x32, 0x06, (outs), (ins), "decd_fw", c.c03>;
+
+//===----------------------------------------------------------------------===//
+// ALES opcodes, opcode2 = 7
+//===----------------------------------------------------------------------===//
+
+def ANDD_FD : ALESInst<0x01, 0x07, (outs), (ins), "andd_fd", c.c03>;
+
+def ANDND_FD : ALESInst<0x03, 0x07, (outs), (ins), "andnd_fd", c.c03>;
+
+def ORD_FD : ALESInst<0x05, 0x07, (outs), (ins), "ord_fd", c.c03>;
+
+def ORND_FD : ALESInst<0x07, 0x07, (outs), (ins), "ornd_fd", c.c03>;
+
+def XORD_FD : ALESInst<0x09, 0x07, (outs), (ins), "xord_fd", c.c03>;
+
+def XORND_FD : ALESInst<0x0b, 0x07, (outs), (ins), "xornd_fd", c.c03>;
+
+def ADDD_FD : ALESInst<0x11, 0x07, (outs), (ins), "addd_fd", c.c03>;
+
+def SUBD_FD : ALESInst<0x13, 0x07, (outs), (ins), "subd_fd", c.c03>;
+
+def SCLD_FD : ALESInst<0x15, 0x07, (outs), (ins), "scld_fd", c.c03>;
+
+def SCRD_FD : ALESInst<0x17, 0x07, (outs), (ins), "scrd_fd", c.c03>;
+
+def SHLD_FD : ALESInst<0x19, 0x07, (outs), (ins), "shld_fd", c.c03>;
+
+def SHRD_FD : ALESInst<0x1b, 0x07, (outs), (ins), "shrd_fd", c.c03>;
+
+def SARD_FD : ALESInst<0x1d, 0x07, (outs), (ins), "sard_fd", c.c03>;
+
+def INCD_FD : ALESInst<0x31, 0x07, (outs), (ins), "incd_fd", c.c03>;
+
+def DECD_FD : ALESInst<0x33, 0x07, (outs), (ins), "decd_fd", c.c03>;
 
 //===----------------------------------------------------------------------===//
 // Feature predicates.
