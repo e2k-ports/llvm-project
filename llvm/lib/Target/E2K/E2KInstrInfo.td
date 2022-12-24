@@ -1356,6 +1356,79 @@ def INCD_FD : ALESInst<0x31, 0x07, (outs), (ins), "incd_fd", c.c03>;
 def DECD_FD : ALESInst<0x33, 0x07, (outs), (ins), "decd_fd", c.c03>;
 
 //===----------------------------------------------------------------------===//
+// CS0 opcodes
+//===----------------------------------------------------------------------===//
+
+// non-procedure immediate flow control
+def IBRANCH : CS0Inst<0x00, (outs), (ins), "ibranch">;
+
+// prefetch code
+def PREF : CS0Inst<0x01, (outs), (ins), "pref">;
+
+def PUTTSD : CS0Inst<0x02, (outs), (ins), "puttsd">;
+
+// return from the hardware interrupt handler
+def DONE : CS0Inst<0x03, (outs), (ins), "done">;
+
+// prepare literal flow control (BRANCH/CALL type)
+def DISP : CS0Inst<0x04, (outs), (ins), "disp">;
+def DISP2 : CS0Inst<0x08, (outs), (ins), "disp">;
+def DISP3 : CS0Inst<0x0c, (outs), (ins), "disp">;
+
+def NOTHING : CS0Inst<0x05, (outs), (ins), "?">;
+
+// prepare global OS procedure flow control (SCALL type)
+def SDISP : CS0Inst<0x06, (outs), (ins), "sdisp">;
+def SDISP2 : CS0Inst<0x0a, (outs), (ins), "sdisp">;
+def SDISP3 : CS0Inst<0x0e, (outs), (ins), "sdisp">;
+
+def GETTSD : CS0Inst<0x07, (outs), (ins), "gettsd">;
+def GETTSD2 : CS0Inst<0x0b, (outs), (ins), "gettsd">;
+
+// prepare array pefetch
+def LDISP : CS0Inst<0x09, (outs), (ins), "ldisp">;
+
+def NOTHING2 : CS0Inst<0x0d, (outs), (ins), "?">;
+
+// prepare return from the procedure
+def RETURN : CS0Inst<0x0f, (outs), (ins), "return">;
+
+//===----------------------------------------------------------------------===//
+// CS1 opcodes
+//===----------------------------------------------------------------------===//
+
+// set size of procedure stack window
+def SETWD : CS1Inst<0x00, (outs), (ins), "setwd">;
+
+// verify size of procedure register area
+def VFRPSZ : CS1Inst<0x01, (outs), (ins), "vfrpsz">;
+
+def SETEI : CS1InstF1<0x02, 0x00, (outs), (ins), "setei">;
+
+def SETFST : CS1InstF1<0x02, 0x01, (outs), (ins), "setfst">;
+
+// wait for the execution of previous operations
+def WAIT : CS1Inst<0x03, (outs), (ins), "wait">;
+
+// set rotation base for number registers
+def SETBN : CS1InstF2<0x04, 0x01, 0x00, (outs), (ins), "setbn">;
+
+// set rotation base for predicate registers
+def SETBP : CS1InstF2<0x04, 0x00, 0x01, (outs), (ins), "setbp">;
+
+def CALL : CS1Inst<0x05, (outs), (ins), "call">;
+
+// memory address specifier, it's not decoded as an instruction itself
+def MAS : CS1Inst<0x06, (outs), (ins), "mas">;
+
+def FLUSHR : FLUSHInst<0x07, 1, 0, 0, 0, (outs), (ins), "flushr">;
+def FLUSHC : FLUSHInst<0x07, 0, 1, 0, 0, (outs), (ins), "flushc">;
+def FILLR : FLUSHInst<0x07, 0, 0, 1, 0, (outs), (ins), "fillr">;
+def FILLC : FLUSHInst<0x07, 0, 0, 0, 1, (outs), (ins), "fillc">;
+
+def VFBG : CS1Inst<0x08, (outs), (ins), "vfbg">;
+
+//===----------------------------------------------------------------------===//
 // Feature predicates.
 //===----------------------------------------------------------------------===//
 
@@ -2287,6 +2360,7 @@ def CBCONDA : CPBranchSPA<(ins brtarget:$imm22, CCOp:$cond),
 // This is the only Format 1 instruction
 let Uses = [O6],
     hasDelaySlot = 1, isCall = 1 in {
+    /*
   def CALL : InstSP<(outs), (ins calltarget:$disp, variable_ops),
                     "call $disp",
                     [],
@@ -2295,6 +2369,7 @@ let Uses = [O6],
     let op = 1;
     let Inst{29-0} = disp;
   }
+  */
 
   // indirect calls: special cases of JMPL.
   let isCodeGenOnly = 1, rd = 15 in {
@@ -3032,11 +3107,12 @@ def : Pat<(add iPTR:$r, (SPlo tblockaddress:$in)),
                         (ADDri $r, tblockaddress:$in)>;
 
 // Calls:
+/*
 def : Pat<(call tglobaladdr:$dst),
           (CALL tglobaladdr:$dst)>;
 def : Pat<(call texternalsym:$dst),
           (CALL texternalsym:$dst)>;
-
+*/
 // Map integer extload's to zextloads.
 def : Pat<(i32 (extloadi1 ADDRrr:$src)), (LDUBrr ADDRrr:$src)>;
 def : Pat<(i32 (extloadi1 ADDRri:$src)), (LDUBri ADDRri:$src)>;
