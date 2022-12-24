@@ -48,15 +48,18 @@ generic:
 compiling the project
 ---------------------
 
-right now, project only compiles on **Linux x86_64**. it doesn't compile on **Elbrus** machines yet.
-
 recommended options for CMake build:
 - **-G Ninja** - recommended (faster) generator is *ninja-build*
 - **-DCMAKE_BUILD_TYPE=Debug** - on an early development stage, it's easier to have all the debug checks
-- **-DLLVM_ENABLE_PROJECTS=clang,lld** - projects being ported first are *clang* and *lld*
+- **-DLLVM_ENABLE_PROJECTS=clang;lld** - projects being ported first are *clang* and *lld*
 - **-DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD=E2K** - to activate an actual *E2K* target
 - **-DCMAKE_VERBOSE_MAKEFILE=ON** - to display full compiler/linker command lines
-- **-DLLVM_USE_LINKER=ON** - *lld* is usually faster compare to regular *ld* or *gold* linkers
+- **-DLLVM_USE_LINKER=lld** - *lld* is usually faster compare to regular *ld* or *gold* linkers
+
+for E2K, to avoid "relocation truncated to fit" error:
+
+- **CMAKE_C_FLAGS="--dwarf2-64bit"**
+- **CMAKE_CXX_FLAGS="--dwarf2-64bit"**
 
 compiling for EK2 via project
 -----------------------------
