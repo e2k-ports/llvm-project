@@ -53,7 +53,7 @@ class ALSEXTInst<bits<7> opcode, bits<8> ext, dag outs, dag ins, string asmstr,
   let Inst{23-16} = Ext;
 }
 
-// ALES command command
+// ALES command
 class ALESInst<bits<7> opcode, bits<8> opcode2, dag outs, dag ins, string asmstr,
               list<int> channels = c.all,
               list<dag> pattern = []>: Instruction {
@@ -69,6 +69,66 @@ class ALESInst<bits<7> opcode, bits<8> opcode2, dag outs, dag ins, string asmstr
   bits<8> OpCode2 = opcode2;
   let Inst{30-24} = OpCode;
   let Inst{47-40} = OpCode2;
+}
+
+// CS0 command
+class CS0Inst<bits<4> opcode, dag outs, dag ins, string asmstr,
+              list<dag> pattern = []>: Instruction {
+
+  let Namespace = "E2K";
+  field bits<32> Inst;
+  dag OutOperandList = outs;
+  dag InOperandList = ins;
+  let AsmString = asmstr;
+  let Pattern = pattern;
+  bits<4> OpCode = opcode;
+  let Inst{31-28} = OpCode;
+}
+
+// CS1 command
+class CS1Inst<bits<4> opcode, dag outs, dag ins, string asmstr,
+              list<dag> pattern = []>: Instruction {
+
+  let Namespace = "E2K";
+  field bits<32> Inst;
+  dag OutOperandList = outs;
+  dag InOperandList = ins;
+  let AsmString = asmstr;
+  let Pattern = pattern;
+  bits<4> OpCode = opcode;
+  let Inst{31-28} = OpCode;
+}
+
+// CS1 with extra flag (setei/setfst)
+class CS1InstF1<bits<4> opcode, bits<1> flag, dag outs, dag ins, string asmstr,
+              list<dag> pattern = []>: CS1Inst<opcode, outs, ins, asmstr, pattern> {
+
+  bits<1> Flag = flag;
+  let Inst{27} = Flag;
+}
+
+// CS1 with two extra flags
+class CS1InstF2<bits<4> opcode, bits<1> flag1, bits<1> flag2, dag outs, dag ins, string asmstr,
+              list<dag> pattern = []>: CS1Inst<opcode, outs, ins, asmstr, pattern> {
+
+  bits<1> Flag1 = flag1;
+  bits<1> Flag2 = flag2;
+  let Inst{26} = Flag1;
+  let Inst{27} = Flag2;
+}
+
+// FLUSH
+class FLUSHInst<bits<4> opcode, bits<1> flushr, bits<1> flushc, bits<1> fillr, bits<1> fillc, dag outs, dag ins, string asmstr,
+              list<dag> pattern = []>: CS1Inst<opcode, outs, ins, asmstr, pattern> {
+
+  bits<1> FlushR = flushr;
+  bits<1> FlushC = flushc;
+  bits<1> FillR = fillr;
+  bits<1> FillC = fillc;
+  let Inst{0} = FlushR;
+  let Inst{1} = FlushC;
+  let Inst{2} = FillR;
+  let Inst{3} = FillC;
 }
 
 class InstSP<dag outs, dag ins, string asmstr, list<dag> pattern,
