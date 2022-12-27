@@ -12,6 +12,7 @@
 
 #include "E2KInstPrinter.h"
 #include "E2K.h"
+#include "MCTargetDesc/E2KMCTargetDesc.h"
 #include "llvm/MC/MCExpr.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCRegisterInfo.h"
@@ -43,6 +44,16 @@ void E2KInstPrinter::printRegName(raw_ostream &OS, unsigned RegNo) const
 void E2KInstPrinter::printInst(const MCInst *MI, uint64_t Address,
                                  StringRef Annot, const MCSubtargetInfo &STI,
                                  raw_ostream &O) {
+
+  if (MI->getOpcode() == E2K::BUNDLE) {
+    for (unsigned i = 0; i < MI->getNumOperands(); ++i) {
+      auto SubInst = MI->getOperand(i).getInst();
+      O << '\n';
+      printInst(SubInst, Address, Annot, STI, O);
+    }
+    return;
+  }
+
   if (!printAliasInstr(MI, Address, STI, O) &&
       !printE2KAliasInstr(MI, STI, O))
     printInstruction(MI, Address, STI, O);
@@ -224,4 +235,18 @@ void E2KInstPrinter::printMembarTag(const MCInst *MI, int opNum,
       First = false;
     }
   }
+}
+
+template <unsigned N>
+void E2KInstPrinter::printUImmOperand(const MCInst *MI, int OpNum,
+                                          raw_ostream &O) {
+  int64_t Value = MI->getOperand(OpNum).getImm();
+  assert(isUInt<N>(Value) && "Invalid uimm argument");
+  O << markup("<imm:") << Value << markup(">");
+}
+
+void E2KInstPrinter::printU8Imm(const MCInst *MI, int opNum,
+                                const MCSubtargetInfo &STI,
+                                raw_ostream &O) {
+  printUImmOperand<8>(MI, opNum, O);
 }
