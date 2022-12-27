@@ -20,8 +20,41 @@ include "E2KInstrFormats.td"
 // NOP
 //===----------------------------------------------------------------------===//
 
-// no operation
+// no operation, encoded in HS itself
 def NOOP : NOPInst<(outs), (ins u8imm:$count), "nop $count">;
+
+//===----------------------------------------------------------------------===//
+// SS
+//===----------------------------------------------------------------------===//
+
+// instruction prefetch depth
+def IPD : SSInst<(outs), (ins u8imm:$count), "ipd $count">;
+
+def VDFI : SSInst<(outs), (ins), "vdfi">;
+
+// end array prefetch
+def EAP : SSInst<(outs), (ins), "eap">;
+
+// begin array prefetch
+def BAP : SSInst<(outs), (ins), "bap">;
+
+def CRP : SSInst<(outs), (ins), "crp">;
+
+def SRP : SSInst<(outs), (ins), "srp">;
+
+def SLRP : SSInst<(outs), (ins), "slrp">;
+
+// adjust base of global registers
+def ABG : SSInst<(outs), (ins u8imm:$abgi, u8imm:$abgd), "abg abgi=$abgi, abgd=$abgd">;
+
+// adjust base of numeric registers
+def ABN : SSInst<(outs), (ins u8imm:$abnf, u8imm:$abnt), "abn abnf=$abnf abnt=$abnt">;
+
+// adjust base of predicate registers
+def ABP : SSInst<(outs), (ins u8imm:$abpf, u8imm:$abpt), "abp abpf=$abpf abpt=$abpt">;
+
+// adjust loop counters
+def ALC : SSInst<(outs), (ins u8imm:$alcf, u8imm:$alct), "alc alcf=$alcf alct=$alct">;
 
 //===----------------------------------------------------------------------===//
 // ALS opcodes
@@ -871,6 +904,8 @@ defm PFSQRTTD : ALESEXT2Inst<0x53, 0x01, 0xC0, "pfsqrttd", format.alopf11, DD_D,
 
 defm ICALLD : ALESEXT2Inst<0x54, 0x01, 0xC0, "icalld", format.alopf11, DD_D, c.c0>;
 
+defm GETSP : ALESEXT1EXT2Inst<0x58, 0xEC, 0x01, 0xC0, "getsp", format.alopf12, S_D, c.c0>;
+
 defm MPSADBH : ALESEXT2Inst<0x58, 0x01, 0xC0, "mpsadbh", format.alopf11, DD_D, c.c14>;
 
 defm LDRD : ALESEXT2Inst<0x5b, 0x01, 0xC0, "ldrd", format.alopf11, DD_D, c.c0235>;
@@ -1257,6 +1292,8 @@ defm LDRQP : ALESEXT2Inst<0x6b, 0x02, 0xC0, "ldrqp", format.alopf11, DD_p, c.c03
 defm QPMPSADBH : ALESEXT2Inst<0x6b, 0x02, 0xC0, "qpmpsadbh", format.alopf11, pS_p, c.c14>;
 
 defm PUTTAGQP : ALESEXT2Inst<0x6c, 0x02, 0xC0, "puttagqp", format.alopf11, pS_p, c.c0134>;
+
+defm QPIDTOFS : ALESEXT1EXT2Inst<0x6d, 0xEC, 0x02, 0xC0, "qpidtofs", format.alopf12, p_D, c.c0134>;
 
 defm QPFSTOIFS : ALESEXT2Inst<0x6e, 0x02, 0xC0, "qpfstoifs", format.alopf11, Dp_p, c.c0134>;
 
@@ -2127,6 +2164,7 @@ def CALL : CS1Inst<0x05, (outs), (ins), "call">;
 // memory address specifier, it's not decoded as an instruction itself
 def MAS : CS1Inst<0x06, (outs), (ins), "mas">;
 
+// this are not fully mutually exclusive, so maybe move to C++ code
 def FLUSHR : FLUSHInst<0x07, 1, 0, 0, 0, (outs), (ins), "flushr">;
 def FLUSHC : FLUSHInst<0x07, 0, 1, 0, 0, (outs), (ins), "flushc">;
 def FILLR : FLUSHInst<0x07, 0, 0, 1, 0, (outs), (ins), "fillr">;
