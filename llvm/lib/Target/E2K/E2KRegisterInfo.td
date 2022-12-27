@@ -34,30 +34,34 @@ foreach Index = 0-63 in {
   let SubRegIndices = [sub_64] in {
     def QR#Index : E2KReg<Index, "qr"#Index, [!cast<E2KReg>("DR"#Index)]>, DwarfRegNum<[Index]>;
   }
+  def QPR#Index : E2KReg<Index, "qpr"#Index>, DwarfRegNum<[Index]>;
 }
 
-def SR : RegisterClass<"E2K", [i32], 32, (sequence "R%u", 0, 63)>;
-def DR : RegisterClass<"E2K", [i64], 64, (sequence "DR%u", 0, 63)>;
-def QR : RegisterClass<"E2K", [i128], 128, (sequence "QR%u", 0, 63)>;
+def RegSR : RegisterClass<"E2K", [i32], 32, (sequence "R%u", 0, 63)>;
+def RegDR : RegisterClass<"E2K", [i64], 64, (sequence "DR%u", 0, 63)>;
+def RegQR : RegisterClass<"E2K", [i128], 128, (sequence "QR%u", 0, 63)>;
+def RegQPR : RegisterClass<"E2K", [i128], 128, (sequence "QPR%u", 0, 63)>;
 
 // based registers, 0-127
 
 foreach Index = 0-127 in {
   // based registers, SR (single register)
-  def B#Index : E2KReg<Index, "b"#Index>, DwarfRegNum<[Index]>;
+  def B#Index : E2KReg<Index, "b["#Index#"]">, DwarfRegNum<[Index]>;
   // based registers, DR (double register)
   let SubRegIndices = [sub_32] in {
-    def DB#Index : E2KReg<Index, "db"#Index, [!cast<E2KReg>("B"#Index)]>, DwarfRegNum<[Index]>;
+    def DB#Index : E2KReg<Index, "db["#Index#"]", [!cast<E2KReg>("B"#Index)]>, DwarfRegNum<[Index]>;
   }
   // based registers, QR (quad register)
   let SubRegIndices = [sub_64] in {
-    def QB#Index : E2KReg<Index, "qb"#Index, [!cast<E2KReg>("DB"#Index)]>, DwarfRegNum<[Index]>;
+    def QB#Index : E2KReg<Index, "qb["#Index#"]", [!cast<E2KReg>("DB"#Index)]>, DwarfRegNum<[Index]>;
   }
+  def QPB#Index : E2KReg<Index, "qpb["#Index#"]">, DwarfRegNum<[Index]>;
 }
 
-def SB : RegisterClass<"E2K", [i32], 32, (sequence "B%u", 0, 127)>;
-def DB : RegisterClass<"E2K", [i64], 64, (sequence "DB%u", 0, 127)>;
-def QB : RegisterClass<"E2K", [i128], 128, (sequence "QB%u", 0, 127)>;
+def RegSB : RegisterClass<"E2K", [i32], 32, (sequence "B%u", 0, 127)>;
+def RegDB : RegisterClass<"E2K", [i64], 64, (sequence "DB%u", 0, 127)>;
+def RegQB : RegisterClass<"E2K", [i128], 128, (sequence "QB%u", 0, 127)>;
+def RegQPB : RegisterClass<"E2K", [i128], 128, (sequence "QPB%u", 0, 127)>;
 
 // global registers, 0-31
 
@@ -72,11 +76,35 @@ foreach Index = 0-31 in {
   let SubRegIndices = [sub_64] in {
     def QG#Index : E2KReg<Index, "qg"#Index, [!cast<E2KReg>("DG"#Index)]>, DwarfRegNum<[Index]>;
   }
+  def QPG#Index : E2KReg<Index, "qpg"#Index>, DwarfRegNum<[Index]>;
 }
 
-def SG : RegisterClass<"E2K", [i32], 32, (sequence "G%u", 0, 31)>;
-def DG : RegisterClass<"E2K", [i64], 64, (sequence "DG%u", 0, 31)>;
-def QG : RegisterClass<"E2K", [i128], 128, (sequence "QG%u", 0, 31)>;
+def RegSG : RegisterClass<"E2K", [i32], 32, (sequence "G%u", 0, 31)>;
+def RegDG : RegisterClass<"E2K", [i64], 64, (sequence "DG%u", 0, 31)>;
+def RegQG : RegisterClass<"E2K", [i128], 128, (sequence "QG%u", 0, 31)>;
+def RegQPG : RegisterClass<"E2K", [i128], 128, (sequence "QPG%u", 0, 31)>;
+
+def RegS : RegisterClass<"E2K", [i32], 32, (add RegSR, RegSB, RegSG)>;
+def RegD : RegisterClass<"E2K", [i64], 64, (add RegDR, RegDB, RegDG)>;
+def RegQ : RegisterClass<"E2K", [i128], 128, (add RegQR, RegQB, RegQG)>;
+def RegQP : RegisterClass<"E2K", [i128], 128, (add RegQPR, RegQPB, RegQPG)>;
+
+def SRC1S : RegisterClass<"E2K", [i32], 32, (add RegS)>;
+def SRC2S : RegisterClass<"E2K", [i32], 32, (add RegS)>;
+def SRC3S : RegisterClass<"E2K", [i32], 32, (add RegS)>;
+def DST1S : RegisterClass<"E2K", [i32], 32, (add RegS)>;
+def SRC1D : RegisterClass<"E2K", [i64], 64, (add RegD)>;
+def SRC2D : RegisterClass<"E2K", [i64], 64, (add RegD)>;
+def SRC3D : RegisterClass<"E2K", [i64], 64, (add RegD)>;
+def DST1D : RegisterClass<"E2K", [i64], 64, (add RegD)>;
+def SRC1Q : RegisterClass<"E2K", [i128], 128, (add RegQ)>;
+def SRC2Q : RegisterClass<"E2K", [i128], 128, (add RegQ)>;
+def SRC3Q : RegisterClass<"E2K", [i128], 128, (add RegQ)>;
+def DST1Q : RegisterClass<"E2K", [i128], 128, (add RegQ)>;
+def SRC1QP : RegisterClass<"E2K", [i128], 128, (add RegQP)>;
+def SRC2QP : RegisterClass<"E2K", [i128], 128, (add RegQP)>;
+def SRC3QP : RegisterClass<"E2K", [i128], 128, (add RegQP)>;
+def DST1QP : RegisterClass<"E2K", [i128], 128, (add RegQP)>;
 
 // predicate registers, 0-31
 
@@ -93,6 +121,20 @@ foreach Index = 1-3 in {
 }
 
 def CTPR : RegisterClass<"E2K", [i128], 128, (sequence "CTPR%u", 1, 3)>;
+
+// AASTI & AAD, used by some commands like ldaa** and staa**
+
+foreach Index = 0-31 in {
+  def AASTI#Index : E2KReg<Index, "aasti"#Index>, DwarfRegNum<[Index]>;
+}
+
+def AASTI : RegisterClass<"E2K", [i128], 128, (sequence "AASTI%u", 0, 31)>;
+
+foreach Index = 0-31 in {
+  def AAD#Index : E2KReg<Index, "aad"#Index>, DwarfRegNum<[Index]>;
+}
+
+def AAD : RegisterClass<"E2K", [i128], 128, (sequence "AAD%u", 0, 31)>;
 
 // current window description
 def WD: E2KReg<0, "WD">;
@@ -159,6 +201,18 @@ def USBR: E2KReg<0, "USBR">;
 // /usr/include/bits/sigcontext.h (struct sigcontext & struct extra_ucontext)
 // /usr/include/asm/kvm.h (struct kvm_regs)
 // but they are barely documented
+
+// used in DST1 encoding
+
+def TST: E2KReg<0, "TST">;
+def TC: E2KReg<0, "TC">;
+def TCD: E2KReg<0, "TCD">;
+def EMPTY_LO: E2KReg<0, "EMPTY_LO">;
+def EMPTY_HI: E2KReg<0, "EMPTY_HI">;
+
+// FIXME : figure out all the possible arguments for rws/rwd/rrs/rrd, also sizes of these registers
+def RegSTATE : RegisterClass<"E2K", [i64], 64,
+    (add PSR)>;
 
 class E2KCtrlReg<bits<16> Enc, string n>: Register<n> {
   let HWEncoding = Enc;

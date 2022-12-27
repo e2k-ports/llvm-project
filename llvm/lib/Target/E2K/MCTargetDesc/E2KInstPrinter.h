@@ -50,6 +50,12 @@ public:
                    raw_ostream &OS);
   void printMembarTag(const MCInst *MI, int opNum, const MCSubtargetInfo &STI,
                       raw_ostream &O);
+
+  template <unsigned N>
+  void printUImmOperand(const MCInst *MI, int OpNum, raw_ostream &O);
+
+  void printU8Imm(const MCInst *MI, int opNum, const MCSubtargetInfo &STI,
+                  raw_ostream &O);
 };
 } // end namespace llvm
 
