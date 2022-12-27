@@ -157,6 +157,41 @@ static const unsigned DSTRegTable[] = {
     0, 0, E2K::EMPTY_LO, E2K::EMPTY_HI,
 };
 
+static const unsigned StateRegTable[] = {
+    E2K::PSR, E2K::WD, 0, 0, E2K::CORE_MODE, 0, E2K::CWD, E2K::PSP_HI,
+    0, E2K::PSP_LO, 0, E2K::PSHTP, 0, E2K::PCSP_HI, 0, E2K::PCSP_LO,
+    0, 0, 0, E2K::PCSHTP, 0, E2K::CTPR1, E2K::CTPR2, E2K::CTPR3,
+    0, 0, 0, 0, 0, 0, E2K::SBR, 0,
+    0, E2K::CUTD, 0, E2K::EIR,0, E2K::CUIR, E2K::OSCUD_HI, E2K::OSCUD_LO,
+    E2K::OSGD_HI, E2K::OSGD_LO, E2K::OSEM, 0,E2K::USD_HI, E2K::USD_LO, 0, E2K::OSR0,
+    E2K::CUD_HI, E2K::CUD_LO, E2K::GD_HI, E2K::GD_LO,E2K::CS_HI, E2K::CS_LO, E2K::DS_HI, E2K::DS_LO,
+    E2K::ES_HI, E2K::ES_LO, E2K::FS_HI, E2K::FS_LO,E2K::GS_HI, E2K::GS_LO, E2K::SS_HI, E2K::SS_LO,
+    E2K::DIBCR, E2K::DIMCR, E2K::DIBSR, E2K::DTCR, 0, 0, 0, 0,
+    E2K::DIBAR0, E2K::DIBAR1, E2K::DIBAR2, E2K::DIBAR3, E2K::DIMAR0, E2K::DIMAR1, E2K::DTARF, E2K::DTART,
+    0, E2K::CR0_HI, 0, E2K::CR0_LO, 0, E2K::CR1_HI, 0, E2K::CR1_LO,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    E2K::SCLKM1, E2K::SCLKM2, 0, 0, 0, 0, 0, 0,
+    E2K::CU_HW0, E2K::CU_HW1, 0, 0, 0, 0, 0, 0,
+    E2K::UPSR, E2K::IP, E2K::NIP, E2K::LSR, E2K::PFPFR, E2K::FPCR, E2K::FPSR, E2K::ILCR,
+    E2K::BR, E2K::BGR, E2K::IDR, 0, 0, 0, 0, 0,
+    E2K::CLKR, E2K::RNDPR, E2K::SCLKR, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, E2K::TIR_HI, E2K::TIR_LO, 0, 0,
+    E2K::RPR_LO, E2K::SBBP, E2K::RPR_HI, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    E2K::UPSRM, 0, 0, E2K::LSR1, 0, 0, 0, E2K::ILCR1,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
+};
+
 enum RegSize {
   s = 's',
   d = 'd',
@@ -204,12 +239,15 @@ static unsigned ChooseBase(RegSize Rs, RegType Rt)
   }
 }
 
-
 static DecodeStatus DecodeRegSTATERegisterClass(MCInst &Inst, unsigned RegNo,
                         uint64_t Address,
                         const MCDisassembler *Decoder) {
-  // TODO
-  Inst.addOperand(MCOperand::createReg(E2K::PSR));
+  if (RegNo > 255)
+    return MCDisassembler::Fail;
+  unsigned reg = StateRegTable[RegNo];
+  if (reg == E2K::NoRegister)
+    return MCDisassembler::Fail;
+  Inst.addOperand(MCOperand::createReg(reg));
   return MCDisassembler::Success;
 }
 
@@ -714,8 +752,37 @@ DecodeStatus E2KDisassembler::getInstruction(MCInst &Instr, uint64_t &Size,
 
   als_ales_t als_ales[6];
   uint32_t CS[2];
+  uint32_t SS;
+  bool HasAAS[6] = {false, false, false, false, false, false};
+  uint16_t AAS[6];
 
   LLVM_DEBUG(dbgs() << "HS" << " : " << format("0x%04x", HS) << "\n");
+
+  const uint32_t MaskType = 1 << 20;
+  uint32_t SSType = 0;
+
+  if (HasSS) {
+    Result = readInstruction32(Bytes, Offset, Size, SS);
+    if (Result == MCDisassembler::Fail)
+      return MCDisassembler::Fail;
+    LLVM_DEBUG(dbgs() << "SS" << " : " << format("0x%04x", SS) << "\n");
+
+    SSType = ((SS & MaskType) == MaskType) ? 1 : 0;
+
+    if (SSType == 0) {
+      for (uint32_t i = 0; i < 4; ++i) {
+        uint32_t MaskAAS = 1 << (12 + i);
+
+        if ((SS & MaskAAS) == MaskAAS) {
+          HasAAS[i >> 1] = true;
+          HasAAS[i + 2] = true;
+        }
+      }
+    }
+    for (uint32_t i = 0; i < 6; ++i) {
+      LLVM_DEBUG(dbgs() << "HasAAS" << i <<  " : " << HasAAS[i] << "\n");
+    }
+  }
 
   for (uint32_t i = 0; i < 6; ++i) {
     if (HasALS[i]) {
@@ -766,6 +833,61 @@ DecodeStatus E2KDisassembler::getInstruction(MCInst &Instr, uint64_t &Size,
     }
   }
 
+  uint32_t NumAAS = 0;
+  for (uint32_t i = 0; i < 6; ++i)
+    if (HasAAS[i])
+      ++NumAAS;
+  if (NumAAS % 2 == 1)
+    Offset += 2;
+
+  for (uint32_t i = 0; i < 6; ++i) {
+    if (HasAAS[i]) {
+      if (HasALES[i]) {
+        Result = readInstruction16(Bytes, Offset, Size, AAS[i]);
+        if (Result == MCDisassembler::Fail)
+          return MCDisassembler::Fail;
+        LLVM_DEBUG(dbgs() << "AAS" << i << " : " << format("0x%02x", AAS[i]) << "\n");
+      }
+    }
+  }
+
+  uint32_t SizePLSCDS = (NumPLS + NumCDS) * 4;
+  if (Offset > Size + SizePLSCDS) {
+    return MCDisassembler::Fail;
+  }
+  uint32_t Remain = Size - Offset - SizePLSCDS;
+  uint32_t NumLTS = Remain / 4;
+  NumLTS = NumLTS > 4 ? 4 : NumLTS;
+  LLVM_DEBUG(dbgs() << "NumLTS" << " : " << NumLTS << "\n");
+  uint32_t PLS[3];
+  uint32_t CDS[3];
+  uint32_t LTS[4];
+
+  for (uint32_t i = 0; i < NumPLS; ++i) {
+    Offset = Size - 4 * (i + 1);
+    Result = readInstruction32(Bytes, Offset, Size, PLS[i]);
+    if (Result == MCDisassembler::Fail)
+      return MCDisassembler::Fail;
+
+    LLVM_DEBUG(dbgs() << "PLS" << i << " : " << format("0x%02x", PLS[i]) << "\n");
+  }
+  for (uint32_t i = 0; i < NumCDS; ++i) {
+    Offset = Size - 4 * (NumPLS + i + 1);
+    Result = readInstruction32(Bytes, Offset, Size, CDS[i]);
+    if (Result == MCDisassembler::Fail)
+      return MCDisassembler::Fail;
+
+    LLVM_DEBUG(dbgs() << "CDS" << i << " : " << format("0x%02x", CDS[i]) << "\n");
+  }
+  for (uint32_t i = 0; i < NumLTS; ++i) {
+    Offset = Size - 4 * (NumPLS + NumCDS + i + 1);
+    Result = readInstruction32(Bytes, Offset, Size, LTS[i]);
+    if (Result == MCDisassembler::Fail)
+      return MCDisassembler::Fail;
+
+    LLVM_DEBUG(dbgs() << "LTS" << i << " : " << format("0x%02x", LTS[i]) << "\n");
+  }
+
   *CurrentBundle = &Instr;
   Instr.setOpcode(E2K::BUNDLE);
 
@@ -774,6 +896,93 @@ DecodeStatus E2KDisassembler::getInstruction(MCInst &Instr, uint64_t &Size,
     SubInstr->setOpcode(E2K::NOOP);
     SubInstr->addOperand(MCOperand::createImm(NOP));
     Instr.addOperand(MCOperand::createInst(SubInstr));
+  }
+
+  if (HasSS) {
+    uint32_t IPD = (SS >> 30) & 0b11;
+
+    if (IPD > 0) {
+      MCInst *SubInstr = getContext().createMCInst();
+      SubInstr->setOpcode(E2K::IPD);
+      SubInstr->addOperand(MCOperand::createImm(IPD));
+      Instr.addOperand(MCOperand::createInst(SubInstr));
+    }
+
+    if (SSType == 0) {
+      const uint32_t MaskEAP = 1 << 29;
+      const uint32_t MaskBAP = 1 << 28;
+      const uint32_t MaskSRP = 1 << 27;
+      const uint32_t MaskVDFI = 1 << 26;
+      const uint32_t MaskCRP = 1 << 25;
+
+      if ((SS & MaskEAP) == MaskEAP) {
+        MCInst *SubInstr = getContext().createMCInst();
+        SubInstr->setOpcode(E2K::EAP);
+        Instr.addOperand(MCOperand::createInst(SubInstr));
+      }
+      if ((SS & MaskBAP) == MaskBAP) {
+        MCInst *SubInstr = getContext().createMCInst();
+        SubInstr->setOpcode(E2K::BAP);
+        Instr.addOperand(MCOperand::createInst(SubInstr));
+      }
+
+      bool HasCRP = (SS & MaskCRP) == MaskCRP;
+      bool HasSRP = (SS & MaskSRP) == MaskSRP;
+
+      if (HasCRP && HasSRP) {
+        MCInst *SubInstr = getContext().createMCInst();
+        SubInstr->setOpcode(E2K::SLRP);
+        Instr.addOperand(MCOperand::createInst(SubInstr));
+      } else if (HasCRP) {
+        MCInst *SubInstr = getContext().createMCInst();
+        SubInstr->setOpcode(E2K::CRP);
+        Instr.addOperand(MCOperand::createInst(SubInstr));
+      } else if (HasSRP) {
+        MCInst *SubInstr = getContext().createMCInst();
+        SubInstr->setOpcode(E2K::SRP);
+        Instr.addOperand(MCOperand::createInst(SubInstr));
+      }
+
+      if ((SS & MaskVDFI) == MaskVDFI) {
+        MCInst *SubInstr = getContext().createMCInst();
+        SubInstr->setOpcode(E2K::VDFI);
+        Instr.addOperand(MCOperand::createInst(SubInstr));
+      }
+
+      uint32_t ABG = (SS >> 23) & 0b11;
+      uint32_t ABN = (SS >> 21) & 0b11;
+      uint32_t APB = (SS >> 18) & 0b11;
+      uint32_t ALC = (SS >> 16) & 0b11;
+
+      if (ABG) {
+        MCInst *SubInstr = getContext().createMCInst();
+        SubInstr->setOpcode(E2K::ABG);
+        SubInstr->addOperand(MCOperand::createImm(ABG >> 1));
+        SubInstr->addOperand(MCOperand::createImm(ABG & 1));
+        Instr.addOperand(MCOperand::createInst(SubInstr));
+      }
+      if (ABN) {
+        MCInst *SubInstr = getContext().createMCInst();
+        SubInstr->setOpcode(E2K::ABN);
+        SubInstr->addOperand(MCOperand::createImm(ABN >> 1));
+        SubInstr->addOperand(MCOperand::createImm(ABN & 1));
+        Instr.addOperand(MCOperand::createInst(SubInstr));
+      }
+      if (APB) {
+        MCInst *SubInstr = getContext().createMCInst();
+        SubInstr->setOpcode(E2K::ABP);
+        SubInstr->addOperand(MCOperand::createImm(APB >> 1));
+        SubInstr->addOperand(MCOperand::createImm(APB & 1));
+        Instr.addOperand(MCOperand::createInst(SubInstr));
+      }
+      if (ALC) {
+        MCInst *SubInstr = getContext().createMCInst();
+        SubInstr->setOpcode(E2K::ALC);
+        SubInstr->addOperand(MCOperand::createImm(ALC >> 1));
+        SubInstr->addOperand(MCOperand::createImm(ALC & 1));
+        Instr.addOperand(MCOperand::createInst(SubInstr));
+      }
+    }
   }
 
   for (uint32_t i = 0; i < 2; ++i) {
