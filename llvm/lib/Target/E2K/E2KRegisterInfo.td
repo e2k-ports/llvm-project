@@ -148,11 +148,11 @@ def TR: E2KReg<0, "TR">;
 // processor state
 def PSR: E2KReg<0, "PSR">;
 
-// user processor state
-def UPSR: E2KReg<0, "UPSR">;
-
 // instruction pointer
 def IP: E2KReg<0, "IP">;
+
+// user processor state
+def UPSR: E2KReg<0, "UPSR">;
 
 // next instruction pointer
 def NIP: E2KReg<0, "NIP">;
@@ -171,12 +171,18 @@ def ILCR: E2KReg<0, "ILCR">;
 
 // user stack pointer
 def USD: E2KReg<0, "USD">;
+def USD_HI: E2KReg<0, "USD.HI">;
+def USD_LO: E2KReg<0, "USD.LO">;
 
 // code segment
 def CUD: E2KReg<0, "CUD">;
+def CUD_HI: E2KReg<0, "CUD.HI">;
+def CUD_LO: E2KReg<0, "CUD.LO">;
 
 // data segment
 def GD: E2KReg<0, "GD">;
+def GD_HI: E2KReg<0, "GD_HI">;
+def GD_LO: E2KReg<0, "GD_LO">;
 
 // current module type
 def TSD: E2KReg<0, "TSD">;
@@ -192,6 +198,8 @@ def PCSHTP: E2KReg<0, "PCSHTP">;
 
 // procedure stack pointer
 def PSP: E2KReg<0, "PSP">;
+def PSP_HI: E2KReg<0, "PSP.HI">;
+def PSP_LO: E2KReg<0, "PSP.LO">;
 
 // user stack base pointer
 def USBR: E2KReg<0, "USBR">;
@@ -210,9 +218,106 @@ def TCD: E2KReg<0, "TCD">;
 def EMPTY_LO: E2KReg<0, "EMPTY_LO">;
 def EMPTY_HI: E2KReg<0, "EMPTY_HI">;
 
+def CORE_MODE: E2KReg<0, "CORE_MODE">;
+def CWD: E2KReg<0, "CWD">;
+def SBR: E2KReg<0, "SBR">;
+def CUTD: E2KReg<0, "CUTD">;
+def EIR: E2KReg<0, "EIR">;
+def OSEM: E2KReg<0, "OSEM">;
+def OSR0: E2KReg<0, "OSR0">;
+def DIBCR: E2KReg<0, "DIBCR">;
+def DIMCR: E2KReg<0, "DIMCR">;
+def DIBSR: E2KReg<0, "DIBSR">;
+def DTCR: E2KReg<0, "DTCR">;
+def DTART: E2KReg<0, "DTART">;
+def DTARF: E2KReg<0, "DTARF">;
+def FPCR: E2KReg<0, "FPCR">;
+def FPSR: E2KReg<0, "FPSR">;
+def BGR: E2KReg<0, "BGR">;
+def IDR: E2KReg<0, "IDR">;
+def CLKR: E2KReg<0, "CLKR">;
+def RNDPR: E2KReg<0, "RNDPR">;
+def SCLKR: E2KReg<0, "SCLKR">;
+def SBBP: E2KReg<0, "SBBP">;
+def UPSRM: E2KReg<0, "UPSRM">;
+def LSR1: E2KReg<0, "LSR1">;
+def ILCR1: E2KReg<0, "ILCR1">;
+
+def DIBAR0: E2KReg<0, "DIBAR0">;
+def DIBAR1: E2KReg<0, "DIBAR1">;
+def DIBAR2: E2KReg<0, "DIBAR2">;
+def DIBAR3: E2KReg<0, "DIBAR3">;
+
+def DIMAR0: E2KReg<0, "DIMAR0">;
+def DIMAR1: E2KReg<0, "DIMAR1">;
+
+def SCLKM1: E2KReg<0, "SCLKM1">;
+def SCLKM2: E2KReg<0, "SCLKM2">;
+
+def CU_HW0: E2KReg<0, "CU_HW0">;
+def CU_HW1: E2KReg<0, "CU_HW1">;
+
+def PCSP_HI: E2KReg<0, "PCSP.HI">;
+def PCSP_LO: E2KReg<0, "PCSP.LO">;
+
+def OSCUD_HI: E2KReg<0, "OSCUD.HI">;
+def OSCUD_LO: E2KReg<0, "OSCUD.LO">;
+
+def OSGD_HI: E2KReg<0, "OSGD.HI">;
+def OSGD_LO: E2KReg<0, "OSGD.LO">;
+
+def CS_HI: E2KReg<0, "CS.HI">;
+def CS_LO: E2KReg<0, "CS.LO">;
+
+def DS_HI: E2KReg<0, "DS.HI">;
+def DS_LO: E2KReg<0, "DS.LO">;
+
+def ES_HI: E2KReg<0, "ES.HI">;
+def ES_LO: E2KReg<0, "ES.LO">;
+
+def FS_HI: E2KReg<0, "FS.HI">;
+def FS_LO: E2KReg<0, "FS.LO">;
+
+def GS_HI: E2KReg<0, "GS.HI">;
+def GS_LO: E2KReg<0, "GS.LO">;
+
+def SS_HI: E2KReg<0, "SS.HI">;
+def SS_LO: E2KReg<0, "SS.LO">;
+
+def CR0_HI: E2KReg<0, "CR0.HI">;
+def CR0_LO: E2KReg<0, "CR0.LO">;
+
+def CR1_HI: E2KReg<0, "CR1.HI">;
+def CR1_LO: E2KReg<0, "CR1.LO">;
+
+def TIR_HI: E2KReg<0, "TIR_HI">;
+def TIR_LO: E2KReg<0, "TIR_LO">;
+
+def RPR_HI: E2KReg<0, "RPR_HI">;
+def RPR_LO: E2KReg<0, "RPR_LO">;
+
+
 // FIXME : figure out all the possible arguments for rws/rwd/rrs/rrd, also sizes of these registers
 def RegSTATE : RegisterClass<"E2K", [i64], 64,
-    (add PSR)>;
+    (add PSR, WD, CORE_MODE, CWD, PSP_HI,
+    PSP_LO, PSHTP, PCSP_HI, PCSP_LO,
+    PCSHTP, CTPR1, CTPR2, CTPR3,
+    SBR,
+    CUTD, EIR,CUIR, OSCUD_HI, OSCUD_LO,
+    OSGD_HI, OSGD_LO, OSEM, USD_HI, USD_LO, OSR0,
+    CUD_HI, CUD_LO, GD_HI, GD_LO,CS_HI, CS_LO, DS_HI, DS_LO,
+    ES_HI, ES_LO, FS_HI, FS_LO,GS_HI, GS_LO, SS_HI, SS_LO,
+    DIBCR, DIMCR, DIBSR, DTCR,
+    DIBAR0, DIBAR1, DIBAR2, DIBAR3, DIMAR0, DIMAR1, DTARF, DTART,
+    CR0_HI, CR0_LO, CR1_HI, CR1_LO,
+    SCLKM1, SCLKM2,
+    CU_HW0, CU_HW1,
+    UPSR, IP, NIP, LSR, PFPFR, FPCR, FPSR, ILCR,
+    BR, BGR, IDR,
+    CLKR, RNDPR, SCLKR,
+    TIR_HI, TIR_LO,
+    RPR_LO, SBBP, RPR_HI,
+    UPSRM, LSR1, ILCR1)>;
 
 class E2KCtrlReg<bits<16> Enc, string n>: Register<n> {
   let HWEncoding = Enc;

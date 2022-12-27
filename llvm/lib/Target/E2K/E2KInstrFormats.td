@@ -36,12 +36,14 @@ def format {
   string alopf10 = " $src1, $src2, $src3";
 
   string alopf11 = " $src1, $src2, $dst";
+  // getsp
+  string alopf12 = " $src2, $dst";
 
   string alopf13 = " $src1, $src2, $src3";
   // rws/rwd
   string alopf15 = " $src2, $dst";
   // rrs/rrd
-  string alopf16 = " $src2, $dst";
+  string alopf16 = " $src1, $dst";
   // used by ALES EXT=2 comparison operations
   string alopf17 = " $src1, $src2, $dst";
   // aaurr/aaurrd
@@ -167,6 +169,11 @@ def S_D : E2KOperands {
   let Ins = (ins SRC2S:$src2);
 }
 
+def p_D : E2KOperands {
+  let Outs = (outs DST1D:$dst);
+  let Ins = (ins SRC2QP:$src2);
+}
+
 def D_S : E2KOperands {
   let Outs = (outs DST1S:$dst);
   let Ins = (ins SRC2D:$src2);
@@ -271,12 +278,12 @@ def D_R : E2KOperands {
 
 def R_S : E2KOperands {
   let Outs = (outs DST1S:$dst);
-  let Ins = (ins SRC1S:$src1, RegSTATE:$src2);
+  let Ins = (ins SRC1S:$src2, RegSTATE:$src1);
 }
 
 def R_D : E2KOperands {
   let Outs = (outs DST1D:$dst);
-  let Ins = (ins SRC1S:$src1, RegSTATE:$src2);
+  let Ins = (ins SRC1S:$src2, RegSTATE:$src1);
 }
 
 // ALOPF17
@@ -379,6 +386,16 @@ def u8imm : Operand<i8> {
 }
 
 class NOPInst<dag outs, dag ins, string asmstr, list<dag> pattern = []>: Instruction {
+
+  let Namespace = "E2K";
+  field bits<32> Inst;
+  dag OutOperandList = outs;
+  dag InOperandList = ins;
+  let AsmString = asmstr;
+  let Pattern = pattern;
+}
+
+class SSInst<dag outs, dag ins, string asmstr, list<dag> pattern = []>: Instruction {
 
   let Namespace = "E2K";
   field bits<32> Inst;
@@ -527,6 +544,26 @@ multiclass ALESEXT2Inst<bits<7> opcode, bits<8> opcode2, bits<8> ext2, string mn
                                 list<dag> pattern = []> {
   foreach channel = channels in {
     def : ALESEXT2InstOneChannel<opcode, opcode2, ext2, operands.Outs, operands.Ins,
+    !strconcat(mnemonic, "," # channel, params), channel, pattern>;
+  }
+}
+
+// ALES with both EXT1 and EXT2, used by getsp
+class ALESEXT1EXT2InstOneChannel<bits<7> opcode, bits<8> ext1, bits<8> opcode2, bits<8> ext2, dag outs, dag ins, string asmstr,
+              int channel,
+              list<dag> pattern = []>: ALESInstOneChannel<opcode, opcode2, outs, ins, asmstr, channel, pattern> {
+
+  bits<8> Ext2 = ext2;
+  let Inst{39-32} = Ext2;
+  bits<8> Ext1 = ext1;
+  let Inst{23-16} = Ext1;
+}
+
+multiclass ALESEXT1EXT2Inst<bits<7> opcode, bits<8> ext1, bits<8> opcode2, bits<8> ext2, string mnemonic, string params, E2KOperands operands,
+                                list<int> channels = c.all,
+                                list<dag> pattern = []> {
+  foreach channel = channels in {
+    def : ALESEXT1EXT2InstOneChannel<opcode, ext1, opcode2, ext2, operands.Outs, operands.Ins,
     !strconcat(mnemonic, "," # channel, params), channel, pattern>;
   }
 }
