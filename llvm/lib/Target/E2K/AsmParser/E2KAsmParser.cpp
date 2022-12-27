@@ -287,6 +287,19 @@ public:
     return true;
   }
 
+  static bool isImmUnsignedi8Value(uint64_t Value) {
+    return isUInt<8>(Value) || isInt<8>(Value);
+  }
+
+  bool isImmUnsignedi8() const {
+    if (!isImm()) return false;
+    // If this isn't a constant expr, just assume it fits and let relaxation
+    // handle it.
+    const MCConstantExpr *CE = dyn_cast<MCConstantExpr>(getImm());
+    if (!CE) return true;
+    return isImmUnsignedi8Value(CE->getValue());
+  }
+
   bool isShiftAmtImm5() const {
     if (!isImm())
       return false;
