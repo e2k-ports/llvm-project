@@ -623,9 +623,11 @@ defm STSSQ : ALESEXT2SRC3Inst<0x07, 0x01, 0xC0, "stssq", format.alopf13, SSQ, c.
 
 defm PADDB : ALESEXT2Inst<0x08, 0x01, 0xC0, "paddb", format.alopf11, DD_D, c.c03>;
 defm PACKSSHB : ALESEXT2Inst<0x08, 0x01, 0xC0, "packsshb", format.alopf11, DD_D, c.c14>;
+defm GETTAGS : ALESEXT2Inst<0x08, 0x01, 0xC0, "gettags", format.alopf11, SS_S, c.c25>;
 
 defm PADDH : ALESEXT2Inst<0x09, 0x01, 0xC0, "paddh", format.alopf11, DD_D, c.c03>;
 defm PACKUSHB : ALESEXT2Inst<0x09, 0x01, 0xC0, "packushb", format.alopf11, DD_D, c.c14>;
+defm GETTAGD : ALESEXT2Inst<0x09, 0x01, 0xC0, "gettags", format.alopf11, DD_D, c.c25>;
 
 defm PADDSB : ALESEXT2Inst<0x0a, 0x01, 0xC0, "paddsb", format.alopf11, DD_D, c.c03>;
 defm PACKSSWH : ALESEXT2Inst<0x0a, 0x01, 0xC0, "packsswh", format.alopf11, DD_D, c.c14>;
@@ -719,10 +721,14 @@ defm SMULX : ALESEXT2Inst<0x23, 0x01, 0xC0, "smulx", format.alopf11, SS_D, c.c01
 defm FSCALES : ALESEXT2Inst<0x24, 0x01, 0xC0, "fscales", format.alopf11, SS_S, c.c14>;
 defm FSCALED : ALESEXT2Inst<0x25, 0x01, 0xC0, "fscaled", format.alopf11, DS_D, c.c14>;
 
+defm GETTC : ALESEXT2Inst<0x24, 0x01, 0xC0, "gettc", format.alopf11, SS_D, c.c0>;
+defm GETTST : ALESEXT2Inst<0x24, 0x01, 0xC0, "gettst", format.alopf11, SS_D, c.c3>;
+
 // store byte (guarded)
 defm STGDB : ALESEXT2SRC3Inst<0x24, 0x01, 0xC0, "stgdb", format.alopf13, SSS, c.c25>;
 
 defm PUTTC : ALESEXT2Inst<0x25, 0x01, 0xC0, "puttc", format.alopf11, DD_D, c.c0>;
+defm PUTTST : ALESEXT2Inst<0x25, 0x01, 0xC0, "puttc", format.alopf11, DD_D, c.c3>;
 
 // store half-word (guarded)
 defm STGDH : ALESEXT2SRC3Inst<0x25, 0x01, 0xC0, "stgdh", format.alopf13, SSS, c.c25>;
@@ -731,6 +737,9 @@ defm PMULLW : ALESEXT2Inst<0x26, 0x01, 0xC0, "pmullw", format.alopf11, DD_D, c.c
 
 // store word (guarded)
 defm STGDW : ALESEXT2SRC3Inst<0x26, 0x01, 0xC0, "stgdw", format.alopf13, SSS, c.c25>;
+
+defm INVTC : ALESEXT2Inst<0x26, 0x01, 0xC0, "invtc", format.alopf11, DD_D, c.c0>;
+defm INVTCE : ALESEXT2Inst<0x26, 0x01, 0xC1, "invtce", format.alopf11, DD_D, c.c0>;
 
 defm FXSCALESX : ALESEXT2Inst<0x27, 0x01, 0xC0, "fxscalesx", format.alopf11, DS_D, c.c14>;
 
@@ -885,14 +894,22 @@ defm PFDIVD : ALESEXT2Inst<0x4b, 0x01, 0xC0, "pfdivd", format.alopf11, DD_D, c.c
 
 defm PSRLD : ALESEXT2Inst<0x4c, 0x01, 0xC0, "psrld", format.alopf11, DD_D, c.c14>;
 
+defm FSQRTS : ALESEXT2Inst<0x4c, 0x01, 0xC0, "fsqrts", format.alopf11, SS_S, c.c5>;
+
 defm PCMPEQD : ALESEXT2Inst<0x4d, 0x01, 0xC0, "pcmpeqd", format.alopf11, DD_D, c.c03>;
 
+defm FSQRTID : ALESEXT2Inst<0x4d, 0x01, 0xC0, "fsqrtid", format.alopf11, DD_D, c.c5>;
+
 defm PSLLD : ALESEXT2Inst<0x4e, 0x01, 0xC0, "pslld", format.alopf11, DD_D, c.c14>;
+
+defm PFSQRTS : ALESEXT2Inst<0x4e, 0x01, 0xC0, "pfsqrts", format.alopf11, SS_S, c.c5>;
 
 defm PCMPGTD : ALESEXT2Inst<0x4f, 0x01, 0xC0, "pcmpgtd", format.alopf11, DD_D, c.c03>;
 
 defm APTOAP : ALESEXT2Inst<0x50, 0x01, 0xC0, "aptoap", format.alopf11, QS_Q, c.c03>;
 defm APTOAPB : ALESEXT2Inst<0x51, 0x01, 0xC0, "aptoapb", format.alopf11, QS_Q, c.c03>;
+
+defm FCRPS : ALESEXT2Inst<0x50, 0x01, 0xC0, "fcrps", format.alopf11, SS_S, c.c5>;
 
 // square root, final command
 defm FSQRTTD : ALESEXT2Inst<0x51, 0x01, 0xC0, "fsqrttd", format.alopf11, DD_D, c.c5>;
@@ -902,11 +919,20 @@ defm GETVA : ALESEXT2Inst<0x52, 0x01, 0xC0, "getva", format.alopf11, QS_D, c.c03
 // packed square root, final command
 defm PFSQRTTD : ALESEXT2Inst<0x53, 0x01, 0xC0, "pfsqrttd", format.alopf11, DD_D, c.c5>;
 
+defm IBRANCHD : ALESEXT2Inst<0x53, 0x01, 0xC0, "ibranchd", format.alopf11, DD_D, c.c0>;
+
 defm ICALLD : ALESEXT2Inst<0x54, 0x01, 0xC0, "icalld", format.alopf11, DD_D, c.c0>;
+
+defm MOVTQ : ALESEXT2Inst<0x57, 0x01, 0xC0, "movtq", format.alopf11, QQ_Q, c.c03>;
+defm MOVTCQ : ALESEXT2Inst<0x57, 0x01, 0xC1, "movtcq", format.alopf11, QQ_Q, c.c03>;
+defm MOVTRQ : ALESEXT2Inst<0x57, 0x01, 0xC2, "movtrq", format.alopf11, QQ_Q, c.c03>;
+defm MOVTRCQ : ALESEXT2Inst<0x57, 0x01, 0xC3, "movtrcq", format.alopf11, QQ_Q, c.c03>;
 
 defm GETSP : ALESEXT1EXT2Inst<0x58, 0xEC, 0x01, 0xC0, "getsp", format.alopf12, S_D, c.c0>;
 
 defm MPSADBH : ALESEXT2Inst<0x58, 0x01, 0xC0, "mpsadbh", format.alopf11, DD_D, c.c14>;
+
+defm GETSOD : ALESEXT1EXT2Inst<0x5a, 0xEC, 0x01, 0xC0, "getsod", format.alopf12, S_D, c.c0>;
 
 defm LDRD : ALESEXT2Inst<0x5b, 0x01, 0xC0, "ldrd", format.alopf11, DD_D, c.c0235>;
 
@@ -1162,6 +1188,11 @@ defm FSUBS2 : ALESEXT2Inst<0x32, 0x02, 0xC0, "fsubs", format.alopf11, SS_S, c.c2
 defm FSUBD2 : ALESEXT2Inst<0x33, 0x02, 0xC0, "fsubd", format.alopf11, DD_D, c.c25>;
 
 defm QPMSK2SGNB : ALESEXT2Inst<0x34, 0x02, 0xC0, "qpmsk2sgnb", format.alopf11, pS_p, c.c0134>;
+
+defm QPCEXT_0x00 : ALESEXT2Inst<0x35, 0x02, 0xC0, "qpcext_0x00", format.alopf11, DD_D, c.c0134>;
+defm QPCEXT_0x7f : ALESEXT2Inst<0x35, 0x02, 0xC2, "qpcext_0x7f", format.alopf11, DD_D, c.c0134>;
+defm QPCEXT_0x80 : ALESEXT2Inst<0x35, 0x02, 0xC4, "qpcext_0x80", format.alopf11, DD_D, c.c0134>;
+defm QPCEXT_0xff : ALESEXT2Inst<0x35, 0x02, 0xC6, "qpcext_0xff", format.alopf11, DD_D, c.c0134>;
 
 defm QPSIGNB : ALESEXT2Inst<0x38, 0x02, 0xC0, "qpsignb", format.alopf11, pp_p, c.c03>;
 defm QPSIGNH : ALESEXT2Inst<0x39, 0x02, 0xC0, "qpsignh", format.alopf11, pp_p, c.c03>;
@@ -2085,18 +2116,33 @@ defm PFHADDSUB_ADDSUBS : ALESInst<0x6e, 0x0f, "pfhadd_addsubs", format.alopf21, 
 // ALES opcodes, opcode2 = 16
 //===----------------------------------------------------------------------===//
 
+foreach Index = 0-127 in {
+  defm PLOG_#Index : ALESInst<Index, 0x10, "plog_"#Index, format.alopf21, DDD_D, c.c0134>;
+}
+
 //===----------------------------------------------------------------------===//
 // ALES opcodes, opcode2 = 17
 //===----------------------------------------------------------------------===//
+
+foreach Index = 0-127 in {
+  defm PLOG_#!add(Index, 128) : ALESInst<Index, 0x11, "plog_"#!add(Index, 128), format.alopf21, DDD_D, c.c0134>;
+}
 
 //===----------------------------------------------------------------------===//
 // ALES opcodes, opcode2 = 18
 //===----------------------------------------------------------------------===//
 
+foreach Index = 0-127 in {
+  defm QPLOG_#Index : ALESInst<Index, 0x12, "qplog_"#Index, format.alopf21, DDD_D, c.c0134>;
+}
+
 //===----------------------------------------------------------------------===//
 // ALES opcodes, opcode2 = 19
 //===----------------------------------------------------------------------===//
 
+foreach Index = 0-127 in {
+  defm QPLOG_#!add(Index, 128) : ALESInst<Index, 0x13, "qplog_"#!add(Index, 128), format.alopf21, DDD_D, c.c0134>;
+}
 
 //===----------------------------------------------------------------------===//
 // CS0 opcodes

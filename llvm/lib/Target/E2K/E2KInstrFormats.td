@@ -17,6 +17,7 @@ def c {
   list<int> c25 = [2, 5];
   list<int> c0 = [0];
   list<int> c2 = [2];
+  list<int> c3 = [3];
   list<int> c5 = [5];
 }
 
@@ -154,6 +155,11 @@ def S_B : E2KOperands {
   let Ins = (ins SRC2S:$src1, SRC2S:$src2);
 }
 
+def Q_Q : E2KOperands {
+  let Outs = (outs DST1Q:$dst);
+  let Ins = (ins SRC2Q:$src2);
+}
+
 def S_S : E2KOperands {
   let Outs = (outs DST1S:$dst);
   let Ins = (ins SRC2S:$src2);
@@ -211,6 +217,11 @@ def DD_Q : E2KOperands {
 def SS_Q : E2KOperands {
   let Outs = (outs DST1Q:$dst);
   let Ins = (ins SRC1S:$src1, SRC2S:$src2);
+}
+
+def QQ_Q : E2KOperands {
+  let Outs = (outs DST1Q:$dst);
+  let Ins = (ins SRC1Q:$src1, SRC2Q:$src2);
 }
 
 def QS_Q : E2KOperands {
