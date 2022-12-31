@@ -42,15 +42,6 @@ E2KInstrInfo::E2KInstrInfo(E2KSubtarget &ST)
 /// any side effects other than loading from the stack slot.
 unsigned E2KInstrInfo::isLoadFromStackSlot(const MachineInstr &MI,
                                              int &FrameIndex) const {
-  if (MI.getOpcode() == E2K::LDri || MI.getOpcode() == E2K::LDXri ||
-      MI.getOpcode() == E2K::LDFri || MI.getOpcode() == E2K::LDDFri ||
-      MI.getOpcode() == E2K::LDQFri) {
-    if (MI.getOperand(1).isFI() && MI.getOperand(2).isImm() &&
-        MI.getOperand(2).getImm() == 0) {
-      FrameIndex = MI.getOperand(1).getIndex();
-      return MI.getOperand(0).getReg();
-    }
-  }
   return 0;
 }
 
@@ -61,15 +52,6 @@ unsigned E2KInstrInfo::isLoadFromStackSlot(const MachineInstr &MI,
 /// any side effects other than storing to the stack slot.
 unsigned E2KInstrInfo::isStoreToStackSlot(const MachineInstr &MI,
                                             int &FrameIndex) const {
-  if (MI.getOpcode() == E2K::STri || MI.getOpcode() == E2K::STXri ||
-      MI.getOpcode() == E2K::STFri || MI.getOpcode() == E2K::STDFri ||
-      MI.getOpcode() == E2K::STQFri) {
-    if (MI.getOperand(0).isFI() && MI.getOperand(1).isImm() &&
-        MI.getOperand(1).getImm() == 0) {
-      FrameIndex = MI.getOperand(0).getIndex();
-      return MI.getOperand(2).getReg();
-    }
-  }
   return 0;
 }
 
@@ -80,81 +62,22 @@ static bool IsIntegerCC(unsigned CC)
 
 static E2KCC::CondCodes GetOppositeBranchCondition(E2KCC::CondCodes CC)
 {
-  switch(CC) {
-  case E2KCC::ICC_A:    return E2KCC::ICC_N;
-  case E2KCC::ICC_N:    return E2KCC::ICC_A;
-  case E2KCC::ICC_NE:   return E2KCC::ICC_E;
-  case E2KCC::ICC_E:    return E2KCC::ICC_NE;
-  case E2KCC::ICC_G:    return E2KCC::ICC_LE;
-  case E2KCC::ICC_LE:   return E2KCC::ICC_G;
-  case E2KCC::ICC_GE:   return E2KCC::ICC_L;
-  case E2KCC::ICC_L:    return E2KCC::ICC_GE;
-  case E2KCC::ICC_GU:   return E2KCC::ICC_LEU;
-  case E2KCC::ICC_LEU:  return E2KCC::ICC_GU;
-  case E2KCC::ICC_CC:   return E2KCC::ICC_CS;
-  case E2KCC::ICC_CS:   return E2KCC::ICC_CC;
-  case E2KCC::ICC_POS:  return E2KCC::ICC_NEG;
-  case E2KCC::ICC_NEG:  return E2KCC::ICC_POS;
-  case E2KCC::ICC_VC:   return E2KCC::ICC_VS;
-  case E2KCC::ICC_VS:   return E2KCC::ICC_VC;
-
-  case E2KCC::FCC_A:    return E2KCC::FCC_N;
-  case E2KCC::FCC_N:    return E2KCC::FCC_A;
-  case E2KCC::FCC_U:    return E2KCC::FCC_O;
-  case E2KCC::FCC_O:    return E2KCC::FCC_U;
-  case E2KCC::FCC_G:    return E2KCC::FCC_ULE;
-  case E2KCC::FCC_LE:   return E2KCC::FCC_UG;
-  case E2KCC::FCC_UG:   return E2KCC::FCC_LE;
-  case E2KCC::FCC_ULE:  return E2KCC::FCC_G;
-  case E2KCC::FCC_L:    return E2KCC::FCC_UGE;
-  case E2KCC::FCC_GE:   return E2KCC::FCC_UL;
-  case E2KCC::FCC_UL:   return E2KCC::FCC_GE;
-  case E2KCC::FCC_UGE:  return E2KCC::FCC_L;
-  case E2KCC::FCC_LG:   return E2KCC::FCC_UE;
-  case E2KCC::FCC_UE:   return E2KCC::FCC_LG;
-  case E2KCC::FCC_NE:   return E2KCC::FCC_E;
-  case E2KCC::FCC_E:    return E2KCC::FCC_NE;
-
-  case E2KCC::CPCC_A:   return E2KCC::CPCC_N;
-  case E2KCC::CPCC_N:   return E2KCC::CPCC_A;
-  case E2KCC::CPCC_3:   [[fallthrough]];
-  case E2KCC::CPCC_2:   [[fallthrough]];
-  case E2KCC::CPCC_23:  [[fallthrough]];
-  case E2KCC::CPCC_1:   [[fallthrough]];
-  case E2KCC::CPCC_13:  [[fallthrough]];
-  case E2KCC::CPCC_12:  [[fallthrough]];
-  case E2KCC::CPCC_123: [[fallthrough]];
-  case E2KCC::CPCC_0:   [[fallthrough]];
-  case E2KCC::CPCC_03:  [[fallthrough]];
-  case E2KCC::CPCC_02:  [[fallthrough]];
-  case E2KCC::CPCC_023: [[fallthrough]];
-  case E2KCC::CPCC_01:  [[fallthrough]];
-  case E2KCC::CPCC_013: [[fallthrough]];
-  case E2KCC::CPCC_012:
-      // "Opposite" code is not meaningful, as we don't know
-      // what the CoProc condition means here. The cond-code will
-      // only be used in inline assembler, so this code should
-      // not be reached in a normal compilation pass.
-      llvm_unreachable("Meaningless inversion of co-processor cond code");
-  }
   llvm_unreachable("Invalid cond code");
 }
 
 static bool isUncondBranchOpcode(int Opc) {
-  return Opc == E2K::BA || Opc == E2K::BPA;
+  return false;
 }
 
 static bool isI32CondBranchOpcode(int Opc) {
-  return Opc == E2K::BCOND || Opc == E2K::BPICC || Opc == E2K::BPICCA ||
-         Opc == E2K::BPICCNT || Opc == E2K::BPICCANT;
+  return false;
 }
 
 static bool isI64CondBranchOpcode(int Opc) {
-  return Opc == E2K::BPXCC || Opc == E2K::BPXCCA || Opc == E2K::BPXCCNT ||
-         Opc == E2K::BPXCCANT;
+  return false;
 }
 
-static bool isFCondBranchOpcode(int Opc) { return Opc == E2K::FBCOND; }
+static bool isFCondBranchOpcode(int Opc) { return false; }
 
 static bool isCondBranchOpcode(int Opc) {
   return isI32CondBranchOpcode(Opc) || isI64CondBranchOpcode(Opc) ||
@@ -162,7 +85,7 @@ static bool isCondBranchOpcode(int Opc) {
 }
 
 static bool isIndirectBranchOpcode(int Opc) {
-  return Opc == E2K::BINDrr || Opc == E2K::BINDri;
+  return false;
 }
 
 static void parseCondBranch(MachineInstr *LastInst, MachineBasicBlock *&Target,
@@ -272,26 +195,7 @@ unsigned E2KInstrInfo::insertBranch(MachineBasicBlock &MBB,
          "E2K branch conditions should have at most two components!");
   assert(!BytesAdded && "code size not handled");
 
-  if (Cond.empty()) {
-    assert(!FBB && "Unconditional branch with multiple successors!");
-    BuildMI(&MBB, DL, get(Subtarget.is64Bit() ? E2K::BPA : E2K::BA)).addMBB(TBB);
-    return 1;
-  }
-
-  // Conditional branch
-  unsigned Opc = Cond[0].getImm();
-  unsigned CC = Cond[1].getImm();
-
-  if (IsIntegerCC(CC)) {
-    BuildMI(&MBB, DL, get(Opc)).addMBB(TBB).addImm(CC);
-  } else {
-    BuildMI(&MBB, DL, get(E2K::FBCOND)).addMBB(TBB).addImm(CC);
-  }
-  if (!FBB)
-    return 1;
-
-  BuildMI(&MBB, DL, get(Subtarget.is64Bit() ? E2K::BPA : E2K::BA)).addMBB(FBB);
-  return 2;
+  llvm_unreachable("cannot insert branch");
 }
 
 unsigned E2KInstrInfo::removeBranch(MachineBasicBlock &MBB,
@@ -329,84 +233,8 @@ void E2KInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
                                  MachineBasicBlock::iterator I,
                                  const DebugLoc &DL, MCRegister DestReg,
                                  MCRegister SrcReg, bool KillSrc) const {
-  unsigned numSubRegs = 0;
-  unsigned movOpc     = 0;
-  const unsigned *subRegIdx = nullptr;
-  bool ExtraG0 = false;
 
-  const unsigned DW_SubRegsIdx[]  = { E2K::sub_even, E2K::sub_odd };
-  const unsigned DFP_FP_SubRegsIdx[]  = { E2K::sub_even, E2K::sub_odd };
-  const unsigned QFP_DFP_SubRegsIdx[] = { E2K::sub_even64, E2K::sub_odd64 };
-  const unsigned QFP_FP_SubRegsIdx[]  = { E2K::sub_even, E2K::sub_odd,
-                                          E2K::sub_odd64_then_sub_even,
-                                          E2K::sub_odd64_then_sub_odd };
-
-  if (E2K::IntRegsRegClass.contains(DestReg, SrcReg))
-    BuildMI(MBB, I, DL, get(E2K::ORrr), DestReg).addReg(E2K::G0)
-      .addReg(SrcReg, getKillRegState(KillSrc));
-  else if (E2K::IntPairRegClass.contains(DestReg, SrcReg)) {
-    subRegIdx  = DW_SubRegsIdx;
-    numSubRegs = 2;
-    movOpc     = E2K::ORrr;
-    ExtraG0 = true;
-  } else if (E2K::FPRegsRegClass.contains(DestReg, SrcReg))
-    BuildMI(MBB, I, DL, get(E2K::FMOVS), DestReg)
-      .addReg(SrcReg, getKillRegState(KillSrc));
-  else if (E2K::DFPRegsRegClass.contains(DestReg, SrcReg)) {
-    if (Subtarget.is64Bit()) {
-      BuildMI(MBB, I, DL, get(E2K::FMOVD), DestReg)
-        .addReg(SrcReg, getKillRegState(KillSrc));
-    } else {
-      // Use two FMOVS instructions.
-      subRegIdx  = DFP_FP_SubRegsIdx;
-      numSubRegs = 2;
-      movOpc     = E2K::FMOVS;
-    }
-  } else if (E2K::QFPRegsRegClass.contains(DestReg, SrcReg)) {
-    if (Subtarget.is64Bit()) {
-      // Use two FMOVD instructions.
-      subRegIdx  = QFP_DFP_SubRegsIdx;
-      numSubRegs = 2;
-      movOpc     = E2K::FMOVD;
-    } else {
-      // Use four FMOVS instructions.
-      subRegIdx  = QFP_FP_SubRegsIdx;
-      numSubRegs = 4;
-      movOpc     = E2K::FMOVS;
-    }
-  } else if (E2K::ASRRegsRegClass.contains(DestReg) &&
-             E2K::IntRegsRegClass.contains(SrcReg)) {
-    BuildMI(MBB, I, DL, get(E2K::WRASRrr), DestReg)
-        .addReg(E2K::G0)
-        .addReg(SrcReg, getKillRegState(KillSrc));
-  } else if (E2K::IntRegsRegClass.contains(DestReg) &&
-             E2K::ASRRegsRegClass.contains(SrcReg)) {
-    BuildMI(MBB, I, DL, get(E2K::RDASR), DestReg)
-        .addReg(SrcReg, getKillRegState(KillSrc));
-  } else
-    llvm_unreachable("Impossible reg-to-reg copy");
-
-  if (numSubRegs == 0 || subRegIdx == nullptr || movOpc == 0)
-    return;
-
-  const TargetRegisterInfo *TRI = &getRegisterInfo();
-  MachineInstr *MovMI = nullptr;
-
-  for (unsigned i = 0; i != numSubRegs; ++i) {
-    Register Dst = TRI->getSubReg(DestReg, subRegIdx[i]);
-    Register Src = TRI->getSubReg(SrcReg, subRegIdx[i]);
-    assert(Dst && Src && "Bad sub-register");
-
-    MachineInstrBuilder MIB = BuildMI(MBB, I, DL, get(movOpc), Dst);
-    if (ExtraG0)
-      MIB.addReg(E2K::G0);
-    MIB.addReg(Src);
-    MovMI = MIB.getInstr();
-  }
-  // Add implicit super-register defs and kills to the last MovMI.
-  MovMI->addRegisterDefined(DestReg, TRI);
-  if (KillSrc)
-    MovMI->addRegisterKilled(SrcReg, TRI);
+  llvm_unreachable("Impossible reg-to-reg copy");
 }
 
 void E2KInstrInfo::
@@ -416,38 +244,7 @@ storeRegToStackSlot(MachineBasicBlock &MBB,
                     const TargetRegisterClass *RC,
                     const TargetRegisterInfo *TRI,
                     Register VReg) const {
-  DebugLoc DL;
-  if (I != MBB.end()) DL = I->getDebugLoc();
-
-  MachineFunction *MF = MBB.getParent();
-  const MachineFrameInfo &MFI = MF->getFrameInfo();
-  MachineMemOperand *MMO = MF->getMachineMemOperand(
-      MachinePointerInfo::getFixedStack(*MF, FI), MachineMemOperand::MOStore,
-      MFI.getObjectSize(FI), MFI.getObjectAlign(FI));
-
-  // On the order of operands here: think "[FrameIdx + 0] = SrcReg".
-  if (RC == &E2K::I64RegsRegClass)
-    BuildMI(MBB, I, DL, get(E2K::STXri)).addFrameIndex(FI).addImm(0)
-      .addReg(SrcReg, getKillRegState(isKill)).addMemOperand(MMO);
-  else if (RC == &E2K::IntRegsRegClass)
-    BuildMI(MBB, I, DL, get(E2K::STri)).addFrameIndex(FI).addImm(0)
-      .addReg(SrcReg, getKillRegState(isKill)).addMemOperand(MMO);
-  else if (RC == &E2K::IntPairRegClass)
-    BuildMI(MBB, I, DL, get(E2K::STDri)).addFrameIndex(FI).addImm(0)
-      .addReg(SrcReg, getKillRegState(isKill)).addMemOperand(MMO);
-  else if (RC == &E2K::FPRegsRegClass)
-    BuildMI(MBB, I, DL, get(E2K::STFri)).addFrameIndex(FI).addImm(0)
-      .addReg(SrcReg,  getKillRegState(isKill)).addMemOperand(MMO);
-  else if (E2K::DFPRegsRegClass.hasSubClassEq(RC))
-    BuildMI(MBB, I, DL, get(E2K::STDFri)).addFrameIndex(FI).addImm(0)
-      .addReg(SrcReg,  getKillRegState(isKill)).addMemOperand(MMO);
-  else if (E2K::QFPRegsRegClass.hasSubClassEq(RC))
-    // Use STQFri irrespective of its legality. If STQ is not legal, it will be
-    // lowered into two STDs in eliminateFrameIndex.
-    BuildMI(MBB, I, DL, get(E2K::STQFri)).addFrameIndex(FI).addImm(0)
-      .addReg(SrcReg,  getKillRegState(isKill)).addMemOperand(MMO);
-  else
-    llvm_unreachable("Can't store this register to stack slot");
+  llvm_unreachable("Can't store this register to stack slot");
 }
 
 void E2KInstrInfo::
@@ -457,37 +254,7 @@ loadRegFromStackSlot(MachineBasicBlock &MBB,
                      const TargetRegisterClass *RC,
                      const TargetRegisterInfo *TRI,
                      Register VReg) const {
-  DebugLoc DL;
-  if (I != MBB.end()) DL = I->getDebugLoc();
-
-  MachineFunction *MF = MBB.getParent();
-  const MachineFrameInfo &MFI = MF->getFrameInfo();
-  MachineMemOperand *MMO = MF->getMachineMemOperand(
-      MachinePointerInfo::getFixedStack(*MF, FI), MachineMemOperand::MOLoad,
-      MFI.getObjectSize(FI), MFI.getObjectAlign(FI));
-
-  if (RC == &E2K::I64RegsRegClass)
-    BuildMI(MBB, I, DL, get(E2K::LDXri), DestReg).addFrameIndex(FI).addImm(0)
-      .addMemOperand(MMO);
-  else if (RC == &E2K::IntRegsRegClass)
-    BuildMI(MBB, I, DL, get(E2K::LDri), DestReg).addFrameIndex(FI).addImm(0)
-      .addMemOperand(MMO);
-  else if (RC == &E2K::IntPairRegClass)
-    BuildMI(MBB, I, DL, get(E2K::LDDri), DestReg).addFrameIndex(FI).addImm(0)
-      .addMemOperand(MMO);
-  else if (RC == &E2K::FPRegsRegClass)
-    BuildMI(MBB, I, DL, get(E2K::LDFri), DestReg).addFrameIndex(FI).addImm(0)
-      .addMemOperand(MMO);
-  else if (E2K::DFPRegsRegClass.hasSubClassEq(RC))
-    BuildMI(MBB, I, DL, get(E2K::LDDFri), DestReg).addFrameIndex(FI).addImm(0)
-      .addMemOperand(MMO);
-  else if (E2K::QFPRegsRegClass.hasSubClassEq(RC))
-    // Use LDQFri irrespective of its legality. If LDQ is not legal, it will be
-    // lowered into two LDDs in eliminateFrameIndex.
-    BuildMI(MBB, I, DL, get(E2K::LDQFri), DestReg).addFrameIndex(FI).addImm(0)
-      .addMemOperand(MMO);
-  else
-    llvm_unreachable("Can't load this register from stack slot");
+  llvm_unreachable("Can't load this register from stack slot");
 }
 
 Register E2KInstrInfo::getGlobalBaseReg(MachineFunction *MF) const {
@@ -502,29 +269,12 @@ Register E2KInstrInfo::getGlobalBaseReg(MachineFunction *MF) const {
   MachineRegisterInfo &RegInfo = MF->getRegInfo();
 
   const TargetRegisterClass *PtrRC =
-    Subtarget.is64Bit() ? &E2K::I64RegsRegClass : &E2K::IntRegsRegClass;
+    Subtarget.is64Bit() ? &E2K::RegDRRegClass : &E2K::RegSRRegClass;
   GlobalBaseReg = RegInfo.createVirtualRegister(PtrRC);
 
-  DebugLoc dl;
-
-  BuildMI(FirstMBB, MBBI, dl, get(E2K::GETPCX), GlobalBaseReg);
-  E2KFI->setGlobalBaseReg(GlobalBaseReg);
   return GlobalBaseReg;
 }
 
 bool E2KInstrInfo::expandPostRAPseudo(MachineInstr &MI) const {
-  switch (MI.getOpcode()) {
-  case TargetOpcode::LOAD_STACK_GUARD: {
-    assert(Subtarget.isTargetLinux() &&
-           "Only Linux target is expected to contain LOAD_STACK_GUARD");
-    // offsetof(tcbhead_t, stack_guard) from sysdeps/e2k/nptl/tls.h in glibc.
-    const int64_t Offset = Subtarget.is64Bit() ? 0x28 : 0x14;
-    MI.setDesc(get(Subtarget.is64Bit() ? E2K::LDXri : E2K::LDri));
-    MachineInstrBuilder(*MI.getParent()->getParent(), MI)
-        .addReg(E2K::G7)
-        .addImm(Offset);
-    return true;
-  }
-  }
   return false;
 }

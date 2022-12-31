@@ -58,17 +58,17 @@ recommended options for CMake build:
 
 for E2K, to avoid "relocation truncated to fit" error:
 
-- **CMAKE_C_FLAGS="--dwarf2-64bit"**
-- **CMAKE_CXX_FLAGS="--dwarf2-64bit"**
+- **-DCMAKE_C_FLAGS="--dwarf2-64bit"**
+- **-DfCMAKE_CXX_FLAGS="--dwarf2-64bit"**
 
 compiling for EK2 via project
 -----------------------------
 
 there are several **must-have** (mandatory) options to use compiled *clang* executable:
 
-- **fuse-ld=lld** - as your system linker probably knows nothing about E2K, it's needed to use compiled one
-- **fintegrated-as** - same for your assembler and binutils, it's needed to use compiled one
-- **target e2k64** - actually instructs compiler to generate code for E2K
+- **-fuse-ld=lld** - as your system linker probably knows nothing about E2K, it's needed to use compiled one
+- **-fintegrated-as** - same for your assembler and binutils, it's needed to use compiled one
+- **-target e2k64** - actually instructs compiler to generate code for E2K
 
 helpful resources and tools
 ---------------------------
