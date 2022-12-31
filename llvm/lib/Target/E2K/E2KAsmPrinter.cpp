@@ -64,9 +64,6 @@ namespace {
     bool PrintAsmMemoryOperand(const MachineInstr *MI, unsigned OpNo,
                                const char *ExtraCode, raw_ostream &O) override;
 
-    void LowerGETPCXAndEmitMCInsts(const MachineInstr *MI,
-                                   const MCSubtargetInfo &STI);
-
   };
 } // end of anonymous namespace
 
@@ -83,172 +80,6 @@ static MCOperand createPCXCallOP(MCSymbol *Label,
   return createE2KMCOperand(E2KMCExpr::VK_E2K_WDISP30, Label, OutContext);
 }
 
-static MCOperand createPCXRelExprOp(E2KMCExpr::VariantKind Kind,
-                                    MCSymbol *GOTLabel, MCSymbol *StartLabel,
-                                    MCSymbol *CurLabel,
-                                    MCContext &OutContext)
-{
-  const MCSymbolRefExpr *GOT = MCSymbolRefExpr::create(GOTLabel, OutContext);
-  const MCSymbolRefExpr *Start = MCSymbolRefExpr::create(StartLabel,
-                                                         OutContext);
-  const MCSymbolRefExpr *Cur = MCSymbolRefExpr::create(CurLabel,
-                                                       OutContext);
-
-  const MCBinaryExpr *Sub = MCBinaryExpr::createSub(Cur, Start, OutContext);
-  const MCBinaryExpr *Add = MCBinaryExpr::createAdd(GOT, Sub, OutContext);
-  const E2KMCExpr *expr = E2KMCExpr::create(Kind,
-                                                Add, OutContext);
-  return MCOperand::createExpr(expr);
-}
-
-static void EmitCall(MCStreamer &OutStreamer,
-                     MCOperand &Callee,
-                     const MCSubtargetInfo &STI)
-{
-  MCInst CallInst;
-  CallInst.setOpcode(E2K::CALL);
-  CallInst.addOperand(Callee);
-  OutStreamer.emitInstruction(CallInst, STI);
-}
-
-static void EmitSETHI(MCStreamer &OutStreamer,
-                      MCOperand &Imm, MCOperand &RD,
-                      const MCSubtargetInfo &STI)
-{
-  MCInst SETHIInst;
-  SETHIInst.setOpcode(E2K::SETHIi);
-  SETHIInst.addOperand(RD);
-  SETHIInst.addOperand(Imm);
-  OutStreamer.emitInstruction(SETHIInst, STI);
-}
-
-static void EmitBinary(MCStreamer &OutStreamer, unsigned Opcode,
-                       MCOperand &RS1, MCOperand &Src2, MCOperand &RD,
-                       const MCSubtargetInfo &STI)
-{
-  MCInst Inst;
-  Inst.setOpcode(Opcode);
-  Inst.addOperand(RD);
-  Inst.addOperand(RS1);
-  Inst.addOperand(Src2);
-  OutStreamer.emitInstruction(Inst, STI);
-}
-
-static void EmitOR(MCStreamer &OutStreamer,
-                   MCOperand &RS1, MCOperand &Imm, MCOperand &RD,
-                   const MCSubtargetInfo &STI) {
-  EmitBinary(OutStreamer, E2K::ORri, RS1, Imm, RD, STI);
-}
-
-static void EmitADD(MCStreamer &OutStreamer,
-                    MCOperand &RS1, MCOperand &RS2, MCOperand &RD,
-                    const MCSubtargetInfo &STI) {
-  EmitBinary(OutStreamer, E2K::ADDrr, RS1, RS2, RD, STI);
-}
-
-static void EmitSHL(MCStreamer &OutStreamer,
-                    MCOperand &RS1, MCOperand &Imm, MCOperand &RD,
-                    const MCSubtargetInfo &STI) {
-  EmitBinary(OutStreamer, E2K::SLLri, RS1, Imm, RD, STI);
-}
-
-
-static void EmitHiLo(MCStreamer &OutStreamer,  MCSymbol *GOTSym,
-                     E2KMCExpr::VariantKind HiKind,
-                     E2KMCExpr::VariantKind LoKind,
-                     MCOperand &RD,
-                     MCContext &OutContext,
-                     const MCSubtargetInfo &STI) {
-
-  MCOperand hi = createE2KMCOperand(HiKind, GOTSym, OutContext);
-  MCOperand lo = createE2KMCOperand(LoKind, GOTSym, OutContext);
-  EmitSETHI(OutStreamer, hi, RD, STI);
-  EmitOR(OutStreamer, RD, lo, RD, STI);
-}
-
-void E2KAsmPrinter::LowerGETPCXAndEmitMCInsts(const MachineInstr *MI,
-                                                const MCSubtargetInfo &STI)
-{
-  MCSymbol *GOTLabel   =
-    OutContext.getOrCreateSymbol(Twine("_GLOBAL_OFFSET_TABLE_"));
-
-  const MachineOperand &MO = MI->getOperand(0);
-  assert(MO.getReg() != E2K::O7 &&
-         "%o7 is assigned as destination for getpcx!");
-
-  MCOperand MCRegOP = MCOperand::createReg(MO.getReg());
-
-
-  if (!isPositionIndependent()) {
-    // Just load the address of GOT to MCRegOP.
-    switch(TM.getCodeModel()) {
-    default:
-      llvm_unreachable("Unsupported absolute code model");
-    case CodeModel::Small:
-      EmitHiLo(*OutStreamer, GOTLabel,
-               E2KMCExpr::VK_E2K_HI, E2KMCExpr::VK_E2K_LO,
-               MCRegOP, OutContext, STI);
-      break;
-    case CodeModel::Medium: {
-      EmitHiLo(*OutStreamer, GOTLabel,
-               E2KMCExpr::VK_E2K_H44, E2KMCExpr::VK_E2K_M44,
-               MCRegOP, OutContext, STI);
-      MCOperand imm = MCOperand::createExpr(MCConstantExpr::create(12,
-                                                                   OutContext));
-      EmitSHL(*OutStreamer, MCRegOP, imm, MCRegOP, STI);
-      MCOperand lo = createE2KMCOperand(E2KMCExpr::VK_E2K_L44,
-                                          GOTLabel, OutContext);
-      EmitOR(*OutStreamer, MCRegOP, lo, MCRegOP, STI);
-      break;
-    }
-    case CodeModel::Large: {
-      EmitHiLo(*OutStreamer, GOTLabel,
-               E2KMCExpr::VK_E2K_HH, E2KMCExpr::VK_E2K_HM,
-               MCRegOP, OutContext, STI);
-      MCOperand imm = MCOperand::createExpr(MCConstantExpr::create(32,
-                                                                   OutContext));
-      EmitSHL(*OutStreamer, MCRegOP, imm, MCRegOP, STI);
-      // Use register %o7 to load the lower 32 bits.
-      MCOperand RegO7 = MCOperand::createReg(E2K::O7);
-      EmitHiLo(*OutStreamer, GOTLabel,
-               E2KMCExpr::VK_E2K_HI, E2KMCExpr::VK_E2K_LO,
-               RegO7, OutContext, STI);
-      EmitADD(*OutStreamer, MCRegOP, RegO7, MCRegOP, STI);
-    }
-    }
-    return;
-  }
-
-  MCSymbol *StartLabel = OutContext.createTempSymbol();
-  MCSymbol *EndLabel   = OutContext.createTempSymbol();
-  MCSymbol *SethiLabel = OutContext.createTempSymbol();
-
-  MCOperand RegO7   = MCOperand::createReg(E2K::O7);
-
-  // <StartLabel>:
-  //   call <EndLabel>
-  // <SethiLabel>:
-  //     sethi %hi(_GLOBAL_OFFSET_TABLE_+(<SethiLabel>-<StartLabel>)), <MO>
-  // <EndLabel>:
-  //   or  <MO>, %lo(_GLOBAL_OFFSET_TABLE_+(<EndLabel>-<StartLabel>))), <MO>
-  //   add <MO>, %o7, <MO>
-
-  OutStreamer->emitLabel(StartLabel);
-  MCOperand Callee =  createPCXCallOP(EndLabel, OutContext);
-  EmitCall(*OutStreamer, Callee, STI);
-  OutStreamer->emitLabel(SethiLabel);
-  MCOperand hiImm = createPCXRelExprOp(E2KMCExpr::VK_E2K_PC22,
-                                       GOTLabel, StartLabel, SethiLabel,
-                                       OutContext);
-  EmitSETHI(*OutStreamer, hiImm, MCRegOP, STI);
-  OutStreamer->emitLabel(EndLabel);
-  MCOperand loImm = createPCXRelExprOp(E2KMCExpr::VK_E2K_PC10,
-                                       GOTLabel, StartLabel, EndLabel,
-                                       OutContext);
-  EmitOR(*OutStreamer, MCRegOP, loImm, MCRegOP, STI);
-  EmitADD(*OutStreamer, MCRegOP, RegO7, MCRegOP, STI);
-}
-
 void E2KAsmPrinter::emitInstruction(const MachineInstr *MI) {
   E2K_MC::verifyInstructionPredicates(MI->getOpcode(),
                                         getSubtargetInfo().getFeatureBits());
@@ -257,9 +88,6 @@ void E2KAsmPrinter::emitInstruction(const MachineInstr *MI) {
   default: break;
   case TargetOpcode::DBG_VALUE:
     // FIXME: Debug Value.
-    return;
-  case E2K::GETPCX:
-    LowerGETPCXAndEmitMCInsts(MI, getSubtargetInfo());
     return;
   }
   MachineBasicBlock::const_instr_iterator I = MI->getIterator();
@@ -301,38 +129,6 @@ void E2KAsmPrinter::printOperand(const MachineInstr *MI, int opNum,
     if (MI->getOpcode() == E2K::CALL)
       assert(TF == E2KMCExpr::VK_E2K_None &&
              "Cannot handle target flags on call address");
-    else if (MI->getOpcode() == E2K::SETHIi || MI->getOpcode() == E2K::SETHIXi)
-      assert((TF == E2KMCExpr::VK_E2K_HI
-              || TF == E2KMCExpr::VK_E2K_H44
-              || TF == E2KMCExpr::VK_E2K_HH
-              || TF == E2KMCExpr::VK_E2K_LM
-              || TF == E2KMCExpr::VK_E2K_TLS_GD_HI22
-              || TF == E2KMCExpr::VK_E2K_TLS_LDM_HI22
-              || TF == E2KMCExpr::VK_E2K_TLS_LDO_HIX22
-              || TF == E2KMCExpr::VK_E2K_TLS_IE_HI22
-              || TF == E2KMCExpr::VK_E2K_TLS_LE_HIX22) &&
-             "Invalid target flags for address operand on sethi");
-    else if (MI->getOpcode() == E2K::TLS_CALL)
-      assert((TF == E2KMCExpr::VK_E2K_None
-              || TF == E2KMCExpr::VK_E2K_TLS_GD_CALL
-              || TF == E2KMCExpr::VK_E2K_TLS_LDM_CALL) &&
-             "Cannot handle target flags on tls call address");
-    else if (MI->getOpcode() == E2K::TLS_ADDrr)
-      assert((TF == E2KMCExpr::VK_E2K_TLS_GD_ADD
-              || TF == E2KMCExpr::VK_E2K_TLS_LDM_ADD
-              || TF == E2KMCExpr::VK_E2K_TLS_LDO_ADD
-              || TF == E2KMCExpr::VK_E2K_TLS_IE_ADD) &&
-             "Cannot handle target flags on add for TLS");
-    else if (MI->getOpcode() == E2K::TLS_LDrr)
-      assert(TF == E2KMCExpr::VK_E2K_TLS_IE_LD &&
-             "Cannot handle target flags on ld for TLS");
-    else if (MI->getOpcode() == E2K::TLS_LDXrr)
-      assert(TF == E2KMCExpr::VK_E2K_TLS_IE_LDX &&
-             "Cannot handle target flags on ldx for TLS");
-    else if (MI->getOpcode() == E2K::XORri || MI->getOpcode() == E2K::XORXri)
-      assert((TF == E2KMCExpr::VK_E2K_TLS_LDO_LOX10
-              || TF == E2KMCExpr::VK_E2K_TLS_LE_LOX10) &&
-             "Cannot handle target flags on xor for TLS");
     else
       assert((TF == E2KMCExpr::VK_E2K_LO
               || TF == E2KMCExpr::VK_E2K_M44

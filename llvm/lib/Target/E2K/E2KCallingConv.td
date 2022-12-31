@@ -18,7 +18,7 @@ def CC_E2K32 : CallingConv<[
   // Custom assign SRet to [sp+64].
   CCIfSRet<CCCustom<"CC_E2K_Assign_SRet">>,
   // i32 f32 arguments get passed in integer registers if there is space.
-  CCIfType<[i32, f32], CCAssignToReg<[I0, I1, I2, I3, I4, I5]>>,
+  CCIfType<[i32, f32], CCAssignToReg<[R0, R1, R2, R3, R4, R5, R6, R7]>>,
   // f64 arguments are split and passed through registers or through stack.
   CCIfType<[f64], CCCustom<"CC_E2K_Assign_Split_64">>,
   // As are v2i32 arguments (this would be the default behavior for
@@ -31,9 +31,9 @@ def CC_E2K32 : CallingConv<[
 ]>;
 
 def RetCC_E2K32 : CallingConv<[
-  CCIfType<[i32], CCAssignToReg<[I0, I1, I2, I3, I4, I5]>>,
-  CCIfType<[f32], CCAssignToReg<[F0, F1, F2, F3]>>,
-  CCIfType<[f64], CCAssignToReg<[D0, D1]>>,
+  CCIfType<[i32], CCAssignToReg<[R0, R1, R2, R3, R4, R5, R6, R7]>>,
+  CCIfType<[f32], CCAssignToReg<[R0, R1, R2, R3, R4, R5, R6, R7]>>,
+  CCIfType<[f64], CCAssignToReg<[DR0, DR1, DR2, DR3, DR4, DR5, DR6, DR7]>>,
   CCIfType<[v2i32], CCCustom<"CC_E2K_Assign_Ret_Split_64">>
 ]>;
 
@@ -137,11 +137,6 @@ def RetCC_E2K64 : CallingConv<[
 
 // Callee-saved registers are handled by the register window mechanism.
 def CSR : CalleeSavedRegs<(add)> {
-  let OtherPreserved = (add (sequence "I%u", 0, 7),
-                            (sequence "L%u", 0, 7), O6);
-}
-
-// Callee-saved registers for calls with ReturnsTwice attribute.
-def RTCSR : CalleeSavedRegs<(add)> {
-  let OtherPreserved = (add I6, I7);
+  let OtherPreserved = (add (sequence "B%u", 0, 7),
+                            (sequence "DB%u", 0, 7));
 }

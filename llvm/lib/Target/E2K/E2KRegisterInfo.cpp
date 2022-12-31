@@ -33,7 +33,7 @@ static cl::opt<bool>
 ReserveAppRegisters("e2k-reserve-app-registers", cl::Hidden, cl::init(false),
                     cl::desc("Reserve application registers (%g2-%g4)"));
 
-E2KRegisterInfo::E2KRegisterInfo() : E2KGenRegisterInfo(E2K::O7) {}
+E2KRegisterInfo::E2KRegisterInfo() : E2KGenRegisterInfo(E2K::R7) {}
 
 const MCPhysReg*
 E2KRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
@@ -46,57 +46,9 @@ E2KRegisterInfo::getCallPreservedMask(const MachineFunction &MF,
   return CSR_RegMask;
 }
 
-const uint32_t*
-E2KRegisterInfo::getRTCallPreservedMask(CallingConv::ID CC) const {
-  return RTCSR_RegMask;
-}
-
 BitVector E2KRegisterInfo::getReservedRegs(const MachineFunction &MF) const {
   BitVector Reserved(getNumRegs());
   const E2KSubtarget &Subtarget = MF.getSubtarget<E2KSubtarget>();
-  // FIXME: G1 reserved for now for large imm generation by frame code.
-  Reserved.set(E2K::G1);
-
-  // G1-G4 can be used in applications.
-  if (ReserveAppRegisters) {
-    Reserved.set(E2K::G2);
-    Reserved.set(E2K::G3);
-    Reserved.set(E2K::G4);
-  }
-  // G5 is not reserved in 64 bit mode.
-  if (!Subtarget.is64Bit())
-    Reserved.set(E2K::G5);
-
-  Reserved.set(E2K::O6);
-  Reserved.set(E2K::I6);
-  Reserved.set(E2K::I7);
-  Reserved.set(E2K::G0);
-  Reserved.set(E2K::G6);
-  Reserved.set(E2K::G7);
-
-  // Also reserve the register pair aliases covering the above
-  // registers, with the same conditions.
-  Reserved.set(E2K::G0_G1);
-  if (ReserveAppRegisters)
-    Reserved.set(E2K::G2_G3);
-  if (ReserveAppRegisters || !Subtarget.is64Bit())
-    Reserved.set(E2K::G4_G5);
-
-  Reserved.set(E2K::O6_O7);
-  Reserved.set(E2K::I6_I7);
-  Reserved.set(E2K::G6_G7);
-
-  // Unaliased double registers are not available in non-V9 targets.
-  if (!Subtarget.is64Bit()) {
-    for (unsigned n = 0; n != 16; ++n) {
-      for (MCRegAliasIterator AI(E2K::D16 + n, this, true); AI.isValid(); ++AI)
-        Reserved.set(*AI);
-    }
-  }
-
-  // Reserve ASR1-ASR31
-  for (unsigned n = 0; n < 31; n++)
-    Reserved.set(E2K::ASR1 + n);
 
   return Reserved;
 }
@@ -105,7 +57,7 @@ const TargetRegisterClass*
 E2KRegisterInfo::getPointerRegClass(const MachineFunction &MF,
                                       unsigned Kind) const {
   const E2KSubtarget &Subtarget = MF.getSubtarget<E2KSubtarget>();
-  return Subtarget.is64Bit() ? &E2K::I64RegsRegClass : &E2K::IntRegsRegClass;
+  return Subtarget.is64Bit() ? &E2K::RegDRRegClass : &E2K::RegSRRegClass;
 }
 
 static void replaceFI(MachineFunction &MF, MachineBasicBlock::iterator II,
@@ -119,44 +71,6 @@ static void replaceFI(MachineFunction &MF, MachineBasicBlock::iterator II,
     MI.getOperand(FIOperandNum + 1).ChangeToImmediate(Offset);
     return;
   }
-
-  const TargetInstrInfo &TII = *MF.getSubtarget().getInstrInfo();
-
-  // FIXME: it would be better to scavenge a register here instead of
-  // reserving G1 all of the time.
-  if (Offset >= 0) {
-    // Emit nonnegaive immediates with sethi + or.
-    // sethi %hi(Offset), %g1
-    // add %g1, %fp, %g1
-    // Insert G1+%lo(offset) into the user.
-    BuildMI(*MI.getParent(), II, dl, TII.get(E2K::SETHIi), E2K::G1)
-      .addImm(HI22(Offset));
-
-
-    // Emit G1 = G1 + I6
-    BuildMI(*MI.getParent(), II, dl, TII.get(E2K::ADDrr), E2K::G1).addReg(E2K::G1)
-      .addReg(FramePtr);
-    // Insert: G1+%lo(offset) into the user.
-    MI.getOperand(FIOperandNum).ChangeToRegister(E2K::G1, false);
-    MI.getOperand(FIOperandNum + 1).ChangeToImmediate(LO10(Offset));
-    return;
-  }
-
-  // Emit Negative numbers with sethi + xor
-  // sethi %hix(Offset), %g1
-  // xor  %g1, %lox(offset), %g1
-  // add %g1, %fp, %g1
-  // Insert: G1 + 0 into the user.
-  BuildMI(*MI.getParent(), II, dl, TII.get(E2K::SETHIi), E2K::G1)
-    .addImm(HIX22(Offset));
-  BuildMI(*MI.getParent(), II, dl, TII.get(E2K::XORri), E2K::G1)
-    .addReg(E2K::G1).addImm(LOX10(Offset));
-
-  BuildMI(*MI.getParent(), II, dl, TII.get(E2K::ADDrr), E2K::G1).addReg(E2K::G1)
-    .addReg(FramePtr);
-  // Insert: G1+%lo(offset) into the user.
-  MI.getOperand(FIOperandNum).ChangeToRegister(E2K::G1, false);
-  MI.getOperand(FIOperandNum + 1).ChangeToImmediate(0);
 }
 
 
@@ -179,42 +93,13 @@ E2KRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
 
   Offset += MI.getOperand(FIOperandNum + 1).getImm();
 
-  if (!Subtarget.is64Bit()) {
-    if (MI.getOpcode() == E2K::STQFri) {
-      const TargetInstrInfo &TII = *Subtarget.getInstrInfo();
-      Register SrcReg = MI.getOperand(2).getReg();
-      Register SrcEvenReg = getSubReg(SrcReg, E2K::sub_even64);
-      Register SrcOddReg = getSubReg(SrcReg, E2K::sub_odd64);
-      MachineInstr *StMI =
-        BuildMI(*MI.getParent(), II, dl, TII.get(E2K::STDFri))
-        .addReg(FrameReg).addImm(0).addReg(SrcEvenReg);
-      replaceFI(MF, *StMI, *StMI, dl, 0, Offset, FrameReg);
-      MI.setDesc(TII.get(E2K::STDFri));
-      MI.getOperand(2).setReg(SrcOddReg);
-      Offset += 8;
-    } else if (MI.getOpcode() == E2K::LDQFri) {
-      const TargetInstrInfo &TII = *Subtarget.getInstrInfo();
-      Register DestReg = MI.getOperand(0).getReg();
-      Register DestEvenReg = getSubReg(DestReg, E2K::sub_even64);
-      Register DestOddReg = getSubReg(DestReg, E2K::sub_odd64);
-      MachineInstr *LdMI =
-        BuildMI(*MI.getParent(), II, dl, TII.get(E2K::LDDFri), DestEvenReg)
-        .addReg(FrameReg).addImm(0);
-      replaceFI(MF, *LdMI, *LdMI, dl, 1, Offset, FrameReg);
-
-      MI.setDesc(TII.get(E2K::LDDFri));
-      MI.getOperand(0).setReg(DestOddReg);
-      Offset += 8;
-    }
-  }
-
   replaceFI(MF, II, MI, dl, FIOperandNum, Offset, FrameReg);
   // replaceFI never removes II
   return false;
 }
 
 Register E2KRegisterInfo::getFrameRegister(const MachineFunction &MF) const {
-  return E2K::I6;
+  return E2K::R0;
 }
 
 // E2K has no architectural need for stack realignment support,

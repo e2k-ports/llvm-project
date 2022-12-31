@@ -111,53 +111,9 @@ bool Filler::runOnMachineBasicBlock(MachineBasicBlock &MBB) {
     MachineBasicBlock::iterator MI = I;
     ++I;
 
-    // If MI is restore, try combining it with previous inst.
-    if (!DisableDelaySlotFiller &&
-        (MI->getOpcode() == E2K::RESTORErr
-         || MI->getOpcode() == E2K::RESTOREri)) {
-      Changed |= tryCombineRestoreWithPrevInst(MBB, MI);
-      continue;
-    }
-
-    // TODO: If we ever want to support v7, this needs to be extended
-    // to cover all floating point operations.
-    if (!Subtarget->is64Bit() &&
-        (MI->getOpcode() == E2K::FCMPS || MI->getOpcode() == E2K::FCMPD
-         || MI->getOpcode() == E2K::FCMPQ)) {
-      BuildMI(MBB, I, MI->getDebugLoc(), TII->get(E2K::NOP));
-      Changed = true;
-      continue;
-    }
-
     // If MI has no delay slot, skip.
     if (!MI->hasDelaySlot())
       continue;
-
-    MachineBasicBlock::iterator D = MBB.end();
-
-    if (!DisableDelaySlotFiller)
-      D = findDelayInstr(MBB, MI);
-
-    ++FilledSlots;
-    Changed = true;
-
-    if (D == MBB.end())
-      BuildMI(MBB, I, MI->getDebugLoc(), TII->get(E2K::NOP));
-    else
-      MBB.splice(I, &MBB, D);
-
-    unsigned structSize = 0;
-    if (needsUnimp(MI, structSize)) {
-      MachineBasicBlock::iterator J = MI;
-      ++J; // skip the delay filler.
-      assert (J != MBB.end() && "MI needs a delay instruction.");
-      BuildMI(MBB, ++J, MI->getDebugLoc(),
-              TII->get(E2K::UNIMP)).addImm(structSize);
-      // Bundle the delay filler and unimp with the instruction.
-      MIBundleBuilder(MBB, MachineBasicBlock::iterator(MI), J);
-    } else {
-      MIBundleBuilder(MBB, MachineBasicBlock::iterator(MI), I);
-    }
   }
   return Changed;
 }
@@ -175,22 +131,6 @@ Filler::findDelayInstr(MachineBasicBlock &MBB,
     return MBB.end();
 
   unsigned Opc = slot->getOpcode();
-
-  if (Opc == E2K::RET || Opc == E2K::TLS_CALL)
-    return MBB.end();
-
-  if (Opc == E2K::RETL || Opc == E2K::TAIL_CALL || Opc == E2K::TAIL_CALLri) {
-    MachineBasicBlock::iterator J = slot;
-    --J;
-
-    if (J->getOpcode() == E2K::RESTORErr
-        || J->getOpcode() == E2K::RESTOREri) {
-      // change retl to ret.
-      if (Opc == E2K::RETL)
-        slot->setDesc(Subtarget->getInstrInfo()->get(E2K::RET));
-      return J;
-    }
-  }
 
   // Call's delay filler can def some of call's uses.
   if (slot->isCall())
@@ -278,27 +218,11 @@ void Filler::insertCallDefsUses(MachineBasicBlock::iterator MI,
                                 SmallSet<unsigned, 32>& RegDefs,
                                 SmallSet<unsigned, 32>& RegUses)
 {
-  // Call defines o7, which is visible to the instruction in delay slot.
-  RegDefs.insert(E2K::O7);
+  // Call defines r7, which is visible to the instruction in delay slot.
+  RegDefs.insert(E2K::R7);
 
   switch(MI->getOpcode()) {
   default: llvm_unreachable("Unknown opcode.");
-  case E2K::CALL: break;
-  case E2K::CALLrr:
-  case E2K::CALLri:
-    assert(MI->getNumOperands() >= 2);
-    const MachineOperand &Reg = MI->getOperand(0);
-    assert(Reg.isReg() && "CALL first operand is not a register.");
-    assert(Reg.isUse() && "CALL first operand is not a use.");
-    RegUses.insert(Reg.getReg());
-
-    const MachineOperand &Operand1 = MI->getOperand(1);
-    if (Operand1.isImm() || Operand1.isGlobal())
-        break;
-    assert(Operand1.isReg() && "CALLrr second operand is not a register.");
-    assert(Operand1.isUse() && "CALLrr second operand is not a use.");
-    RegUses.insert(Operand1.getReg());
-    break;
   }
 }
 
@@ -317,10 +241,6 @@ void Filler::insertDefsUses(MachineBasicBlock::iterator MI,
     if (MO.isDef())
       RegDefs.insert(Reg);
     if (MO.isUse()) {
-      // Implicit register uses of retl are return values and
-      // retl does not use them.
-      if (MO.isImplicit() && MI->getOpcode() == E2K::RETL)
-        continue;
       RegUses.insert(Reg);
     }
   }
@@ -345,12 +265,6 @@ bool Filler::needsUnimp(MachineBasicBlock::iterator I, unsigned &StructSize)
   unsigned structSizeOpNum = 0;
   switch (I->getOpcode()) {
   default: llvm_unreachable("Unknown call opcode.");
-  case E2K::CALL: structSizeOpNum = 1; break;
-  case E2K::CALLrr:
-  case E2K::CALLri: structSizeOpNum = 2; break;
-  case E2K::TLS_CALL: return false;
-  case E2K::TAIL_CALLri:
-  case E2K::TAIL_CALL: return false;
   }
 
   const MachineOperand &MO = I->getOperand(structSizeOpNum);
@@ -364,137 +278,25 @@ static bool combineRestoreADD(MachineBasicBlock::iterator RestoreMI,
                               MachineBasicBlock::iterator AddMI,
                               const TargetInstrInfo *TII)
 {
-  // Before:  add  <op0>, <op1>, %i[0-7]
-  //          restore %g0, %g0, %i[0-7]
-  //
-  // After :  restore <op0>, <op1>, %o[0-7]
-
-  Register reg = AddMI->getOperand(0).getReg();
-  if (reg < E2K::I0 || reg > E2K::I7)
-    return false;
-
-  // Erase RESTORE.
-  RestoreMI->eraseFromParent();
-
-  // Change ADD to RESTORE.
-  AddMI->setDesc(TII->get((AddMI->getOpcode() == E2K::ADDrr)
-                          ? E2K::RESTORErr
-                          : E2K::RESTOREri));
-
-  // Map the destination register.
-  AddMI->getOperand(0).setReg(reg - E2K::I0 + E2K::O0);
-
-  return true;
+  return false;
 }
 
 static bool combineRestoreOR(MachineBasicBlock::iterator RestoreMI,
                              MachineBasicBlock::iterator OrMI,
                              const TargetInstrInfo *TII)
 {
-  // Before:  or  <op0>, <op1>, %i[0-7]
-  //          restore %g0, %g0, %i[0-7]
-  //    and <op0> or <op1> is zero,
-  //
-  // After :  restore <op0>, <op1>, %o[0-7]
-
-  Register reg = OrMI->getOperand(0).getReg();
-  if (reg < E2K::I0 || reg > E2K::I7)
-    return false;
-
-  // check whether it is a copy.
-  if (OrMI->getOpcode() == E2K::ORrr
-      && OrMI->getOperand(1).getReg() != E2K::G0
-      && OrMI->getOperand(2).getReg() != E2K::G0)
-    return false;
-
-  if (OrMI->getOpcode() == E2K::ORri
-      && OrMI->getOperand(1).getReg() != E2K::G0
-      && (!OrMI->getOperand(2).isImm() || OrMI->getOperand(2).getImm() != 0))
-    return false;
-
-  // Erase RESTORE.
-  RestoreMI->eraseFromParent();
-
-  // Change OR to RESTORE.
-  OrMI->setDesc(TII->get((OrMI->getOpcode() == E2K::ORrr)
-                         ? E2K::RESTORErr
-                         : E2K::RESTOREri));
-
-  // Map the destination register.
-  OrMI->getOperand(0).setReg(reg - E2K::I0 + E2K::O0);
-
-  return true;
+  return false;
 }
 
 static bool combineRestoreSETHIi(MachineBasicBlock::iterator RestoreMI,
                                  MachineBasicBlock::iterator SetHiMI,
                                  const TargetInstrInfo *TII)
 {
-  // Before:  sethi imm3, %i[0-7]
-  //          restore %g0, %g0, %g0
-  //
-  // After :  restore %g0, (imm3<<10), %o[0-7]
-
-  Register reg = SetHiMI->getOperand(0).getReg();
-  if (reg < E2K::I0 || reg > E2K::I7)
-    return false;
-
-  if (!SetHiMI->getOperand(1).isImm())
-    return false;
-
-  int64_t imm = SetHiMI->getOperand(1).getImm();
-
-  // Is it a 3 bit immediate?
-  if (!isInt<3>(imm))
-    return false;
-
-  // Make it a 13 bit immediate.
-  imm = (imm << 10) & 0x1FFF;
-
-  assert(RestoreMI->getOpcode() == E2K::RESTORErr);
-
-  RestoreMI->setDesc(TII->get(E2K::RESTOREri));
-
-  RestoreMI->getOperand(0).setReg(reg - E2K::I0 + E2K::O0);
-  RestoreMI->getOperand(1).setReg(E2K::G0);
-  RestoreMI->getOperand(2).ChangeToImmediate(imm);
-
-
-  // Erase the original SETHI.
-  SetHiMI->eraseFromParent();
-
-  return true;
+  return false;
 }
 
 bool Filler::tryCombineRestoreWithPrevInst(MachineBasicBlock &MBB,
                                         MachineBasicBlock::iterator MBBI)
 {
-  // No previous instruction.
-  if (MBBI == MBB.begin())
-    return false;
-
-  // assert that MBBI is a "restore %g0, %g0, %g0".
-  assert(MBBI->getOpcode() == E2K::RESTORErr
-         && MBBI->getOperand(0).getReg() == E2K::G0
-         && MBBI->getOperand(1).getReg() == E2K::G0
-         && MBBI->getOperand(2).getReg() == E2K::G0);
-
-  MachineBasicBlock::iterator PrevInst = std::prev(MBBI);
-
-  // It cannot be combined with a bundled instruction.
-  if (PrevInst->isBundledWithSucc())
-    return false;
-
-  const TargetInstrInfo *TII = Subtarget->getInstrInfo();
-
-  switch (PrevInst->getOpcode()) {
-  default: break;
-  case E2K::ADDrr:
-  case E2K::ADDri: return combineRestoreADD(MBBI, PrevInst, TII); break;
-  case E2K::ORrr:
-  case E2K::ORri:  return combineRestoreOR(MBBI, PrevInst, TII); break;
-  case E2K::SETHIi: return combineRestoreSETHIi(MBBI, PrevInst, TII); break;
-  }
-  // It cannot combine with the previous instruction.
   return false;
 }

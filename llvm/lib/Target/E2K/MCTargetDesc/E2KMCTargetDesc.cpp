@@ -37,7 +37,7 @@ static MCAsmInfo *createE2K32MCAsmInfo(const MCRegisterInfo &MRI,
                                        const Triple &TT,
                                        const MCTargetOptions &Options) {
   MCAsmInfo *MAI = new E2KELFMCAsmInfo(TT);
-  unsigned Reg = MRI.getDwarfRegNum(E2K::O6, true);
+  unsigned Reg = MRI.getDwarfRegNum(E2K::R0, true);
   MCCFIInstruction Inst = MCCFIInstruction::cfiDefCfa(nullptr, Reg, 0);
   MAI->addInitialFrameState(Inst);
   return MAI;
@@ -47,7 +47,7 @@ static MCAsmInfo *createE2K64MCAsmInfo(const MCRegisterInfo &MRI,
                                          const Triple &TT,
                                          const MCTargetOptions &Options) {
   MCAsmInfo *MAI = new E2KELFMCAsmInfo(TT);
-  unsigned Reg = MRI.getDwarfRegNum(E2K::O6, true);
+  unsigned Reg = MRI.getDwarfRegNum(E2K::R0, true);
   MCCFIInstruction Inst = MCCFIInstruction::cfiDefCfa(nullptr, Reg, 2047);
   MAI->addInitialFrameState(Inst);
   return MAI;
@@ -57,7 +57,7 @@ static MCAsmInfo *createE2K128MCAsmInfo(const MCRegisterInfo &MRI,
                                        const Triple &TT,
                                        const MCTargetOptions &Options) {
   MCAsmInfo *MAI = new E2KELFMCAsmInfo(TT);
-  unsigned Reg = MRI.getDwarfRegNum(E2K::O6, true);
+  unsigned Reg = MRI.getDwarfRegNum(E2K::R0, true);
   MCCFIInstruction Inst = MCCFIInstruction::cfiDefCfa(nullptr, Reg, 2047);
   MAI->addInitialFrameState(Inst);
   return MAI;
@@ -67,7 +67,7 @@ static MCAsmInfo *createE2K12864MCAsmInfo(const MCRegisterInfo &MRI,
                                        const Triple &TT,
                                        const MCTargetOptions &Options) {
   MCAsmInfo *MAI = new E2KELFMCAsmInfo(TT);
-  unsigned Reg = MRI.getDwarfRegNum(E2K::O6, true);
+  unsigned Reg = MRI.getDwarfRegNum(E2K::R0, true);
   MCCFIInstruction Inst = MCCFIInstruction::cfiDefCfa(nullptr, Reg, 2047);
   MAI->addInitialFrameState(Inst);
   return MAI;
@@ -81,7 +81,7 @@ static MCInstrInfo *createE2KMCInstrInfo() {
 
 static MCRegisterInfo *createE2KMCRegisterInfo(const Triple &TT) {
   MCRegisterInfo *X = new MCRegisterInfo();
-  InitE2KMCRegisterInfo(X, E2K::O7);
+  InitE2KMCRegisterInfo(X, E2K::R0);
   return X;
 }
 
