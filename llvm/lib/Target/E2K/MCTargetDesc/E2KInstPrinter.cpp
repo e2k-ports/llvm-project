@@ -65,51 +65,6 @@ bool E2KInstPrinter::printE2KAliasInstr(const MCInst *MI,
                                             raw_ostream &O) {
   switch (MI->getOpcode()) {
   default: return false;
-  case E2K::JMPLrr:
-  case E2K::JMPLri: {
-    if (MI->getNumOperands() != 3)
-      return false;
-    if (!MI->getOperand(0).isReg())
-      return false;
-    switch (MI->getOperand(0).getReg()) {
-    default: return false;
-    case E2K::G0: // jmp $addr | ret | retl
-      if (MI->getOperand(2).isImm() &&
-          MI->getOperand(2).getImm() == 8) {
-        switch(MI->getOperand(1).getReg()) {
-        default: break;
-        case E2K::I7: O << "\tret"; return true;
-        case E2K::O7: O << "\tretl"; return true;
-        }
-      }
-      O << "\tjmp "; printMemOperand(MI, 1, STI, O);
-      return true;
-    case E2K::O7: // call $addr
-      O << "\tcall "; printMemOperand(MI, 1, STI, O);
-      return true;
-    }
-  }
-  case E2K::V9FCMPS:  case E2K::V9FCMPD:  case E2K::V9FCMPQ:
-  case E2K::V9FCMPES: case E2K::V9FCMPED: case E2K::V9FCMPEQ: {
-    if ((MI->getNumOperands() != 3)
-        || (!MI->getOperand(0).isReg())
-        || (MI->getOperand(0).getReg() != E2K::FCC0))
-      return false;
-    // if V8, skip printing %fcc0.
-    switch(MI->getOpcode()) {
-    default:
-    case E2K::V9FCMPS:  O << "\tfcmps "; break;
-    case E2K::V9FCMPD:  O << "\tfcmpd "; break;
-    case E2K::V9FCMPQ:  O << "\tfcmpq "; break;
-    case E2K::V9FCMPES: O << "\tfcmpes "; break;
-    case E2K::V9FCMPED: O << "\tfcmped "; break;
-    case E2K::V9FCMPEQ: O << "\tfcmpeq "; break;
-    }
-    printOperand(MI, 1, STI, O);
-    O << ", ";
-    printOperand(MI, 2, STI, O);
-    return true;
-  }
   }
 }
 
@@ -127,16 +82,6 @@ void E2KInstPrinter::printOperand(const MCInst *MI, int opNum,
     switch (MI->getOpcode()) {
       default:
         O << (int)MO.getImm();
-        return;
-
-      case E2K::TICCri: // Fall through
-      case E2K::TICCrr: // Fall through
-      case E2K::TRAPri: // Fall through
-      case E2K::TRAPrr: // Fall through
-      case E2K::TXCCri: // Fall through
-      case E2K::TXCCrr: // Fall through
-        // Only seven-bit values up to 127.
-        O << ((int) MO.getImm() & 0x7f);
         return;
     }
   }
@@ -184,25 +129,6 @@ void E2KInstPrinter::printCCOperand(const MCInst *MI, int opNum,
   int CC = (int)MI->getOperand(opNum).getImm();
   switch (MI->getOpcode()) {
   default: break;
-  case E2K::FBCOND:
-  case E2K::FBCONDA:
-  case E2K::BPFCC:
-  case E2K::BPFCCA:
-  case E2K::BPFCCNT:
-  case E2K::BPFCCANT:
-  case E2K::MOVFCCrr:  case E2K::V9MOVFCCrr:
-  case E2K::MOVFCCri:  case E2K::V9MOVFCCri:
-  case E2K::FMOVS_FCC: case E2K::V9FMOVS_FCC:
-  case E2K::FMOVD_FCC: case E2K::V9FMOVD_FCC:
-  case E2K::FMOVQ_FCC: case E2K::V9FMOVQ_FCC:
-    // Make sure CC is a fp conditional flag.
-    CC = (CC < 16) ? (CC + 16) : CC;
-    break;
-  case E2K::CBCOND:
-  case E2K::CBCONDA:
-    // Make sure CC is a cp conditional flag.
-    CC = (CC < 32) ? (CC + 32) : CC;
-    break;
   }
   O << E2KCondCodeToString((E2KCC::CondCodes)CC);
 }

@@ -99,13 +99,6 @@ void E2KMCCodeEmitter::encodeInstruction(const MCInst &MI, raw_ostream &OS,
   unsigned SymOpNo = 0;
   switch (MI.getOpcode()) {
   default: break;
-  case E2K::TLS_CALL:   SymOpNo = 1; break;
-  case E2K::GDOP_LDrr:
-  case E2K::GDOP_LDXrr:
-  case E2K::TLS_ADDrr:
-  case E2K::TLS_ADDXrr:
-  case E2K::TLS_LDrr:
-  case E2K::TLS_LDXrr:  SymOpNo = 3; break;
   }
   if (SymOpNo != 0) {
     const MCOperand &MO = MI.getOperand(SymOpNo);
@@ -181,20 +174,6 @@ getCallTargetOpValue(const MCInst &MI, unsigned OpNo,
   const MCOperand &MO = MI.getOperand(OpNo);
   const MCExpr *Expr = MO.getExpr();
   const E2KMCExpr *SExpr = dyn_cast<E2KMCExpr>(Expr);
-
-  if (MI.getOpcode() == E2K::TLS_CALL) {
-    // No fixups for __tls_get_addr. Will emit for fixups for tls_symbol in
-    // encodeInstruction.
-#ifndef NDEBUG
-    // Verify that the callee is actually __tls_get_addr.
-    assert(SExpr && SExpr->getSubExpr()->getKind() == MCExpr::SymbolRef &&
-           "Unexpected expression in TLS_CALL");
-    const MCSymbolRefExpr *SymExpr = cast<MCSymbolRefExpr>(SExpr->getSubExpr());
-    assert(SymExpr->getSymbol().getName() == "__tls_get_addr" &&
-           "Unexpected function for TLS_CALL");
-#endif
-    return 0;
-  }
 
   MCFixupKind Kind = MCFixupKind(SExpr->getFixupKind());
   Fixups.push_back(MCFixup::create(0, Expr, Kind));
