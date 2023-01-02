@@ -20,41 +20,10 @@
 namespace llvm {
   class E2KSubtarget;
 
-  namespace SPISD {
+  namespace E2KISD {
   enum NodeType : unsigned {
     FIRST_NUMBER = ISD::BUILTIN_OP_END,
-    CMPICC,    // Compare two GPR operands, set icc+xcc.
-    CMPFCC,    // Compare two FP operands, set fcc.
-    CMPFCC_V9, // Compare two FP operands, set fcc (v9 variant).
-    BRICC,     // Branch to dest on icc condition
-    BPICC,    // Branch to dest on icc condition, with prediction (64-bit only).
-    BPXCC,    // Branch to dest on xcc condition, with prediction (64-bit only).
-    BRFCC,    // Branch to dest on fcc condition
-    BRFCC_V9, // Branch to dest on fcc condition (v9 variant).
-    SELECT_ICC, // Select between two values using the current ICC flags.
-    SELECT_XCC, // Select between two values using the current XCC flags.
-    SELECT_FCC, // Select between two values using the current FCC flags.
-
-    Hi,
-    Lo, // Hi/Lo operations, typically on a global address.
-
-    FTOI, // FP to Int within a FP register.
-    ITOF, // Int to FP within a FP register.
-    FTOX, // FP to Int64 within a FP register.
-    XTOF, // Int64 to FP within a FP register.
-
-    CALL,            // A call instruction.
-    RET_FLAG,        // Return with a flag operand.
-    GLOBAL_BASE_REG, // Global base reg for PIC.
-    FLUSHW,          // FLUSH register windows to stack.
-
-    TAIL_CALL, // Tail call
-
-    TLS_ADD, // For Thread Local Storage (TLS).
-    TLS_LD,
-    TLS_CALL,
-
-    LOAD_GDOP, // Load operation w/ gdop relocation.
+    RET_FLAG,
   };
   }
 
@@ -141,11 +110,6 @@ namespace llvm {
     SDValue
       LowerCall(TargetLowering::CallLoweringInfo &CLI,
                 SmallVectorImpl<SDValue> &InVals) const override;
-    SDValue LowerCall_32(TargetLowering::CallLoweringInfo &CLI,
-                         SmallVectorImpl<SDValue> &InVals) const;
-    SDValue LowerCall_64(TargetLowering::CallLoweringInfo &CLI,
-                         SmallVectorImpl<SDValue> &InVals) const;
-
     bool CanLowerReturn(CallingConv::ID CallConv, MachineFunction &MF,
                         bool isVarArg,
                         const SmallVectorImpl<ISD::OutputArg> &Outs,
@@ -155,34 +119,19 @@ namespace llvm {
                         const SmallVectorImpl<ISD::OutputArg> &Outs,
                         const SmallVectorImpl<SDValue> &OutVals,
                         const SDLoc &dl, SelectionDAG &DAG) const override;
-    SDValue LowerReturn_32(SDValue Chain, CallingConv::ID CallConv,
-                           bool IsVarArg,
-                           const SmallVectorImpl<ISD::OutputArg> &Outs,
-                           const SmallVectorImpl<SDValue> &OutVals,
-                           const SDLoc &DL, SelectionDAG &DAG) const;
-    SDValue LowerReturn_64(SDValue Chain, CallingConv::ID CallConv,
-                           bool IsVarArg,
-                           const SmallVectorImpl<ISD::OutputArg> &Outs,
-                           const SmallVectorImpl<SDValue> &OutVals,
-                           const SDLoc &DL, SelectionDAG &DAG) const;
+
 
     SDValue LowerGlobalAddress(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerGlobalTLSAddress(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerConstantPool(SDValue Op, SelectionDAG &DAG) const;
     SDValue LowerBlockAddress(SDValue Op, SelectionDAG &DAG) const;
 
-    SDValue withTargetFlags(SDValue Op, unsigned TF, SelectionDAG &DAG) const;
-    SDValue makeHiLoPair(SDValue Op, unsigned HiTF, unsigned LoTF,
-                         SelectionDAG &DAG) const;
+
     SDValue makeAddress(SDValue Op, SelectionDAG &DAG) const;
 
-    SDValue LowerF128_LibCallArg(SDValue Chain, ArgListTy &Args, SDValue Arg,
-                                 const SDLoc &DL, SelectionDAG &DAG) const;
     SDValue LowerF128Op(SDValue Op, SelectionDAG &DAG,
                         const char *LibFuncName,
                         unsigned numArgs) const;
-    SDValue LowerF128Compare(SDValue LHS, SDValue RHS, unsigned &SPCC,
-                             const SDLoc &DL, SelectionDAG &DAG) const;
 
     SDValue LowerINTRINSIC_WO_CHAIN(SDValue Op, SelectionDAG &DAG) const;
 
@@ -216,8 +165,6 @@ namespace llvm {
                             SmallVectorImpl<SDValue>& Results,
                             SelectionDAG &DAG) const override;
 
-    MachineBasicBlock *expandSelectCC(MachineInstr &MI, MachineBasicBlock *BB,
-                                      unsigned BROpcode) const;
   };
 } // end namespace llvm
 

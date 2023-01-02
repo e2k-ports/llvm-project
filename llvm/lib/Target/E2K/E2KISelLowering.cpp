@@ -218,24 +218,11 @@ static bool RetCC_E2K64_Half(unsigned &ValNo, MVT &ValVT, MVT &LocVT,
 
 #include "E2KGenCallingConv.inc"
 
-// The calling conventions in E2KCallingConv.td are described in terms of the
-// callee's register window. This function translates registers to the
-// corresponding caller window %o register.
-static unsigned toCallerWindow(unsigned Reg) {
-  static_assert(E2K::B0 + 7 == E2K::B7 && E2K::R0 + 7 == E2K::R7,
-                "Unexpected enum");
-  if (Reg >= E2K::B0 && Reg <= E2K::B7)
-    return Reg - E2K::B0 + E2K::R0;
-  return Reg;
-}
 
 bool E2KTargetLowering::CanLowerReturn(
     CallingConv::ID CallConv, MachineFunction &MF, bool isVarArg,
     const SmallVectorImpl<ISD::OutputArg> &Outs, LLVMContext &Context) const {
-  SmallVector<CCValAssign, 16> RVLocs;
-  CCState CCInfo(CallConv, isVarArg, MF, RVLocs, Context);
-  return CCInfo.CheckReturn(Outs, Subtarget->is64Bit() ? RetCC_E2K64
-                                                       : RetCC_E2K32);
+  return false;
 }
 
 SDValue
@@ -244,171 +231,53 @@ E2KTargetLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
                                  const SmallVectorImpl<ISD::OutputArg> &Outs,
                                  const SmallVectorImpl<SDValue> &OutVals,
                                  const SDLoc &DL, SelectionDAG &DAG) const {
-  if (Subtarget->is64Bit())
-    return LowerReturn_64(Chain, CallConv, IsVarArg, Outs, OutVals, DL, DAG);
-  return LowerReturn_32(Chain, CallConv, IsVarArg, Outs, OutVals, DL, DAG);
-}
 
-SDValue
-E2KTargetLowering::LowerReturn_32(SDValue Chain, CallingConv::ID CallConv,
-                                    bool IsVarArg,
-                                    const SmallVectorImpl<ISD::OutputArg> &Outs,
-                                    const SmallVectorImpl<SDValue> &OutVals,
-                                    const SDLoc &DL, SelectionDAG &DAG) const {
+  // CCValAssign represent the assignment of the return value to a location
+  SmallVector<CCValAssign, 16> RVLocs;
   MachineFunction &MF = DAG.getMachineFunction();
 
-  // CCValAssign - represent the assignment of the return value to locations.
-  SmallVector<CCValAssign, 16> RVLocs;
-
-  // CCState - Info about the registers and stack slot.
-  CCState CCInfo(CallConv, IsVarArg, DAG.getMachineFunction(), RVLocs,
-                 *DAG.getContext());
-
-  // Analyze return values.
-  CCInfo.AnalyzeReturn(Outs, RetCC_E2K32);
+  // CCState represent the info about the registers and stack slot.
+  CCState CCInfo(CallConv, IsVarArg, MF, RVLocs, *DAG.getContext());
 
   SDValue Flag;
   SmallVector<SDValue, 4> RetOps(1, Chain);
-  // Make room for the return address offset.
-  RetOps.push_back(SDValue());
-
-  // Copy the result values into the output registers.
-  for (unsigned i = 0, realRVLocIdx = 0;
-       i != RVLocs.size();
-       ++i, ++realRVLocIdx) {
-    CCValAssign &VA = RVLocs[i];
-    assert(VA.isRegLoc() && "Can only return in registers!");
-
-    SDValue Arg = OutVals[realRVLocIdx];
-
-    if (VA.needsCustom()) {
-      assert(VA.getLocVT() == MVT::v2i32);
-      // Legalize ret v2i32 -> ret 2 x i32 (Basically: do what would
-      // happen by default if this wasn't a legal type)
-
-      SDValue Part0 = DAG.getNode(ISD::EXTRACT_VECTOR_ELT, DL, MVT::i32,
-                                  Arg,
-                                  DAG.getConstant(0, DL, getVectorIdxTy(DAG.getDataLayout())));
-      SDValue Part1 = DAG.getNode(ISD::EXTRACT_VECTOR_ELT, DL, MVT::i32,
-                                  Arg,
-                                  DAG.getConstant(1, DL, getVectorIdxTy(DAG.getDataLayout())));
-
-      Chain = DAG.getCopyToReg(Chain, DL, VA.getLocReg(), Part0, Flag);
-      Flag = Chain.getValue(1);
-      RetOps.push_back(DAG.getRegister(VA.getLocReg(), VA.getLocVT()));
-      VA = RVLocs[++i]; // skip ahead to next loc
-      Chain = DAG.getCopyToReg(Chain, DL, VA.getLocReg(), Part1,
-                               Flag);
-    } else
-      Chain = DAG.getCopyToReg(Chain, DL, VA.getLocReg(), Arg, Flag);
-
-    // Guarantee that all emitted copies are stuck together with flags.
-    Flag = Chain.getValue(1);
-    RetOps.push_back(DAG.getRegister(VA.getLocReg(), VA.getLocVT()));
-  }
-
-  unsigned RetAddrOffset = 8; // Call Inst + Delay Slot
-  // If the function returns a struct, copy the SRetReturnReg to I0
-  if (MF.getFunction().hasStructRetAttr()) {
-    E2KMachineFunctionInfo *SFI = MF.getInfo<E2KMachineFunctionInfo>();
-    Register Reg = SFI->getSRetReturnReg();
-    if (!Reg)
-      llvm_unreachable("sret virtual register not created in the entry block");
-    auto PtrVT = getPointerTy(DAG.getDataLayout());
-    SDValue Val = DAG.getCopyFromReg(Chain, DL, Reg, PtrVT);
-    Chain = DAG.getCopyToReg(Chain, DL, E2K::R0, Val, Flag);
-    Flag = Chain.getValue(1);
-    RetOps.push_back(DAG.getRegister(E2K::R0, PtrVT));
-    RetAddrOffset = 12; // CallInst + Delay Slot + Unimp
-  }
-
-  RetOps[0] = Chain;  // Update chain.
-  RetOps[1] = DAG.getConstant(RetAddrOffset, DL, MVT::i32);
-
-  // Add the flag if we have it.
-  if (Flag.getNode())
-    RetOps.push_back(Flag);
-
-  return DAG.getNode(SPISD::RET_FLAG, DL, MVT::Other, RetOps);
-}
-
-// Lower return values for the 64-bit ABI.
-// Return values are passed the exactly the same way as function arguments.
-SDValue
-E2KTargetLowering::LowerReturn_64(SDValue Chain, CallingConv::ID CallConv,
-                                    bool IsVarArg,
-                                    const SmallVectorImpl<ISD::OutputArg> &Outs,
-                                    const SmallVectorImpl<SDValue> &OutVals,
-                                    const SDLoc &DL, SelectionDAG &DAG) const {
-  // CCValAssign - represent the assignment of the return value to locations.
-  SmallVector<CCValAssign, 16> RVLocs;
-
-  // CCState - Info about the registers and stack slot.
-  CCState CCInfo(CallConv, IsVarArg, DAG.getMachineFunction(), RVLocs,
-                 *DAG.getContext());
-
-  // Analyze return values.
-  CCInfo.AnalyzeReturn(Outs, RetCC_E2K64);
-
-  SDValue Flag;
-  SmallVector<SDValue, 4> RetOps(1, Chain);
-
-  // The second operand on the return instruction is the return address offset.
-  // The return address is always %i7+8 with the 64-bit ABI.
-  RetOps.push_back(DAG.getConstant(8, DL, MVT::i32));
 
   // Copy the result values into the output registers.
   for (unsigned i = 0; i != RVLocs.size(); ++i) {
+    SDValue Val = OutVals[i];
     CCValAssign &VA = RVLocs[i];
     assert(VA.isRegLoc() && "Can only return in registers!");
-    SDValue OutVal = OutVals[i];
 
-    // Integer return values must be sign or zero extended by the callee.
-    switch (VA.getLocInfo()) {
-    case CCValAssign::Full: break;
-    case CCValAssign::SExt:
-      OutVal = DAG.getNode(ISD::SIGN_EXTEND, DL, VA.getLocVT(), OutVal);
-      break;
-    case CCValAssign::ZExt:
-      OutVal = DAG.getNode(ISD::ZERO_EXTEND, DL, VA.getLocVT(), OutVal);
-      break;
-    case CCValAssign::AExt:
-      OutVal = DAG.getNode(ISD::ANY_EXTEND, DL, VA.getLocVT(), OutVal);
-      break;
-    default:
-      llvm_unreachable("Unknown loc info!");
-    }
+    if (RVLocs[i].getValVT() != RVLocs[i].getLocVT())
+      Val = DAG.getNode(ISD::BITCAST, DL, RVLocs[i].getLocVT(), Val);
 
-    // The custom bit on an i32 return value indicates that it should be passed
-    // in the high bits of the register.
-    if (VA.getValVT() == MVT::i32 && VA.needsCustom()) {
-      OutVal = DAG.getNode(ISD::SHL, DL, MVT::i64, OutVal,
-                           DAG.getConstant(32, DL, MVT::i32));
-
-      // The next value may go in the low bits of the same register.
-      // Handle both at once.
-      if (i+1 < RVLocs.size() && RVLocs[i+1].getLocReg() == VA.getLocReg()) {
-        SDValue NV = DAG.getNode(ISD::ZERO_EXTEND, DL, MVT::i64, OutVals[i+1]);
-        OutVal = DAG.getNode(ISD::OR, DL, MVT::i64, OutVal, NV);
-        // Skip the next value, it's already done.
-        ++i;
-      }
-    }
-
-    Chain = DAG.getCopyToReg(Chain, DL, VA.getLocReg(), OutVal, Flag);
+    Chain = DAG.getCopyToReg(Chain, DL, VA.getLocReg(), Val, Flag);
 
     // Guarantee that all emitted copies are stuck together with flags.
     Flag = Chain.getValue(1);
     RetOps.push_back(DAG.getRegister(VA.getLocReg(), VA.getLocVT()));
   }
 
-  RetOps[0] = Chain;  // Update chain.
+  if (MF.getFunction().hasStructRetAttr()) {
+    E2KMachineFunctionInfo *Cpu0FI = MF.getInfo<E2KMachineFunctionInfo>();
+    unsigned Reg = Cpu0FI->getSRetReturnReg();
+
+    if (!Reg)
+      llvm_unreachable("sret virtual register not created in the entry block");
+    SDValue Val = DAG.getCopyFromReg(Chain, DL, Reg,
+                                     getPointerTy(DAG.getDataLayout()));
+    Chain = DAG.getCopyToReg(Chain, DL, E2K::R0, Val, Flag);
+    Flag = Chain.getValue(1);
+    RetOps.push_back(DAG.getRegister(E2K::R0, getPointerTy(DAG.getDataLayout())));
+  }
+
+  RetOps[0] = Chain;    // Update chain.
 
   // Add the flag if we have it.
   if (Flag.getNode())
     RetOps.push_back(Flag);
 
-  return DAG.getNode(SPISD::RET_FLAG, DL, MVT::Other, RetOps);
+  return DAG.getNode(E2KISD::RET_FLAG, DL, MVT::Other, RetOps);
 }
 
 SDValue E2KTargetLowering::LowerFormalArguments(
@@ -731,9 +600,9 @@ SDValue E2KTargetLowering::LowerFormalArguments_64(
 SDValue
 E2KTargetLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
                                SmallVectorImpl<SDValue> &InVals) const {
-  if (Subtarget->is64Bit())
-    return LowerCall_64(CLI, InVals);
-  return LowerCall_32(CLI, InVals);
+  SDValue Chain                         = CLI.Chain;
+
+  return Chain;
 }
 
 /// IsEligibleForTailCallOptimization - Check whether the call is eligible
@@ -766,321 +635,6 @@ bool E2KTargetLowering::IsEligibleForTailCallOptimization(
   return true;
 }
 
-// Lower a call for the 32-bit ABI.
-SDValue
-E2KTargetLowering::LowerCall_32(TargetLowering::CallLoweringInfo &CLI,
-                                  SmallVectorImpl<SDValue> &InVals) const {
-  SelectionDAG &DAG                     = CLI.DAG;
-  SDLoc &dl                             = CLI.DL;
-  SmallVectorImpl<ISD::OutputArg> &Outs = CLI.Outs;
-  SmallVectorImpl<SDValue> &OutVals     = CLI.OutVals;
-  SmallVectorImpl<ISD::InputArg> &Ins   = CLI.Ins;
-  SDValue Chain                         = CLI.Chain;
-  SDValue Callee                        = CLI.Callee;
-  bool &isTailCall                      = CLI.IsTailCall;
-  CallingConv::ID CallConv              = CLI.CallConv;
-  bool isVarArg                         = CLI.IsVarArg;
-
-  // Analyze operands of the call, assigning locations to each operand.
-  SmallVector<CCValAssign, 16> ArgLocs;
-  CCState CCInfo(CallConv, isVarArg, DAG.getMachineFunction(), ArgLocs,
-                 *DAG.getContext());
-  CCInfo.AnalyzeCallOperands(Outs, CC_E2K32);
-
-  isTailCall = isTailCall && IsEligibleForTailCallOptimization(
-                                 CCInfo, CLI, DAG.getMachineFunction());
-
-  // Get the size of the outgoing arguments stack space requirement.
-  unsigned ArgsSize = CCInfo.getNextStackOffset();
-
-  // Keep stack frames 8-byte aligned.
-  ArgsSize = (ArgsSize+7) & ~7;
-
-  MachineFrameInfo &MFI = DAG.getMachineFunction().getFrameInfo();
-
-  // Create local copies for byval args.
-  SmallVector<SDValue, 8> ByValArgs;
-  for (unsigned i = 0,  e = Outs.size(); i != e; ++i) {
-    ISD::ArgFlagsTy Flags = Outs[i].Flags;
-    if (!Flags.isByVal())
-      continue;
-
-    SDValue Arg = OutVals[i];
-    unsigned Size = Flags.getByValSize();
-    Align Alignment = Flags.getNonZeroByValAlign();
-
-    if (Size > 0U) {
-      int FI = MFI.CreateStackObject(Size, Alignment, false);
-      SDValue FIPtr = DAG.getFrameIndex(FI, getPointerTy(DAG.getDataLayout()));
-      SDValue SizeNode = DAG.getConstant(Size, dl, MVT::i32);
-
-      Chain = DAG.getMemcpy(Chain, dl, FIPtr, Arg, SizeNode, Alignment,
-                            false,        // isVolatile,
-                            (Size <= 32), // AlwaysInline if size <= 32,
-                            false,        // isTailCall
-                            MachinePointerInfo(), MachinePointerInfo());
-      ByValArgs.push_back(FIPtr);
-    }
-    else {
-      SDValue nullVal;
-      ByValArgs.push_back(nullVal);
-    }
-  }
-
-  assert(!isTailCall || ArgsSize == 0);
-
-  if (!isTailCall)
-    Chain = DAG.getCALLSEQ_START(Chain, ArgsSize, 0, dl);
-
-  SmallVector<std::pair<unsigned, SDValue>, 8> RegsToPass;
-  SmallVector<SDValue, 8> MemOpChains;
-
-  const unsigned StackOffset = 92;
-  bool hasStructRetAttr = false;
-  unsigned SRetArgSize = 0;
-  // Walk the register/memloc assignments, inserting copies/loads.
-  for (unsigned i = 0, realArgIdx = 0, byvalArgIdx = 0, e = ArgLocs.size();
-       i != e;
-       ++i, ++realArgIdx) {
-    CCValAssign &VA = ArgLocs[i];
-    SDValue Arg = OutVals[realArgIdx];
-
-    ISD::ArgFlagsTy Flags = Outs[realArgIdx].Flags;
-
-    // Use local copy if it is a byval arg.
-    if (Flags.isByVal()) {
-      Arg = ByValArgs[byvalArgIdx++];
-      if (!Arg) {
-        continue;
-      }
-    }
-
-    // Promote the value if needed.
-    switch (VA.getLocInfo()) {
-    default: llvm_unreachable("Unknown loc info!");
-    case CCValAssign::Full: break;
-    case CCValAssign::SExt:
-      Arg = DAG.getNode(ISD::SIGN_EXTEND, dl, VA.getLocVT(), Arg);
-      break;
-    case CCValAssign::ZExt:
-      Arg = DAG.getNode(ISD::ZERO_EXTEND, dl, VA.getLocVT(), Arg);
-      break;
-    case CCValAssign::AExt:
-      Arg = DAG.getNode(ISD::ANY_EXTEND, dl, VA.getLocVT(), Arg);
-      break;
-    case CCValAssign::BCvt:
-      Arg = DAG.getNode(ISD::BITCAST, dl, VA.getLocVT(), Arg);
-      break;
-    }
-
-    if (Flags.isSRet()) {
-      assert(VA.needsCustom());
-
-      if (isTailCall)
-        continue;
-
-      // store SRet argument in %sp+64
-      SDValue StackPtr = DAG.getRegister(E2K::R6, MVT::i32);
-      SDValue PtrOff = DAG.getIntPtrConstant(64, dl);
-      PtrOff = DAG.getNode(ISD::ADD, dl, MVT::i32, StackPtr, PtrOff);
-      MemOpChains.push_back(
-          DAG.getStore(Chain, dl, Arg, PtrOff, MachinePointerInfo()));
-      hasStructRetAttr = true;
-      // sret only allowed on first argument
-      assert(Outs[realArgIdx].OrigArgIndex == 0);
-      SRetArgSize =
-          DAG.getDataLayout().getTypeAllocSize(CLI.getArgs()[0].IndirectType);
-      continue;
-    }
-
-    if (VA.needsCustom()) {
-      assert(VA.getLocVT() == MVT::f64 || VA.getLocVT() == MVT::v2i32);
-
-      if (VA.isMemLoc()) {
-        unsigned Offset = VA.getLocMemOffset() + StackOffset;
-        // if it is double-word aligned, just store.
-        if (Offset % 8 == 0) {
-          SDValue StackPtr = DAG.getRegister(E2K::R6, MVT::i32);
-          SDValue PtrOff = DAG.getIntPtrConstant(Offset, dl);
-          PtrOff = DAG.getNode(ISD::ADD, dl, MVT::i32, StackPtr, PtrOff);
-          MemOpChains.push_back(
-              DAG.getStore(Chain, dl, Arg, PtrOff, MachinePointerInfo()));
-          continue;
-        }
-      }
-
-      if (VA.getLocVT() == MVT::f64) {
-        // Move from the float value from float registers into the
-        // integer registers.
-        if (ConstantFPSDNode *C = dyn_cast<ConstantFPSDNode>(Arg))
-          Arg = bitcastConstantFPToInt(C, dl, DAG);
-        else
-          Arg = DAG.getNode(ISD::BITCAST, dl, MVT::v2i32, Arg);
-      }
-
-      SDValue Part0 = DAG.getNode(ISD::EXTRACT_VECTOR_ELT, dl, MVT::i32,
-                                  Arg,
-                                  DAG.getConstant(0, dl, getVectorIdxTy(DAG.getDataLayout())));
-      SDValue Part1 = DAG.getNode(ISD::EXTRACT_VECTOR_ELT, dl, MVT::i32,
-                                  Arg,
-                                  DAG.getConstant(1, dl, getVectorIdxTy(DAG.getDataLayout())));
-
-      if (VA.isRegLoc()) {
-        RegsToPass.push_back(std::make_pair(VA.getLocReg(), Part0));
-        assert(i+1 != e);
-        CCValAssign &NextVA = ArgLocs[++i];
-        if (NextVA.isRegLoc()) {
-          RegsToPass.push_back(std::make_pair(NextVA.getLocReg(), Part1));
-        } else {
-          // Store the second part in stack.
-          unsigned Offset = NextVA.getLocMemOffset() + StackOffset;
-          SDValue StackPtr = DAG.getRegister(E2K::R6, MVT::i32);
-          SDValue PtrOff = DAG.getIntPtrConstant(Offset, dl);
-          PtrOff = DAG.getNode(ISD::ADD, dl, MVT::i32, StackPtr, PtrOff);
-          MemOpChains.push_back(
-              DAG.getStore(Chain, dl, Part1, PtrOff, MachinePointerInfo()));
-        }
-      } else {
-        unsigned Offset = VA.getLocMemOffset() + StackOffset;
-        // Store the first part.
-        SDValue StackPtr = DAG.getRegister(E2K::R6, MVT::i32);
-        SDValue PtrOff = DAG.getIntPtrConstant(Offset, dl);
-        PtrOff = DAG.getNode(ISD::ADD, dl, MVT::i32, StackPtr, PtrOff);
-        MemOpChains.push_back(
-            DAG.getStore(Chain, dl, Part0, PtrOff, MachinePointerInfo()));
-        // Store the second part.
-        PtrOff = DAG.getIntPtrConstant(Offset + 4, dl);
-        PtrOff = DAG.getNode(ISD::ADD, dl, MVT::i32, StackPtr, PtrOff);
-        MemOpChains.push_back(
-            DAG.getStore(Chain, dl, Part1, PtrOff, MachinePointerInfo()));
-      }
-      continue;
-    }
-
-    // Arguments that can be passed on register must be kept at
-    // RegsToPass vector
-    if (VA.isRegLoc()) {
-      if (VA.getLocVT() != MVT::f32) {
-        RegsToPass.push_back(std::make_pair(VA.getLocReg(), Arg));
-        continue;
-      }
-      Arg = DAG.getNode(ISD::BITCAST, dl, MVT::i32, Arg);
-      RegsToPass.push_back(std::make_pair(VA.getLocReg(), Arg));
-      continue;
-    }
-
-    assert(VA.isMemLoc());
-
-    // Create a store off the stack pointer for this argument.
-    SDValue StackPtr = DAG.getRegister(E2K::R6, MVT::i32);
-    SDValue PtrOff = DAG.getIntPtrConstant(VA.getLocMemOffset() + StackOffset,
-                                           dl);
-    PtrOff = DAG.getNode(ISD::ADD, dl, MVT::i32, StackPtr, PtrOff);
-    MemOpChains.push_back(
-        DAG.getStore(Chain, dl, Arg, PtrOff, MachinePointerInfo()));
-  }
-
-
-  // Emit all stores, make sure the occur before any copies into physregs.
-  if (!MemOpChains.empty())
-    Chain = DAG.getNode(ISD::TokenFactor, dl, MVT::Other, MemOpChains);
-
-  // Build a sequence of copy-to-reg nodes chained together with token
-  // chain and flag operands which copy the outgoing args into registers.
-  // The InFlag in necessary since all emitted instructions must be
-  // stuck together.
-  SDValue InFlag;
-  for (unsigned i = 0, e = RegsToPass.size(); i != e; ++i) {
-    Register Reg = RegsToPass[i].first;
-    if (!isTailCall)
-      Reg = toCallerWindow(Reg);
-    Chain = DAG.getCopyToReg(Chain, dl, Reg, RegsToPass[i].second, InFlag);
-    InFlag = Chain.getValue(1);
-  }
-
-
-  // If the callee is a GlobalAddress node (quite common, every direct call is)
-  // turn it into a TargetGlobalAddress node so that legalize doesn't hack it.
-  // Likewise ExternalSymbol -> TargetExternalSymbol.
-  unsigned TF = isPositionIndependent() ? E2KMCExpr::VK_E2K_WPLT30
-                                        : E2KMCExpr::VK_E2K_WDISP30;
-  if (GlobalAddressSDNode *G = dyn_cast<GlobalAddressSDNode>(Callee))
-    Callee = DAG.getTargetGlobalAddress(G->getGlobal(), dl, MVT::i32, 0, TF);
-  else if (ExternalSymbolSDNode *E = dyn_cast<ExternalSymbolSDNode>(Callee))
-    Callee = DAG.getTargetExternalSymbol(E->getSymbol(), MVT::i32, TF);
-
-  // Returns a chain & a flag for retval copy to use
-  SDVTList NodeTys = DAG.getVTList(MVT::Other, MVT::Glue);
-  SmallVector<SDValue, 8> Ops;
-  Ops.push_back(Chain);
-  Ops.push_back(Callee);
-  if (hasStructRetAttr)
-    Ops.push_back(DAG.getTargetConstant(SRetArgSize, dl, MVT::i32));
-  for (unsigned i = 0, e = RegsToPass.size(); i != e; ++i) {
-    Register Reg = RegsToPass[i].first;
-    if (!isTailCall)
-      Reg = toCallerWindow(Reg);
-    Ops.push_back(DAG.getRegister(Reg, RegsToPass[i].second.getValueType()));
-  }
-
-  // Add a register mask operand representing the call-preserved registers.
-  const E2KRegisterInfo *TRI = Subtarget->getRegisterInfo();
-  const uint32_t *Mask = TRI->getCallPreservedMask(DAG.getMachineFunction(), CallConv);
-  assert(Mask && "Missing call preserved mask for calling convention");
-  Ops.push_back(DAG.getRegisterMask(Mask));
-
-  if (InFlag.getNode())
-    Ops.push_back(InFlag);
-
-  if (isTailCall) {
-    DAG.getMachineFunction().getFrameInfo().setHasTailCall();
-    return DAG.getNode(SPISD::TAIL_CALL, dl, MVT::Other, Ops);
-  }
-
-  Chain = DAG.getNode(SPISD::CALL, dl, NodeTys, Ops);
-  InFlag = Chain.getValue(1);
-
-  Chain = DAG.getCALLSEQ_END(Chain, ArgsSize, 0, InFlag, dl);
-  InFlag = Chain.getValue(1);
-
-  // Assign locations to each value returned by this call.
-  SmallVector<CCValAssign, 16> RVLocs;
-  CCState RVInfo(CallConv, isVarArg, DAG.getMachineFunction(), RVLocs,
-                 *DAG.getContext());
-
-  RVInfo.AnalyzeCallResult(Ins, RetCC_E2K32);
-
-  // Copy all of the result registers out of their specified physreg.
-  for (unsigned i = 0; i != RVLocs.size(); ++i) {
-    assert(RVLocs[i].isRegLoc() && "Can only return in registers!");
-    if (RVLocs[i].getLocVT() == MVT::v2i32) {
-      SDValue Vec = DAG.getNode(ISD::UNDEF, dl, MVT::v2i32);
-      SDValue Lo = DAG.getCopyFromReg(
-          Chain, dl, toCallerWindow(RVLocs[i++].getLocReg()), MVT::i32, InFlag);
-      Chain = Lo.getValue(1);
-      InFlag = Lo.getValue(2);
-      Vec = DAG.getNode(ISD::INSERT_VECTOR_ELT, dl, MVT::v2i32, Vec, Lo,
-                        DAG.getConstant(0, dl, MVT::i32));
-      SDValue Hi = DAG.getCopyFromReg(
-          Chain, dl, toCallerWindow(RVLocs[i].getLocReg()), MVT::i32, InFlag);
-      Chain = Hi.getValue(1);
-      InFlag = Hi.getValue(2);
-      Vec = DAG.getNode(ISD::INSERT_VECTOR_ELT, dl, MVT::v2i32, Vec, Hi,
-                        DAG.getConstant(1, dl, MVT::i32));
-      InVals.push_back(Vec);
-    } else {
-      Chain =
-          DAG.getCopyFromReg(Chain, dl, toCallerWindow(RVLocs[i].getLocReg()),
-                             RVLocs[i].getValVT(), InFlag)
-              .getValue(1);
-      InFlag = Chain.getValue(2);
-      InVals.push_back(Chain.getValue(0));
-    }
-  }
-
-  return Chain;
-}
-
 // FIXME? Maybe this could be a TableGen attribute on some registers and
 // this table could be generated automatically from RegInfo.
 Register E2KTargetLowering::getRegisterByName(const char* RegName, LLT VT,
@@ -1094,316 +648,6 @@ Register E2KTargetLowering::getRegisterByName(const char* RegName, LLT VT,
   report_fatal_error("Invalid register name global variable");
 }
 
-// Fixup floating point arguments in the ... part of a varargs call.
-//
-// The E2K v9 ABI requires that floating point arguments are treated the same
-// as integers when calling a varargs function. This does not apply to the
-// fixed arguments that are part of the function's prototype.
-//
-// This function post-processes a CCValAssign array created by
-// AnalyzeCallOperands().
-static void fixupVariableFloatArgs(SmallVectorImpl<CCValAssign> &ArgLocs,
-                                   ArrayRef<ISD::OutputArg> Outs) {
-  for (unsigned i = 0, e = ArgLocs.size(); i != e; ++i) {
-    const CCValAssign &VA = ArgLocs[i];
-    MVT ValTy = VA.getLocVT();
-    // FIXME: What about f32 arguments? C promotes them to f64 when calling
-    // varargs functions.
-    if (!VA.isRegLoc() || (ValTy != MVT::f64 && ValTy != MVT::f128))
-      continue;
-    // The fixed arguments to a varargs function still go in FP registers.
-    if (Outs[VA.getValNo()].IsFixed)
-      continue;
-
-    // This floating point argument should be reassigned.
-    CCValAssign NewVA;
-
-    // Determine the offset into the argument array.
-    Register firstReg = (ValTy == MVT::f64) ? E2K::DR0 : E2K::QR0;
-    unsigned argSize  = (ValTy == MVT::f64) ? 8 : 16;
-    unsigned Offset = argSize * (VA.getLocReg() - firstReg);
-    assert(Offset < 16*8 && "Offset out of range, bad register enum?");
-
-    if (Offset < 6*8) {
-      // This argument should go in %i0-%i5.
-      unsigned IReg = E2K::R0 + Offset/8;
-      if (ValTy == MVT::f64)
-        // Full register, just bitconvert into i64.
-        NewVA = CCValAssign::getReg(VA.getValNo(), VA.getValVT(),
-                                    IReg, MVT::i64, CCValAssign::BCvt);
-      else {
-        assert(ValTy == MVT::f128 && "Unexpected type!");
-        // Full register, just bitconvert into i128 -- We will lower this into
-        // two i64s in LowerCall_64.
-        NewVA = CCValAssign::getCustomReg(VA.getValNo(), VA.getValVT(),
-                                          IReg, MVT::i128, CCValAssign::BCvt);
-      }
-    } else {
-      // This needs to go to memory, we're out of integer registers.
-      NewVA = CCValAssign::getMem(VA.getValNo(), VA.getValVT(),
-                                  Offset, VA.getLocVT(), VA.getLocInfo());
-    }
-    ArgLocs[i] = NewVA;
-  }
-}
-
-// Lower a call for the 64-bit ABI.
-SDValue
-E2KTargetLowering::LowerCall_64(TargetLowering::CallLoweringInfo &CLI,
-                                  SmallVectorImpl<SDValue> &InVals) const {
-  SelectionDAG &DAG = CLI.DAG;
-  SDLoc DL = CLI.DL;
-  SDValue Chain = CLI.Chain;
-  auto PtrVT = getPointerTy(DAG.getDataLayout());
-
-  // E2K target does not yet support tail call optimization.
-  CLI.IsTailCall = false;
-
-  // Analyze operands of the call, assigning locations to each operand.
-  SmallVector<CCValAssign, 16> ArgLocs;
-  CCState CCInfo(CLI.CallConv, CLI.IsVarArg, DAG.getMachineFunction(), ArgLocs,
-                 *DAG.getContext());
-  CCInfo.AnalyzeCallOperands(CLI.Outs, CC_E2K64);
-
-  // Get the size of the outgoing arguments stack space requirement.
-  // The stack offset computed by CC_E2K64 includes all arguments.
-  // Called functions expect 6 argument words to exist in the stack frame, used
-  // or not.
-  unsigned ArgsSize = std::max(6*8u, CCInfo.getNextStackOffset());
-
-  // Keep stack frames 16-byte aligned.
-  ArgsSize = alignTo(ArgsSize, 16);
-
-  // Varargs calls require special treatment.
-  if (CLI.IsVarArg)
-    fixupVariableFloatArgs(ArgLocs, CLI.Outs);
-
-  // Adjust the stack pointer to make room for the arguments.
-  // FIXME: Use hasReservedCallFrame to avoid %sp adjustments around all calls
-  // with more than 6 arguments.
-  Chain = DAG.getCALLSEQ_START(Chain, ArgsSize, 0, DL);
-
-  // Collect the set of registers to pass to the function and their values.
-  // This will be emitted as a sequence of CopyToReg nodes glued to the call
-  // instruction.
-  SmallVector<std::pair<Register, SDValue>, 8> RegsToPass;
-
-  // Collect chains from all the memory opeations that copy arguments to the
-  // stack. They must follow the stack pointer adjustment above and precede the
-  // call instruction itself.
-  SmallVector<SDValue, 8> MemOpChains;
-
-  for (unsigned i = 0, e = ArgLocs.size(); i != e; ++i) {
-    const CCValAssign &VA = ArgLocs[i];
-    SDValue Arg = CLI.OutVals[i];
-
-    // Promote the value if needed.
-    switch (VA.getLocInfo()) {
-    default:
-      llvm_unreachable("Unknown location info!");
-    case CCValAssign::Full:
-      break;
-    case CCValAssign::SExt:
-      Arg = DAG.getNode(ISD::SIGN_EXTEND, DL, VA.getLocVT(), Arg);
-      break;
-    case CCValAssign::ZExt:
-      Arg = DAG.getNode(ISD::ZERO_EXTEND, DL, VA.getLocVT(), Arg);
-      break;
-    case CCValAssign::AExt:
-      Arg = DAG.getNode(ISD::ANY_EXTEND, DL, VA.getLocVT(), Arg);
-      break;
-    case CCValAssign::BCvt:
-      // fixupVariableFloatArgs() may create bitcasts from f128 to i128. But
-      // E2K does not support i128 natively. Lower it into two i64, see below.
-      if (!VA.needsCustom() || VA.getValVT() != MVT::f128
-          || VA.getLocVT() != MVT::i128)
-        Arg = DAG.getNode(ISD::BITCAST, DL, VA.getLocVT(), Arg);
-      break;
-    }
-
-    if (VA.isRegLoc()) {
-      if (VA.needsCustom() && VA.getValVT() == MVT::f128
-          && VA.getLocVT() == MVT::i128) {
-        // Store and reload into the integer register reg and reg+1.
-        unsigned Offset = 8 * (VA.getLocReg() - E2K::R0);
-        unsigned StackOffset = Offset + Subtarget->getStackPointerBias() + 128;
-        SDValue StackPtr = DAG.getRegister(E2K::R6, PtrVT);
-        SDValue HiPtrOff = DAG.getIntPtrConstant(StackOffset, DL);
-        HiPtrOff = DAG.getNode(ISD::ADD, DL, PtrVT, StackPtr, HiPtrOff);
-        SDValue LoPtrOff = DAG.getIntPtrConstant(StackOffset + 8, DL);
-        LoPtrOff = DAG.getNode(ISD::ADD, DL, PtrVT, StackPtr, LoPtrOff);
-
-        // Store to %sp+BIAS+128+Offset
-        SDValue Store =
-            DAG.getStore(Chain, DL, Arg, HiPtrOff, MachinePointerInfo());
-        // Load into Reg and Reg+1
-        SDValue Hi64 =
-            DAG.getLoad(MVT::i64, DL, Store, HiPtrOff, MachinePointerInfo());
-        SDValue Lo64 =
-            DAG.getLoad(MVT::i64, DL, Store, LoPtrOff, MachinePointerInfo());
-        RegsToPass.push_back(std::make_pair(toCallerWindow(VA.getLocReg()),
-                                            Hi64));
-        RegsToPass.push_back(std::make_pair(toCallerWindow(VA.getLocReg()+1),
-                                            Lo64));
-        continue;
-      }
-
-      // The custom bit on an i32 return value indicates that it should be
-      // passed in the high bits of the register.
-      if (VA.getValVT() == MVT::i32 && VA.needsCustom()) {
-        Arg = DAG.getNode(ISD::SHL, DL, MVT::i64, Arg,
-                          DAG.getConstant(32, DL, MVT::i32));
-
-        // The next value may go in the low bits of the same register.
-        // Handle both at once.
-        if (i+1 < ArgLocs.size() && ArgLocs[i+1].isRegLoc() &&
-            ArgLocs[i+1].getLocReg() == VA.getLocReg()) {
-          SDValue NV = DAG.getNode(ISD::ZERO_EXTEND, DL, MVT::i64,
-                                   CLI.OutVals[i+1]);
-          Arg = DAG.getNode(ISD::OR, DL, MVT::i64, Arg, NV);
-          // Skip the next value, it's already done.
-          ++i;
-        }
-      }
-      RegsToPass.push_back(std::make_pair(toCallerWindow(VA.getLocReg()), Arg));
-      continue;
-    }
-
-    assert(VA.isMemLoc());
-
-    // Create a store off the stack pointer for this argument.
-    SDValue StackPtr = DAG.getRegister(E2K::R6, PtrVT);
-    // The argument area starts at %fp+BIAS+128 in the callee frame,
-    // %sp+BIAS+128 in ours.
-    SDValue PtrOff = DAG.getIntPtrConstant(VA.getLocMemOffset() +
-                                           Subtarget->getStackPointerBias() +
-                                           128, DL);
-    PtrOff = DAG.getNode(ISD::ADD, DL, PtrVT, StackPtr, PtrOff);
-    MemOpChains.push_back(
-        DAG.getStore(Chain, DL, Arg, PtrOff, MachinePointerInfo()));
-  }
-
-  // Emit all stores, make sure they occur before the call.
-  if (!MemOpChains.empty())
-    Chain = DAG.getNode(ISD::TokenFactor, DL, MVT::Other, MemOpChains);
-
-  // Build a sequence of CopyToReg nodes glued together with token chain and
-  // glue operands which copy the outgoing args into registers. The InGlue is
-  // necessary since all emitted instructions must be stuck together in order
-  // to pass the live physical registers.
-  SDValue InGlue;
-  for (unsigned i = 0, e = RegsToPass.size(); i != e; ++i) {
-    Chain = DAG.getCopyToReg(Chain, DL,
-                             RegsToPass[i].first, RegsToPass[i].second, InGlue);
-    InGlue = Chain.getValue(1);
-  }
-
-  // If the callee is a GlobalAddress node (quite common, every direct call is)
-  // turn it into a TargetGlobalAddress node so that legalize doesn't hack it.
-  // Likewise ExternalSymbol -> TargetExternalSymbol.
-  SDValue Callee = CLI.Callee;
-  unsigned TF = isPositionIndependent() ? E2KMCExpr::VK_E2K_WPLT30
-                                        : E2KMCExpr::VK_E2K_WDISP30;
-  if (GlobalAddressSDNode *G = dyn_cast<GlobalAddressSDNode>(Callee))
-    Callee = DAG.getTargetGlobalAddress(G->getGlobal(), DL, PtrVT, 0, TF);
-  else if (ExternalSymbolSDNode *E = dyn_cast<ExternalSymbolSDNode>(Callee))
-    Callee = DAG.getTargetExternalSymbol(E->getSymbol(), PtrVT, TF);
-
-  // Build the operands for the call instruction itself.
-  SmallVector<SDValue, 8> Ops;
-  Ops.push_back(Chain);
-  Ops.push_back(Callee);
-  for (unsigned i = 0, e = RegsToPass.size(); i != e; ++i)
-    Ops.push_back(DAG.getRegister(RegsToPass[i].first,
-                                  RegsToPass[i].second.getValueType()));
-
-  // Add a register mask operand representing the call-preserved registers.
-  const E2KRegisterInfo *TRI = Subtarget->getRegisterInfo();
-  const uint32_t *Mask = TRI->getCallPreservedMask(DAG.getMachineFunction(),
-                                                     CLI.CallConv);
-  assert(Mask && "Missing call preserved mask for calling convention");
-  Ops.push_back(DAG.getRegisterMask(Mask));
-
-  // Make sure the CopyToReg nodes are glued to the call instruction which
-  // consumes the registers.
-  if (InGlue.getNode())
-    Ops.push_back(InGlue);
-
-  // Now the call itself.
-  SDVTList NodeTys = DAG.getVTList(MVT::Other, MVT::Glue);
-  Chain = DAG.getNode(SPISD::CALL, DL, NodeTys, Ops);
-  InGlue = Chain.getValue(1);
-
-  // Revert the stack pointer immediately after the call.
-  Chain = DAG.getCALLSEQ_END(Chain, ArgsSize, 0, InGlue, DL);
-  InGlue = Chain.getValue(1);
-
-  // Now extract the return values. This is more or less the same as
-  // LowerFormalArguments_64.
-
-  // Assign locations to each value returned by this call.
-  SmallVector<CCValAssign, 16> RVLocs;
-  CCState RVInfo(CLI.CallConv, CLI.IsVarArg, DAG.getMachineFunction(), RVLocs,
-                 *DAG.getContext());
-
-  // Set inreg flag manually for codegen generated library calls that
-  // return float.
-  if (CLI.Ins.size() == 1 && CLI.Ins[0].VT == MVT::f32 && !CLI.CB)
-    CLI.Ins[0].Flags.setInReg();
-
-  RVInfo.AnalyzeCallResult(CLI.Ins, RetCC_E2K64);
-
-  // Copy all of the result registers out of their specified physreg.
-  for (unsigned i = 0; i != RVLocs.size(); ++i) {
-    CCValAssign &VA = RVLocs[i];
-    assert(VA.isRegLoc() && "Can only return in registers!");
-    unsigned Reg = toCallerWindow(VA.getLocReg());
-
-    // When returning 'inreg {i32, i32 }', two consecutive i32 arguments can
-    // reside in the same register in the high and low bits. Reuse the
-    // CopyFromReg previous node to avoid duplicate copies.
-    SDValue RV;
-    if (RegisterSDNode *SrcReg = dyn_cast<RegisterSDNode>(Chain.getOperand(1)))
-      if (SrcReg->getReg() == Reg && Chain->getOpcode() == ISD::CopyFromReg)
-        RV = Chain.getValue(0);
-
-    // But usually we'll create a new CopyFromReg for a different register.
-    if (!RV.getNode()) {
-      RV = DAG.getCopyFromReg(Chain, DL, Reg, RVLocs[i].getLocVT(), InGlue);
-      Chain = RV.getValue(1);
-      InGlue = Chain.getValue(2);
-    }
-
-    // Get the high bits for i32 struct elements.
-    if (VA.getValVT() == MVT::i32 && VA.needsCustom())
-      RV = DAG.getNode(ISD::SRL, DL, VA.getLocVT(), RV,
-                       DAG.getConstant(32, DL, MVT::i32));
-
-    // The callee promoted the return value, so insert an Assert?ext SDNode so
-    // we won't promote the value again in this function.
-    switch (VA.getLocInfo()) {
-    case CCValAssign::SExt:
-      RV = DAG.getNode(ISD::AssertSext, DL, VA.getLocVT(), RV,
-                       DAG.getValueType(VA.getValVT()));
-      break;
-    case CCValAssign::ZExt:
-      RV = DAG.getNode(ISD::AssertZext, DL, VA.getLocVT(), RV,
-                       DAG.getValueType(VA.getValVT()));
-      break;
-    default:
-      break;
-    }
-
-    // Truncate the register down to the return value type.
-    if (VA.isExtInLoc())
-      RV = DAG.getNode(ISD::TRUNCATE, DL, VA.getValVT(), RV);
-
-    InVals.push_back(RV);
-  }
-
-  return Chain;
-}
-
 //===----------------------------------------------------------------------===//
 // TargetLowering Implementation
 //===----------------------------------------------------------------------===//
@@ -1414,52 +658,6 @@ TargetLowering::AtomicExpansionKind E2KTargetLowering::shouldExpandAtomicRMWInIR
     return AtomicExpansionKind::None; // Uses xchg instruction
 
   return AtomicExpansionKind::CmpXChg;
-}
-
-/// IntCondCCodeToICC - Convert a DAG integer condition code to a E2K ICC
-/// condition.
-static E2KCC::CondCodes IntCondCCodeToICC(ISD::CondCode CC) {
-  switch (CC) {
-  default: llvm_unreachable("Unknown integer condition code!");
-  case ISD::SETEQ:  return E2KCC::ICC_E;
-  case ISD::SETNE:  return E2KCC::ICC_NE;
-  case ISD::SETLT:  return E2KCC::ICC_L;
-  case ISD::SETGT:  return E2KCC::ICC_G;
-  case ISD::SETLE:  return E2KCC::ICC_LE;
-  case ISD::SETGE:  return E2KCC::ICC_GE;
-  case ISD::SETULT: return E2KCC::ICC_CS;
-  case ISD::SETULE: return E2KCC::ICC_LEU;
-  case ISD::SETUGT: return E2KCC::ICC_GU;
-  case ISD::SETUGE: return E2KCC::ICC_CC;
-  }
-}
-
-/// FPCondCCodeToFCC - Convert a DAG floatingp oint condition code to a E2K
-/// FCC condition.
-static E2KCC::CondCodes FPCondCCodeToFCC(ISD::CondCode CC) {
-  switch (CC) {
-  default: llvm_unreachable("Unknown fp condition code!");
-  case ISD::SETEQ:
-  case ISD::SETOEQ: return E2KCC::FCC_E;
-  case ISD::SETNE:
-  case ISD::SETUNE: return E2KCC::FCC_NE;
-  case ISD::SETLT:
-  case ISD::SETOLT: return E2KCC::FCC_L;
-  case ISD::SETGT:
-  case ISD::SETOGT: return E2KCC::FCC_G;
-  case ISD::SETLE:
-  case ISD::SETOLE: return E2KCC::FCC_LE;
-  case ISD::SETGE:
-  case ISD::SETOGE: return E2KCC::FCC_GE;
-  case ISD::SETULT: return E2KCC::FCC_UL;
-  case ISD::SETULE: return E2KCC::FCC_ULE;
-  case ISD::SETUGT: return E2KCC::FCC_UG;
-  case ISD::SETUGE: return E2KCC::FCC_UGE;
-  case ISD::SETUO:  return E2KCC::FCC_U;
-  case ISD::SETO:   return E2KCC::FCC_O;
-  case ISD::SETONE: return E2KCC::FCC_LG;
-  case ISD::SETUEQ: return E2KCC::FCC_UE;
-  }
 }
 
 E2KTargetLowering::E2KTargetLowering(const TargetMachine &TM,
@@ -1796,39 +994,12 @@ E2KTargetLowering::E2KTargetLowering(const TargetMachine &TM,
   computeRegisterProperties(Subtarget->getRegisterInfo());
 }
 
+#define NODE_NAME_CASE(node) case E2KISD::node: return #node;
+
 const char *E2KTargetLowering::getTargetNodeName(unsigned Opcode) const {
-  switch ((SPISD::NodeType)Opcode) {
-  case SPISD::FIRST_NUMBER:    break;
-  case SPISD::CMPICC:          return "SPISD::CMPICC";
-  case SPISD::CMPFCC:          return "SPISD::CMPFCC";
-  case SPISD::CMPFCC_V9:
-    return "SPISD::CMPFCC_V9";
-  case SPISD::BRICC:           return "SPISD::BRICC";
-  case SPISD::BPICC:
-    return "SPISD::BPICC";
-  case SPISD::BPXCC:
-    return "SPISD::BPXCC";
-  case SPISD::BRFCC:           return "SPISD::BRFCC";
-  case SPISD::BRFCC_V9:
-    return "SPISD::BRFCC_V9";
-  case SPISD::SELECT_ICC:      return "SPISD::SELECT_ICC";
-  case SPISD::SELECT_XCC:      return "SPISD::SELECT_XCC";
-  case SPISD::SELECT_FCC:      return "SPISD::SELECT_FCC";
-  case SPISD::Hi:              return "SPISD::Hi";
-  case SPISD::Lo:              return "SPISD::Lo";
-  case SPISD::FTOI:            return "SPISD::FTOI";
-  case SPISD::ITOF:            return "SPISD::ITOF";
-  case SPISD::FTOX:            return "SPISD::FTOX";
-  case SPISD::XTOF:            return "SPISD::XTOF";
-  case SPISD::CALL:            return "SPISD::CALL";
-  case SPISD::RET_FLAG:        return "SPISD::RET_FLAG";
-  case SPISD::GLOBAL_BASE_REG: return "SPISD::GLOBAL_BASE_REG";
-  case SPISD::FLUSHW:          return "SPISD::FLUSHW";
-  case SPISD::TLS_ADD:         return "SPISD::TLS_ADD";
-  case SPISD::TLS_LD:          return "SPISD::TLS_LD";
-  case SPISD::TLS_CALL:        return "SPISD::TLS_CALL";
-  case SPISD::TAIL_CALL:       return "SPISD::TAIL_CALL";
-  case SPISD::LOAD_GDOP:       return "SPISD::LOAD_GDOP";
+  switch ((E2KISD::NodeType)Opcode) {
+  case E2KISD::FIRST_NUMBER:    break;
+  NODE_NAME_CASE(RET_FLAG);
   }
   return nullptr;
 }
@@ -1854,73 +1025,7 @@ void E2KTargetLowering::computeKnownBitsForTargetNode
 
   switch (Op.getOpcode()) {
   default: break;
-  case SPISD::SELECT_ICC:
-  case SPISD::SELECT_XCC:
-  case SPISD::SELECT_FCC:
-    Known = DAG.computeKnownBits(Op.getOperand(1), Depth + 1);
-    Known2 = DAG.computeKnownBits(Op.getOperand(0), Depth + 1);
-
-    // Only known if known in both the LHS and RHS.
-    Known = KnownBits::commonBits(Known, Known2);
-    break;
   }
-}
-
-// Look at LHS/RHS/CC and see if they are a lowered setcc instruction.  If so
-// set LHS/RHS and SPCC to the LHS/RHS of the setcc and SPCC to the condition.
-static void LookThroughSetCC(SDValue &LHS, SDValue &RHS,
-                             ISD::CondCode CC, unsigned &SPCC) {
-  if (isNullConstant(RHS) && CC == ISD::SETNE &&
-      (((LHS.getOpcode() == SPISD::SELECT_ICC ||
-         LHS.getOpcode() == SPISD::SELECT_XCC) &&
-        LHS.getOperand(3).getOpcode() == SPISD::CMPICC) ||
-       (LHS.getOpcode() == SPISD::SELECT_FCC &&
-        (LHS.getOperand(3).getOpcode() == SPISD::CMPFCC ||
-         LHS.getOperand(3).getOpcode() == SPISD::CMPFCC_V9))) &&
-      isOneConstant(LHS.getOperand(0)) && isNullConstant(LHS.getOperand(1))) {
-    SDValue CMPCC = LHS.getOperand(3);
-    SPCC = cast<ConstantSDNode>(LHS.getOperand(2))->getZExtValue();
-    LHS = CMPCC.getOperand(0);
-    RHS = CMPCC.getOperand(1);
-  }
-}
-
-// Convert to a target node and set target flags.
-SDValue E2KTargetLowering::withTargetFlags(SDValue Op, unsigned TF,
-                                             SelectionDAG &DAG) const {
-  if (const GlobalAddressSDNode *GA = dyn_cast<GlobalAddressSDNode>(Op))
-    return DAG.getTargetGlobalAddress(GA->getGlobal(),
-                                      SDLoc(GA),
-                                      GA->getValueType(0),
-                                      GA->getOffset(), TF);
-
-  if (const ConstantPoolSDNode *CP = dyn_cast<ConstantPoolSDNode>(Op))
-    return DAG.getTargetConstantPool(CP->getConstVal(), CP->getValueType(0),
-                                     CP->getAlign(), CP->getOffset(), TF);
-
-  if (const BlockAddressSDNode *BA = dyn_cast<BlockAddressSDNode>(Op))
-    return DAG.getTargetBlockAddress(BA->getBlockAddress(),
-                                     Op.getValueType(),
-                                     0,
-                                     TF);
-
-  if (const ExternalSymbolSDNode *ES = dyn_cast<ExternalSymbolSDNode>(Op))
-    return DAG.getTargetExternalSymbol(ES->getSymbol(),
-                                       ES->getValueType(0), TF);
-
-  llvm_unreachable("Unhandled address SDNode");
-}
-
-// Split Op into high and low parts according to HiTF and LoTF.
-// Return an ADD node combining the parts.
-SDValue E2KTargetLowering::makeHiLoPair(SDValue Op,
-                                          unsigned HiTF, unsigned LoTF,
-                                          SelectionDAG &DAG) const {
-  SDLoc DL(Op);
-  EVT VT = Op.getValueType();
-  SDValue Hi = DAG.getNode(SPISD::Hi, DL, VT, withTargetFlags(Op, HiTF, DAG));
-  SDValue Lo = DAG.getNode(SPISD::Lo, DL, VT, withTargetFlags(Op, LoTF, DAG));
-  return DAG.getNode(ISD::ADD, DL, VT, Hi, Lo);
 }
 
 // Build SDNodes for producing an address from a GlobalAddress, ConstantPool,
@@ -1929,58 +1034,10 @@ SDValue E2KTargetLowering::makeAddress(SDValue Op, SelectionDAG &DAG) const {
   SDLoc DL(Op);
   EVT VT = getPointerTy(DAG.getDataLayout());
 
-  // Handle PIC mode first. E2K needs a got load for every variable!
-  if (isPositionIndependent()) {
-    const Module *M = DAG.getMachineFunction().getFunction().getParent();
-    PICLevel::Level picLevel = M->getPICLevel();
-    SDValue Idx;
-
-    if (picLevel == PICLevel::SmallPIC) {
-      // This is the pic13 code model, the GOT is known to be smaller than 8KiB.
-      Idx = DAG.getNode(SPISD::Lo, DL, Op.getValueType(),
-                        withTargetFlags(Op, E2KMCExpr::VK_E2K_GOT13, DAG));
-    } else {
-      // This is the pic32 code model, the GOT is known to be smaller than 4GB.
-      Idx = makeHiLoPair(Op, E2KMCExpr::VK_E2K_GOT22,
-                         E2KMCExpr::VK_E2K_GOT10, DAG);
-    }
-
-    SDValue GlobalBase = DAG.getNode(SPISD::GLOBAL_BASE_REG, DL, VT);
-    SDValue AbsAddr = DAG.getNode(ISD::ADD, DL, VT, GlobalBase, Idx);
-    // GLOBAL_BASE_REG codegen'ed with call. Inform MFI that this
-    // function has calls.
-    MachineFrameInfo &MFI = DAG.getMachineFunction().getFrameInfo();
-    MFI.setHasCalls(true);
-    return DAG.getLoad(VT, DL, DAG.getEntryNode(), AbsAddr,
-                       MachinePointerInfo::getGOT(DAG.getMachineFunction()));
-  }
-
   // This is one of the absolute code models.
   switch(getTargetMachine().getCodeModel()) {
   default:
     llvm_unreachable("Unsupported absolute code model");
-  case CodeModel::Small:
-    // abs32.
-    return makeHiLoPair(Op, E2KMCExpr::VK_E2K_HI,
-                        E2KMCExpr::VK_E2K_LO, DAG);
-  case CodeModel::Medium: {
-    // abs44.
-    SDValue H44 = makeHiLoPair(Op, E2KMCExpr::VK_E2K_H44,
-                               E2KMCExpr::VK_E2K_M44, DAG);
-    H44 = DAG.getNode(ISD::SHL, DL, VT, H44, DAG.getConstant(12, DL, MVT::i32));
-    SDValue L44 = withTargetFlags(Op, E2KMCExpr::VK_E2K_L44, DAG);
-    L44 = DAG.getNode(SPISD::Lo, DL, VT, L44);
-    return DAG.getNode(ISD::ADD, DL, VT, H44, L44);
-  }
-  case CodeModel::Large: {
-    // abs64.
-    SDValue Hi = makeHiLoPair(Op, E2KMCExpr::VK_E2K_HH,
-                              E2KMCExpr::VK_E2K_HM, DAG);
-    Hi = DAG.getNode(ISD::SHL, DL, VT, Hi, DAG.getConstant(32, DL, MVT::i32));
-    SDValue Lo = makeHiLoPair(Op, E2KMCExpr::VK_E2K_HI,
-                              E2KMCExpr::VK_E2K_LO, DAG);
-    return DAG.getNode(ISD::ADD, DL, VT, Hi, Lo);
-  }
   }
 }
 
@@ -2002,131 +1059,8 @@ SDValue E2KTargetLowering::LowerBlockAddress(SDValue Op,
 SDValue E2KTargetLowering::LowerGlobalTLSAddress(SDValue Op,
                                                    SelectionDAG &DAG) const {
 
-  GlobalAddressSDNode *GA = cast<GlobalAddressSDNode>(Op);
-  if (DAG.getTarget().useEmulatedTLS())
-    return LowerToTLSEmulatedModel(GA, DAG);
-
-  SDLoc DL(GA);
-  const GlobalValue *GV = GA->getGlobal();
-  EVT PtrVT = getPointerTy(DAG.getDataLayout());
-
-  TLSModel::Model model = getTargetMachine().getTLSModel(GV);
-
-  if (model == TLSModel::GeneralDynamic || model == TLSModel::LocalDynamic) {
-    unsigned HiTF = ((model == TLSModel::GeneralDynamic)
-                     ? E2KMCExpr::VK_E2K_TLS_GD_HI22
-                     : E2KMCExpr::VK_E2K_TLS_LDM_HI22);
-    unsigned LoTF = ((model == TLSModel::GeneralDynamic)
-                     ? E2KMCExpr::VK_E2K_TLS_GD_LO10
-                     : E2KMCExpr::VK_E2K_TLS_LDM_LO10);
-    unsigned addTF = ((model == TLSModel::GeneralDynamic)
-                      ? E2KMCExpr::VK_E2K_TLS_GD_ADD
-                      : E2KMCExpr::VK_E2K_TLS_LDM_ADD);
-    unsigned callTF = ((model == TLSModel::GeneralDynamic)
-                       ? E2KMCExpr::VK_E2K_TLS_GD_CALL
-                       : E2KMCExpr::VK_E2K_TLS_LDM_CALL);
-
-    SDValue HiLo = makeHiLoPair(Op, HiTF, LoTF, DAG);
-    SDValue Base = DAG.getNode(SPISD::GLOBAL_BASE_REG, DL, PtrVT);
-    SDValue Argument = DAG.getNode(SPISD::TLS_ADD, DL, PtrVT, Base, HiLo,
-                               withTargetFlags(Op, addTF, DAG));
-
-    SDValue Chain = DAG.getEntryNode();
-    SDValue InFlag;
-
-    Chain = DAG.getCALLSEQ_START(Chain, 1, 0, DL);
-    Chain = DAG.getCopyToReg(Chain, DL, E2K::R6, Argument, InFlag);
-    InFlag = Chain.getValue(1);
-    SDValue Callee = DAG.getTargetExternalSymbol("__tls_get_addr", PtrVT);
-    SDValue Symbol = withTargetFlags(Op, callTF, DAG);
-
-    SDVTList NodeTys = DAG.getVTList(MVT::Other, MVT::Glue);
-    const uint32_t *Mask = Subtarget->getRegisterInfo()->getCallPreservedMask(
-        DAG.getMachineFunction(), CallingConv::C);
-    assert(Mask && "Missing call preserved mask for calling convention");
-    SDValue Ops[] = {Chain,
-                     Callee,
-                     Symbol,
-                     DAG.getRegister(E2K::R0, PtrVT),
-                     DAG.getRegisterMask(Mask),
-                     InFlag};
-    Chain = DAG.getNode(SPISD::TLS_CALL, DL, NodeTys, Ops);
-    InFlag = Chain.getValue(1);
-    Chain = DAG.getCALLSEQ_END(Chain, 1, 0, InFlag, DL);
-    InFlag = Chain.getValue(1);
-    SDValue Ret = DAG.getCopyFromReg(Chain, DL, E2K::R0, PtrVT, InFlag);
-
-    if (model != TLSModel::LocalDynamic)
-      return Ret;
-
-    SDValue Hi = DAG.getNode(SPISD::Hi, DL, PtrVT,
-                 withTargetFlags(Op, E2KMCExpr::VK_E2K_TLS_LDO_HIX22, DAG));
-    SDValue Lo = DAG.getNode(SPISD::Lo, DL, PtrVT,
-                 withTargetFlags(Op, E2KMCExpr::VK_E2K_TLS_LDO_LOX10, DAG));
-    HiLo =  DAG.getNode(ISD::XOR, DL, PtrVT, Hi, Lo);
-    return DAG.getNode(SPISD::TLS_ADD, DL, PtrVT, Ret, HiLo,
-                   withTargetFlags(Op, E2KMCExpr::VK_E2K_TLS_LDO_ADD, DAG));
-  }
-
-  if (model == TLSModel::InitialExec) {
-    unsigned ldTF     = ((PtrVT == MVT::i64)? E2KMCExpr::VK_E2K_TLS_IE_LDX
-                         : E2KMCExpr::VK_E2K_TLS_IE_LD);
-
-    SDValue Base = DAG.getNode(SPISD::GLOBAL_BASE_REG, DL, PtrVT);
-
-    // GLOBAL_BASE_REG codegen'ed with call. Inform MFI that this
-    // function has calls.
-    MachineFrameInfo &MFI = DAG.getMachineFunction().getFrameInfo();
-    MFI.setHasCalls(true);
-
-    SDValue TGA = makeHiLoPair(Op,
-                               E2KMCExpr::VK_E2K_TLS_IE_HI22,
-                               E2KMCExpr::VK_E2K_TLS_IE_LO10, DAG);
-    SDValue Ptr = DAG.getNode(ISD::ADD, DL, PtrVT, Base, TGA);
-    SDValue Offset = DAG.getNode(SPISD::TLS_LD,
-                                 DL, PtrVT, Ptr,
-                                 withTargetFlags(Op, ldTF, DAG));
-    return DAG.getNode(SPISD::TLS_ADD, DL, PtrVT,
-                       DAG.getRegister(E2K::G7, PtrVT), Offset,
-                       withTargetFlags(Op,
-                                       E2KMCExpr::VK_E2K_TLS_IE_ADD, DAG));
-  }
-
-  assert(model == TLSModel::LocalExec);
-  SDValue Hi = DAG.getNode(SPISD::Hi, DL, PtrVT,
-                  withTargetFlags(Op, E2KMCExpr::VK_E2K_TLS_LE_HIX22, DAG));
-  SDValue Lo = DAG.getNode(SPISD::Lo, DL, PtrVT,
-                  withTargetFlags(Op, E2KMCExpr::VK_E2K_TLS_LE_LOX10, DAG));
-  SDValue Offset =  DAG.getNode(ISD::XOR, DL, PtrVT, Hi, Lo);
-
-  return DAG.getNode(ISD::ADD, DL, PtrVT,
-                     DAG.getRegister(E2K::G7, PtrVT), Offset);
-}
-
-SDValue E2KTargetLowering::LowerF128_LibCallArg(SDValue Chain,
-                                                  ArgListTy &Args, SDValue Arg,
-                                                  const SDLoc &DL,
-                                                  SelectionDAG &DAG) const {
-  MachineFrameInfo &MFI = DAG.getMachineFunction().getFrameInfo();
-  EVT ArgVT = Arg.getValueType();
-  Type *ArgTy = ArgVT.getTypeForEVT(*DAG.getContext());
-
-  ArgListEntry Entry;
-  Entry.Node = Arg;
-  Entry.Ty   = ArgTy;
-
-  if (ArgTy->isFP128Ty()) {
-    // Create a stack object and pass the pointer to the library function.
-    int FI = MFI.CreateStackObject(16, Align(8), false);
-    SDValue FIPtr = DAG.getFrameIndex(FI, getPointerTy(DAG.getDataLayout()));
-    Chain = DAG.getStore(Chain, DL, Entry.Node, FIPtr, MachinePointerInfo(),
-                         Align(8));
-
-    Entry.Node = FIPtr;
-    Entry.Ty   = PointerType::getUnqual(ArgTy);
-  }
-  Args.push_back(Entry);
-  return Chain;
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 SDValue
@@ -2134,668 +1068,141 @@ E2KTargetLowering::LowerF128Op(SDValue Op, SelectionDAG &DAG,
                                  const char *LibFuncName,
                                  unsigned numArgs) const {
 
-  ArgListTy Args;
-
-  MachineFrameInfo &MFI = DAG.getMachineFunction().getFrameInfo();
-  auto PtrVT = getPointerTy(DAG.getDataLayout());
-
-  SDValue Callee = DAG.getExternalSymbol(LibFuncName, PtrVT);
-  Type *RetTy = Op.getValueType().getTypeForEVT(*DAG.getContext());
-  Type *RetTyABI = RetTy;
-  SDValue Chain = DAG.getEntryNode();
-  SDValue RetPtr;
-
-  if (RetTy->isFP128Ty()) {
-    // Create a Stack Object to receive the return value of type f128.
-    ArgListEntry Entry;
-    int RetFI = MFI.CreateStackObject(16, Align(8), false);
-    RetPtr = DAG.getFrameIndex(RetFI, PtrVT);
-    Entry.Node = RetPtr;
-    Entry.Ty   = PointerType::getUnqual(RetTy);
-    if (!Subtarget->is64Bit()) {
-      Entry.IsSRet = true;
-      Entry.IndirectType = RetTy;
-    }
-    Entry.IsReturned = false;
-    Args.push_back(Entry);
-    RetTyABI = Type::getVoidTy(*DAG.getContext());
-  }
-
-  assert(Op->getNumOperands() >= numArgs && "Not enough operands!");
-  for (unsigned i = 0, e = numArgs; i != e; ++i) {
-    Chain = LowerF128_LibCallArg(Chain, Args, Op.getOperand(i), SDLoc(Op), DAG);
-  }
-  TargetLowering::CallLoweringInfo CLI(DAG);
-  CLI.setDebugLoc(SDLoc(Op)).setChain(Chain)
-    .setCallee(CallingConv::C, RetTyABI, Callee, std::move(Args));
-
-  std::pair<SDValue, SDValue> CallInfo = LowerCallTo(CLI);
-
-  // chain is in second result.
-  if (RetTyABI == RetTy)
-    return CallInfo.first;
-
-  assert (RetTy->isFP128Ty() && "Unexpected return type!");
-
-  Chain = CallInfo.second;
-
-  // Load RetPtr to get the return value.
-  return DAG.getLoad(Op.getValueType(), SDLoc(Op), Chain, RetPtr,
-                     MachinePointerInfo(), Align(8));
-}
-
-SDValue E2KTargetLowering::LowerF128Compare(SDValue LHS, SDValue RHS,
-                                              unsigned &SPCC, const SDLoc &DL,
-                                              SelectionDAG &DAG) const {
-
-  const char *LibCall = nullptr;
-  bool is64Bit = Subtarget->is64Bit();
-  switch(SPCC) {
-  default: llvm_unreachable("Unhandled conditional code!");
-  case E2KCC::FCC_E  : LibCall = is64Bit? "_Qp_feq" : "_Q_feq"; break;
-  case E2KCC::FCC_NE : LibCall = is64Bit? "_Qp_fne" : "_Q_fne"; break;
-  case E2KCC::FCC_L  : LibCall = is64Bit? "_Qp_flt" : "_Q_flt"; break;
-  case E2KCC::FCC_G  : LibCall = is64Bit? "_Qp_fgt" : "_Q_fgt"; break;
-  case E2KCC::FCC_LE : LibCall = is64Bit? "_Qp_fle" : "_Q_fle"; break;
-  case E2KCC::FCC_GE : LibCall = is64Bit? "_Qp_fge" : "_Q_fge"; break;
-  case E2KCC::FCC_UL :
-  case E2KCC::FCC_ULE:
-  case E2KCC::FCC_UG :
-  case E2KCC::FCC_UGE:
-  case E2KCC::FCC_U  :
-  case E2KCC::FCC_O  :
-  case E2KCC::FCC_LG :
-  case E2KCC::FCC_UE : LibCall = is64Bit? "_Qp_cmp" : "_Q_cmp"; break;
-  }
-
-  auto PtrVT = getPointerTy(DAG.getDataLayout());
-  SDValue Callee = DAG.getExternalSymbol(LibCall, PtrVT);
-  Type *RetTy = Type::getInt32Ty(*DAG.getContext());
-  ArgListTy Args;
-  SDValue Chain = DAG.getEntryNode();
-  Chain = LowerF128_LibCallArg(Chain, Args, LHS, DL, DAG);
-  Chain = LowerF128_LibCallArg(Chain, Args, RHS, DL, DAG);
-
-  TargetLowering::CallLoweringInfo CLI(DAG);
-  CLI.setDebugLoc(DL).setChain(Chain)
-    .setCallee(CallingConv::C, RetTy, Callee, std::move(Args));
-
-  std::pair<SDValue, SDValue> CallInfo = LowerCallTo(CLI);
-
-  // result is in first, and chain is in second result.
-  SDValue Result =  CallInfo.first;
-
-  switch(SPCC) {
-  default: {
-    SDValue RHS = DAG.getConstant(0, DL, Result.getValueType());
-    SPCC = E2KCC::ICC_NE;
-    return DAG.getNode(SPISD::CMPICC, DL, MVT::Glue, Result, RHS);
-  }
-  case E2KCC::FCC_UL : {
-    SDValue Mask   = DAG.getConstant(1, DL, Result.getValueType());
-    Result = DAG.getNode(ISD::AND, DL, Result.getValueType(), Result, Mask);
-    SDValue RHS    = DAG.getConstant(0, DL, Result.getValueType());
-    SPCC = E2KCC::ICC_NE;
-    return DAG.getNode(SPISD::CMPICC, DL, MVT::Glue, Result, RHS);
-  }
-  case E2KCC::FCC_ULE: {
-    SDValue RHS = DAG.getConstant(2, DL, Result.getValueType());
-    SPCC = E2KCC::ICC_NE;
-    return DAG.getNode(SPISD::CMPICC, DL, MVT::Glue, Result, RHS);
-  }
-  case E2KCC::FCC_UG :  {
-    SDValue RHS = DAG.getConstant(1, DL, Result.getValueType());
-    SPCC = E2KCC::ICC_G;
-    return DAG.getNode(SPISD::CMPICC, DL, MVT::Glue, Result, RHS);
-  }
-  case E2KCC::FCC_UGE: {
-    SDValue RHS = DAG.getConstant(1, DL, Result.getValueType());
-    SPCC = E2KCC::ICC_NE;
-    return DAG.getNode(SPISD::CMPICC, DL, MVT::Glue, Result, RHS);
-  }
-
-  case E2KCC::FCC_U  :  {
-    SDValue RHS = DAG.getConstant(3, DL, Result.getValueType());
-    SPCC = E2KCC::ICC_E;
-    return DAG.getNode(SPISD::CMPICC, DL, MVT::Glue, Result, RHS);
-  }
-  case E2KCC::FCC_O  :  {
-    SDValue RHS = DAG.getConstant(3, DL, Result.getValueType());
-    SPCC = E2KCC::ICC_NE;
-    return DAG.getNode(SPISD::CMPICC, DL, MVT::Glue, Result, RHS);
-  }
-  case E2KCC::FCC_LG :  {
-    SDValue Mask   = DAG.getConstant(3, DL, Result.getValueType());
-    Result = DAG.getNode(ISD::AND, DL, Result.getValueType(), Result, Mask);
-    SDValue RHS    = DAG.getConstant(0, DL, Result.getValueType());
-    SPCC = E2KCC::ICC_NE;
-    return DAG.getNode(SPISD::CMPICC, DL, MVT::Glue, Result, RHS);
-  }
-  case E2KCC::FCC_UE : {
-    SDValue Mask   = DAG.getConstant(3, DL, Result.getValueType());
-    Result = DAG.getNode(ISD::AND, DL, Result.getValueType(), Result, Mask);
-    SDValue RHS    = DAG.getConstant(0, DL, Result.getValueType());
-    SPCC = E2KCC::ICC_E;
-    return DAG.getNode(SPISD::CMPICC, DL, MVT::Glue, Result, RHS);
-  }
-  }
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 static SDValue
 LowerF128_FPEXTEND(SDValue Op, SelectionDAG &DAG,
                    const E2KTargetLowering &TLI) {
 
-  if (Op.getOperand(0).getValueType() == MVT::f64)
-    return TLI.LowerF128Op(Op, DAG,
-                           TLI.getLibcallName(RTLIB::FPEXT_F64_F128), 1);
 
-  if (Op.getOperand(0).getValueType() == MVT::f32)
-    return TLI.LowerF128Op(Op, DAG,
-                           TLI.getLibcallName(RTLIB::FPEXT_F32_F128), 1);
-
-  llvm_unreachable("fpextend with non-float operand!");
+  llvm_unreachable("unimplemented");
   return SDValue();
 }
 
 static SDValue
 LowerF128_FPROUND(SDValue Op, SelectionDAG &DAG,
                   const E2KTargetLowering &TLI) {
-  // FP_ROUND on f64 and f32 are legal.
-  if (Op.getOperand(0).getValueType() != MVT::f128)
-    return Op;
-
-  if (Op.getValueType() == MVT::f64)
-    return TLI.LowerF128Op(Op, DAG,
-                           TLI.getLibcallName(RTLIB::FPROUND_F128_F64), 1);
-  if (Op.getValueType() == MVT::f32)
-    return TLI.LowerF128Op(Op, DAG,
-                           TLI.getLibcallName(RTLIB::FPROUND_F128_F32), 1);
-
-  llvm_unreachable("fpround to non-float!");
+  llvm_unreachable("unimplemented");
   return SDValue();
 }
 
 static SDValue LowerFP_TO_SINT(SDValue Op, SelectionDAG &DAG,
-                               const E2KTargetLowering &TLI,
-                               bool hasHardQuad) {
-  SDLoc dl(Op);
-  EVT VT = Op.getValueType();
-  assert(VT == MVT::i32 || VT == MVT::i64);
-
-  // Expand f128 operations to fp128 abi calls.
-  if (Op.getOperand(0).getValueType() == MVT::f128
-      && (!hasHardQuad || !TLI.isTypeLegal(VT))) {
-    const char *libName = TLI.getLibcallName(VT == MVT::i32
-                                             ? RTLIB::FPTOSINT_F128_I32
-                                             : RTLIB::FPTOSINT_F128_I64);
-    return TLI.LowerF128Op(Op, DAG, libName, 1);
-  }
-
-  // Expand if the resulting type is illegal.
-  if (!TLI.isTypeLegal(VT))
-    return SDValue();
-
-  // Otherwise, Convert the fp value to integer in an FP register.
-  if (VT == MVT::i32)
-    Op = DAG.getNode(SPISD::FTOI, dl, MVT::f32, Op.getOperand(0));
-  else
-    Op = DAG.getNode(SPISD::FTOX, dl, MVT::f64, Op.getOperand(0));
-
-  return DAG.getNode(ISD::BITCAST, dl, VT, Op);
+                               const E2KTargetLowering &TLI) {
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 static SDValue LowerSINT_TO_FP(SDValue Op, SelectionDAG &DAG,
-                               const E2KTargetLowering &TLI,
-                               bool hasHardQuad) {
-  SDLoc dl(Op);
-  EVT OpVT = Op.getOperand(0).getValueType();
-  assert(OpVT == MVT::i32 || (OpVT == MVT::i64));
-
-  EVT floatVT = (OpVT == MVT::i32) ? MVT::f32 : MVT::f64;
-
-  // Expand f128 operations to fp128 ABI calls.
-  if (Op.getValueType() == MVT::f128
-      && (!hasHardQuad || !TLI.isTypeLegal(OpVT))) {
-    const char *libName = TLI.getLibcallName(OpVT == MVT::i32
-                                             ? RTLIB::SINTTOFP_I32_F128
-                                             : RTLIB::SINTTOFP_I64_F128);
-    return TLI.LowerF128Op(Op, DAG, libName, 1);
-  }
-
-  // Expand if the operand type is illegal.
-  if (!TLI.isTypeLegal(OpVT))
-    return SDValue();
-
-  // Otherwise, Convert the int value to FP in an FP register.
-  SDValue Tmp = DAG.getNode(ISD::BITCAST, dl, floatVT, Op.getOperand(0));
-  unsigned opcode = (OpVT == MVT::i32)? SPISD::ITOF : SPISD::XTOF;
-  return DAG.getNode(opcode, dl, Op.getValueType(), Tmp);
+                               const E2KTargetLowering &TLI) {
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 static SDValue LowerFP_TO_UINT(SDValue Op, SelectionDAG &DAG,
-                               const E2KTargetLowering &TLI,
-                               bool hasHardQuad) {
-  SDLoc dl(Op);
-  EVT VT = Op.getValueType();
-
-  // Expand if it does not involve f128 or the target has support for
-  // quad floating point instructions and the resulting type is legal.
-  if (Op.getOperand(0).getValueType() != MVT::f128 ||
-      (hasHardQuad && TLI.isTypeLegal(VT)))
-    return SDValue();
-
-  assert(VT == MVT::i32 || VT == MVT::i64);
-
-  return TLI.LowerF128Op(Op, DAG,
-                         TLI.getLibcallName(VT == MVT::i32
-                                            ? RTLIB::FPTOUINT_F128_I32
-                                            : RTLIB::FPTOUINT_F128_I64),
-                         1);
+                               const E2KTargetLowering &TLI) {
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 static SDValue LowerUINT_TO_FP(SDValue Op, SelectionDAG &DAG,
-                               const E2KTargetLowering &TLI,
-                               bool hasHardQuad) {
-  SDLoc dl(Op);
-  EVT OpVT = Op.getOperand(0).getValueType();
-  assert(OpVT == MVT::i32 || OpVT == MVT::i64);
-
-  // Expand if it does not involve f128 or the target has support for
-  // quad floating point instructions and the operand type is legal.
-  if (Op.getValueType() != MVT::f128 || (hasHardQuad && TLI.isTypeLegal(OpVT)))
-    return SDValue();
-
-  return TLI.LowerF128Op(Op, DAG,
-                         TLI.getLibcallName(OpVT == MVT::i32
-                                            ? RTLIB::UINTTOFP_I32_F128
-                                            : RTLIB::UINTTOFP_I64_F128),
-                         1);
+                               const E2KTargetLowering &TLI) {
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 static SDValue LowerBR_CC(SDValue Op, SelectionDAG &DAG,
-                          const E2KTargetLowering &TLI, bool hasHardQuad,
-                          bool isV9) {
-  SDValue Chain = Op.getOperand(0);
-  ISD::CondCode CC = cast<CondCodeSDNode>(Op.getOperand(1))->get();
-  SDValue LHS = Op.getOperand(2);
-  SDValue RHS = Op.getOperand(3);
-  SDValue Dest = Op.getOperand(4);
-  SDLoc dl(Op);
-  unsigned Opc, SPCC = ~0U;
-
-  // If this is a br_cc of a "setcc", and if the setcc got lowered into
-  // an CMP[IF]CC/SELECT_[IF]CC pair, find the original compared values.
-  LookThroughSetCC(LHS, RHS, CC, SPCC);
-
-  // Get the condition flag.
-  SDValue CompareFlag;
-  if (LHS.getValueType().isInteger()) {
-    CompareFlag = DAG.getNode(SPISD::CMPICC, dl, MVT::Glue, LHS, RHS);
-    if (SPCC == ~0U) SPCC = IntCondCCodeToICC(CC);
-    if (isV9)
-      // 32-bit compares use the icc flags, 64-bit uses the xcc flags.
-      Opc = LHS.getValueType() == MVT::i32 ? SPISD::BPICC : SPISD::BPXCC;
-    else
-      // Non-v9 targets don't have xcc.
-      Opc = SPISD::BRICC;
-  } else {
-    if (!hasHardQuad && LHS.getValueType() == MVT::f128) {
-      if (SPCC == ~0U) SPCC = FPCondCCodeToFCC(CC);
-      CompareFlag = TLI.LowerF128Compare(LHS, RHS, SPCC, dl, DAG);
-      Opc = isV9 ? SPISD::BPICC : SPISD::BRICC;
-    } else {
-      unsigned CmpOpc = isV9 ? SPISD::CMPFCC_V9 : SPISD::CMPFCC;
-      CompareFlag = DAG.getNode(CmpOpc, dl, MVT::Glue, LHS, RHS);
-      if (SPCC == ~0U) SPCC = FPCondCCodeToFCC(CC);
-      Opc = isV9 ? SPISD::BRFCC_V9 : SPISD::BRFCC;
-    }
-  }
-  return DAG.getNode(Opc, dl, MVT::Other, Chain, Dest,
-                     DAG.getConstant(SPCC, dl, MVT::i32), CompareFlag);
+                          const E2KTargetLowering &TLI) {
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 static SDValue LowerSELECT_CC(SDValue Op, SelectionDAG &DAG,
-                              const E2KTargetLowering &TLI, bool hasHardQuad,
-                              bool isV9) {
-  SDValue LHS = Op.getOperand(0);
-  SDValue RHS = Op.getOperand(1);
-  ISD::CondCode CC = cast<CondCodeSDNode>(Op.getOperand(4))->get();
-  SDValue TrueVal = Op.getOperand(2);
-  SDValue FalseVal = Op.getOperand(3);
-  SDLoc dl(Op);
-  unsigned Opc, SPCC = ~0U;
-
-  // If this is a select_cc of a "setcc", and if the setcc got lowered into
-  // an CMP[IF]CC/SELECT_[IF]CC pair, find the original compared values.
-  LookThroughSetCC(LHS, RHS, CC, SPCC);
-
-  SDValue CompareFlag;
-  if (LHS.getValueType().isInteger()) {
-    CompareFlag = DAG.getNode(SPISD::CMPICC, dl, MVT::Glue, LHS, RHS);
-    Opc = LHS.getValueType() == MVT::i32 ?
-          SPISD::SELECT_ICC : SPISD::SELECT_XCC;
-    if (SPCC == ~0U) SPCC = IntCondCCodeToICC(CC);
-  } else {
-    if (!hasHardQuad && LHS.getValueType() == MVT::f128) {
-      if (SPCC == ~0U) SPCC = FPCondCCodeToFCC(CC);
-      CompareFlag = TLI.LowerF128Compare(LHS, RHS, SPCC, dl, DAG);
-      Opc = SPISD::SELECT_ICC;
-    } else {
-      unsigned CmpOpc = isV9 ? SPISD::CMPFCC_V9 : SPISD::CMPFCC;
-      CompareFlag = DAG.getNode(CmpOpc, dl, MVT::Glue, LHS, RHS);
-      Opc = SPISD::SELECT_FCC;
-      if (SPCC == ~0U) SPCC = FPCondCCodeToFCC(CC);
-    }
-  }
-  return DAG.getNode(Opc, dl, TrueVal.getValueType(), TrueVal, FalseVal,
-                     DAG.getConstant(SPCC, dl, MVT::i32), CompareFlag);
+                              const E2KTargetLowering &TLI) {
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 static SDValue LowerVASTART(SDValue Op, SelectionDAG &DAG,
                             const E2KTargetLowering &TLI) {
-  MachineFunction &MF = DAG.getMachineFunction();
-  E2KMachineFunctionInfo *FuncInfo = MF.getInfo<E2KMachineFunctionInfo>();
-  auto PtrVT = TLI.getPointerTy(DAG.getDataLayout());
-
-  // Need frame address to find the address of VarArgsFrameIndex.
-  MF.getFrameInfo().setFrameAddressIsTaken(true);
-
-  // vastart just stores the address of the VarArgsFrameIndex slot into the
-  // memory location argument.
-  SDLoc DL(Op);
-  SDValue Offset =
-      DAG.getNode(ISD::ADD, DL, PtrVT, DAG.getRegister(E2K::R6, PtrVT),
-                  DAG.getIntPtrConstant(FuncInfo->getVarArgsFrameOffset(), DL));
-  const Value *SV = cast<SrcValueSDNode>(Op.getOperand(2))->getValue();
-  return DAG.getStore(Op.getOperand(0), DL, Offset, Op.getOperand(1),
-                      MachinePointerInfo(SV));
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 static SDValue LowerVAARG(SDValue Op, SelectionDAG &DAG) {
-  SDNode *Node = Op.getNode();
-  EVT VT = Node->getValueType(0);
-  SDValue InChain = Node->getOperand(0);
-  SDValue VAListPtr = Node->getOperand(1);
-  EVT PtrVT = VAListPtr.getValueType();
-  const Value *SV = cast<SrcValueSDNode>(Node->getOperand(2))->getValue();
-  SDLoc DL(Node);
-  SDValue VAList =
-      DAG.getLoad(PtrVT, DL, InChain, VAListPtr, MachinePointerInfo(SV));
-  // Increment the pointer, VAList, to the next vaarg.
-  SDValue NextPtr = DAG.getNode(ISD::ADD, DL, PtrVT, VAList,
-                                DAG.getIntPtrConstant(VT.getSizeInBits()/8,
-                                                      DL));
-  // Store the incremented VAList to the legalized pointer.
-  InChain = DAG.getStore(VAList.getValue(1), DL, NextPtr, VAListPtr,
-                         MachinePointerInfo(SV));
-  // Load the actual argument out of the pointer VAList.
-  // We can't count on greater alignment than the word size.
-  return DAG.getLoad(
-      VT, DL, InChain, VAList, MachinePointerInfo(),
-      std::min(PtrVT.getFixedSizeInBits(), VT.getFixedSizeInBits()) / 8);
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 static SDValue LowerDYNAMIC_STACKALLOC(SDValue Op, SelectionDAG &DAG,
                                        const E2KSubtarget *Subtarget) {
-  SDValue Chain = Op.getOperand(0);  // Legalize the chain.
-  SDValue Size  = Op.getOperand(1);  // Legalize the size.
-  MaybeAlign Alignment =
-      cast<ConstantSDNode>(Op.getOperand(2))->getMaybeAlignValue();
-  Align StackAlign = Subtarget->getFrameLowering()->getStackAlign();
-  EVT VT = Size->getValueType(0);
-  SDLoc dl(Op);
-
-  // TODO: implement over-aligned alloca. (Note: also implies
-  // supporting support for overaligned function frames + dynamic
-  // allocations, at all, which currently isn't supported)
-  if (Alignment && *Alignment > StackAlign) {
-    const MachineFunction &MF = DAG.getMachineFunction();
-    report_fatal_error("Function \"" + Twine(MF.getName()) + "\": "
-                       "over-aligned dynamic alloca not supported.");
-  }
-
-  // The resultant pointer needs to be above the register spill area
-  // at the bottom of the stack.
-  unsigned regSpillArea;
-  if (Subtarget->is64Bit()) {
-    regSpillArea = 128;
-  } else {
-    // On E2K32, the size of the spill area is 92. Unfortunately,
-    // that's only 4-byte aligned, not 8-byte aligned (the stack
-    // pointer is 8-byte aligned). So, if the user asked for an 8-byte
-    // aligned dynamic allocation, we actually need to add 96 to the
-    // bottom of the stack, instead of 92, to ensure 8-byte alignment.
-
-    // That also means adding 4 to the size of the allocation --
-    // before applying the 8-byte rounding. Unfortunately, we the
-    // value we get here has already had rounding applied. So, we need
-    // to add 8, instead, wasting a bit more memory.
-
-    // Further, this only actually needs to be done if the required
-    // alignment is > 4, but, we've lost that info by this point, too,
-    // so we always apply it.
-
-    // (An alternative approach would be to always reserve 96 bytes
-    // instead of the required 92, but then we'd waste 4 extra bytes
-    // in every frame, not just those with dynamic stack allocations)
-
-    // TODO: modify code in SelectionDAGBuilder to make this less sad.
-
-    Size = DAG.getNode(ISD::ADD, dl, VT, Size,
-                       DAG.getConstant(8, dl, VT));
-    regSpillArea = 96;
-  }
-
-  unsigned SPReg = E2K::R6;
-  SDValue SP = DAG.getCopyFromReg(Chain, dl, SPReg, VT);
-  SDValue NewSP = DAG.getNode(ISD::SUB, dl, VT, SP, Size); // Value
-  Chain = DAG.getCopyToReg(SP.getValue(1), dl, SPReg, NewSP);    // Output chain
-
-  regSpillArea += Subtarget->getStackPointerBias();
-
-  SDValue NewVal = DAG.getNode(ISD::ADD, dl, VT, NewSP,
-                               DAG.getConstant(regSpillArea, dl, VT));
-  SDValue Ops[2] = { NewVal, Chain };
-  return DAG.getMergeValues(Ops, dl);
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 
 static SDValue getFLUSHW(SDValue Op, SelectionDAG &DAG) {
-  SDLoc dl(Op);
-  SDValue Chain = DAG.getNode(SPISD::FLUSHW,
-                              dl, MVT::Other, DAG.getEntryNode());
-  return Chain;
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 static SDValue getFRAMEADDR(uint64_t depth, SDValue Op, SelectionDAG &DAG,
                             const E2KSubtarget *Subtarget,
                             bool AlwaysFlush = false) {
-  MachineFrameInfo &MFI = DAG.getMachineFunction().getFrameInfo();
-  MFI.setFrameAddressIsTaken(true);
-
-  EVT VT = Op.getValueType();
-  SDLoc dl(Op);
-  unsigned FrameReg = E2K::R6;
-  unsigned stackBias = Subtarget->getStackPointerBias();
-
-  SDValue FrameAddr;
-  SDValue Chain;
-
-  // flush first to make sure the windowed registers' values are in stack
-  Chain = (depth || AlwaysFlush) ? getFLUSHW(Op, DAG) : DAG.getEntryNode();
-
-  FrameAddr = DAG.getCopyFromReg(Chain, dl, FrameReg, VT);
-
-  unsigned Offset = (Subtarget->is64Bit()) ? (stackBias + 112) : 56;
-
-  while (depth--) {
-    SDValue Ptr = DAG.getNode(ISD::ADD, dl, VT, FrameAddr,
-                              DAG.getIntPtrConstant(Offset, dl));
-    FrameAddr = DAG.getLoad(VT, dl, Chain, Ptr, MachinePointerInfo());
-  }
-  if (Subtarget->is64Bit())
-    FrameAddr = DAG.getNode(ISD::ADD, dl, VT, FrameAddr,
-                            DAG.getIntPtrConstant(stackBias, dl));
-  return FrameAddr;
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 
 static SDValue LowerFRAMEADDR(SDValue Op, SelectionDAG &DAG,
                               const E2KSubtarget *Subtarget) {
 
-  uint64_t depth = Op.getConstantOperandVal(0);
-
-  return getFRAMEADDR(depth, Op, DAG, Subtarget);
-
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 static SDValue LowerRETURNADDR(SDValue Op, SelectionDAG &DAG,
                                const E2KTargetLowering &TLI,
                                const E2KSubtarget *Subtarget) {
-  MachineFunction &MF = DAG.getMachineFunction();
-  MachineFrameInfo &MFI = MF.getFrameInfo();
-  MFI.setReturnAddressIsTaken(true);
-
-  if (TLI.verifyReturnAddressArgumentIsConstant(Op, DAG))
-    return SDValue();
-
-  EVT VT = Op.getValueType();
-  SDLoc dl(Op);
-  uint64_t depth = Op.getConstantOperandVal(0);
-
-  SDValue RetAddr;
-  if (depth == 0) {
-    auto PtrVT = TLI.getPointerTy(DAG.getDataLayout());
-    Register RetReg = MF.addLiveIn(E2K::R7, TLI.getRegClassFor(PtrVT));
-    RetAddr = DAG.getCopyFromReg(DAG.getEntryNode(), dl, RetReg, VT);
-    return RetAddr;
-  }
-
-  // Need frame address to find return address of the caller.
-  SDValue FrameAddr = getFRAMEADDR(depth - 1, Op, DAG, Subtarget, true);
-
-  unsigned Offset = (Subtarget->is64Bit()) ? 120 : 60;
-  SDValue Ptr = DAG.getNode(ISD::ADD,
-                            dl, VT,
-                            FrameAddr,
-                            DAG.getIntPtrConstant(Offset, dl));
-  RetAddr = DAG.getLoad(VT, dl, DAG.getEntryNode(), Ptr, MachinePointerInfo());
-
-  return RetAddr;
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 // Lower a f128 load into two f64 loads.
 static SDValue LowerF128Load(SDValue Op, SelectionDAG &DAG)
 {
-  SDLoc dl(Op);
-  LoadSDNode *LdNode = cast<LoadSDNode>(Op.getNode());
-  assert(LdNode->getOffset().isUndef() && "Unexpected node type");
-
-  llvm_unreachable("LowerF64Op");
-  return Op;
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 static SDValue LowerLOAD(SDValue Op, SelectionDAG &DAG)
 {
-  LoadSDNode *LdNode = cast<LoadSDNode>(Op.getNode());
-
-  EVT MemVT = LdNode->getMemoryVT();
-  if (MemVT == MVT::f128)
-    return LowerF128Load(Op, DAG);
-
-  return Op;
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 // Lower a f128 store into two f64 stores.
 static SDValue LowerF128Store(SDValue Op, SelectionDAG &DAG) {
-  SDLoc dl(Op);
-  StoreSDNode *StNode = cast<StoreSDNode>(Op.getNode());
-  assert(StNode->getOffset().isUndef() && "Unexpected node type");
-
-  llvm_unreachable("LowerF128Store");
-  return Op;
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 static SDValue LowerSTORE(SDValue Op, SelectionDAG &DAG)
 {
-  SDLoc dl(Op);
-  StoreSDNode *St = cast<StoreSDNode>(Op.getNode());
-
-  EVT MemVT = St->getMemoryVT();
-  if (MemVT == MVT::f128)
-    return LowerF128Store(Op, DAG);
-
-  if (MemVT == MVT::i64) {
-    // Custom handling for i64 stores: turn it into a bitcast and a
-    // v2i32 store.
-    SDValue Val = DAG.getNode(ISD::BITCAST, dl, MVT::v2i32, St->getValue());
-    SDValue Chain = DAG.getStore(
-        St->getChain(), dl, Val, St->getBasePtr(), St->getPointerInfo(),
-        St->getOriginalAlign(), St->getMemOperand()->getFlags(),
-        St->getAAInfo());
-    return Chain;
-  }
-
+  llvm_unreachable("unimplemented");
   return SDValue();
 }
 
-static SDValue LowerFNEGorFABS(SDValue Op, SelectionDAG &DAG, bool isV9) {
-  assert((Op.getOpcode() == ISD::FNEG || Op.getOpcode() == ISD::FABS)
-         && "invalid opcode");
-
-  SDLoc dl(Op);
-
-  llvm_unreachable("LowerFNEGorFABS");
-  return Op;
+static SDValue LowerFNEGorFABS(SDValue Op, SelectionDAG &DAG) {
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 static SDValue LowerADDC_ADDE_SUBC_SUBE(SDValue Op, SelectionDAG &DAG) {
 
-  if (Op.getValueType() != MVT::i64)
-    return Op;
-
-  SDLoc dl(Op);
-  SDValue Src1 = Op.getOperand(0);
-  SDValue Src1Lo = DAG.getNode(ISD::TRUNCATE, dl, MVT::i32, Src1);
-  SDValue Src1Hi = DAG.getNode(ISD::SRL, dl, MVT::i64, Src1,
-                               DAG.getConstant(32, dl, MVT::i64));
-  Src1Hi = DAG.getNode(ISD::TRUNCATE, dl, MVT::i32, Src1Hi);
-
-  SDValue Src2 = Op.getOperand(1);
-  SDValue Src2Lo = DAG.getNode(ISD::TRUNCATE, dl, MVT::i32, Src2);
-  SDValue Src2Hi = DAG.getNode(ISD::SRL, dl, MVT::i64, Src2,
-                               DAG.getConstant(32, dl, MVT::i64));
-  Src2Hi = DAG.getNode(ISD::TRUNCATE, dl, MVT::i32, Src2Hi);
-
-
-  bool hasChain = false;
-  unsigned hiOpc = Op.getOpcode();
-  switch (Op.getOpcode()) {
-  default: llvm_unreachable("Invalid opcode");
-  case ISD::ADDC: hiOpc = ISD::ADDE; break;
-  case ISD::ADDE: hasChain = true; break;
-  case ISD::SUBC: hiOpc = ISD::SUBE; break;
-  case ISD::SUBE: hasChain = true; break;
-  }
-  SDValue Lo;
-  SDVTList VTs = DAG.getVTList(MVT::i32, MVT::Glue);
-  if (hasChain) {
-    Lo = DAG.getNode(Op.getOpcode(), dl, VTs, Src1Lo, Src2Lo,
-                     Op.getOperand(2));
-  } else {
-    Lo = DAG.getNode(Op.getOpcode(), dl, VTs, Src1Lo, Src2Lo);
-  }
-  SDValue Hi = DAG.getNode(hiOpc, dl, VTs, Src1Hi, Src2Hi, Lo.getValue(1));
-  SDValue Carry = Hi.getValue(1);
-
-  Lo = DAG.getNode(ISD::ZERO_EXTEND, dl, MVT::i64, Lo);
-  Hi = DAG.getNode(ISD::ZERO_EXTEND, dl, MVT::i64, Hi);
-  Hi = DAG.getNode(ISD::SHL, dl, MVT::i64, Hi,
-                   DAG.getConstant(32, dl, MVT::i64));
-
-  SDValue Dst = DAG.getNode(ISD::OR, dl, MVT::i64, Hi, Lo);
-  SDValue Ops[2] = { Dst, Carry };
-  return DAG.getMergeValues(Ops, dl);
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 // Custom lower UMULO/SMULO for E2K. This code is similar to ExpandNode()
@@ -2803,86 +1210,25 @@ static SDValue LowerADDC_ADDE_SUBC_SUBE(SDValue Op, SelectionDAG &DAG) {
 static SDValue LowerUMULO_SMULO(SDValue Op, SelectionDAG &DAG,
                                 const E2KTargetLowering &TLI)
 {
-  unsigned opcode = Op.getOpcode();
-  assert((opcode == ISD::UMULO || opcode == ISD::SMULO) && "Invalid Opcode.");
-
-  bool isSigned = (opcode == ISD::SMULO);
-  EVT VT = MVT::i64;
-  EVT WideVT = MVT::i128;
-  SDLoc dl(Op);
-  SDValue LHS = Op.getOperand(0);
-
-  if (LHS.getValueType() != VT)
-    return Op;
-
-  SDValue ShiftAmt = DAG.getConstant(63, dl, VT);
-
-  SDValue RHS = Op.getOperand(1);
-  SDValue HiLHS, HiRHS;
-  if (isSigned) {
-    HiLHS = DAG.getNode(ISD::SRA, dl, VT, LHS, ShiftAmt);
-    HiRHS = DAG.getNode(ISD::SRA, dl, MVT::i64, RHS, ShiftAmt);
-  } else {
-    HiLHS = DAG.getConstant(0, dl, VT);
-    HiRHS = DAG.getConstant(0, dl, MVT::i64);
-  }
-
-  SDValue Args[] = { HiLHS, LHS, HiRHS, RHS };
-
-  TargetLowering::MakeLibCallOptions CallOptions;
-  CallOptions.setSExt(isSigned);
-  SDValue MulResult = TLI.makeLibCall(DAG,
-                                      RTLIB::MUL_I128, WideVT,
-                                      Args, CallOptions, dl).first;
-  SDValue BottomHalf = DAG.getNode(ISD::EXTRACT_ELEMENT, dl, VT,
-                                   MulResult, DAG.getIntPtrConstant(0, dl));
-  SDValue TopHalf = DAG.getNode(ISD::EXTRACT_ELEMENT, dl, VT,
-                                MulResult, DAG.getIntPtrConstant(1, dl));
-  if (isSigned) {
-    SDValue Tmp1 = DAG.getNode(ISD::SRA, dl, VT, BottomHalf, ShiftAmt);
-    TopHalf = DAG.getSetCC(dl, MVT::i32, TopHalf, Tmp1, ISD::SETNE);
-  } else {
-    TopHalf = DAG.getSetCC(dl, MVT::i32, TopHalf, DAG.getConstant(0, dl, VT),
-                           ISD::SETNE);
-  }
-  // MulResult is a node with an illegal type. Because such things are not
-  // generally permitted during this phase of legalization, ensure that
-  // nothing is left using the node. The above EXTRACT_ELEMENT nodes should have
-  // been folded.
-  assert(MulResult->use_empty() && "Illegally typed node still in use!");
-
-  SDValue Ops[2] = { BottomHalf, TopHalf } ;
-  return DAG.getMergeValues(Ops, dl);
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 static SDValue LowerATOMIC_LOAD_STORE(SDValue Op, SelectionDAG &DAG) {
-  if (isStrongerThanMonotonic(cast<AtomicSDNode>(Op)->getSuccessOrdering())) {
-    // Expand with a fence.
-    return SDValue();
-  }
 
-  // Monotonic load/stores are legal.
-  return Op;
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 SDValue E2KTargetLowering::LowerINTRINSIC_WO_CHAIN(SDValue Op,
                                                      SelectionDAG &DAG) const {
-  unsigned IntNo = cast<ConstantSDNode>(Op.getOperand(0))->getZExtValue();
-  SDLoc dl(Op);
-  switch (IntNo) {
-  default: return SDValue();    // Don't custom lower most intrinsics.
-  case Intrinsic::thread_pointer: {
-    EVT PtrVT = getPointerTy(DAG.getDataLayout());
-    return DAG.getRegister(E2K::G7, PtrVT);
-  }
-  }
+  llvm_unreachable("unimplemented");
+  return SDValue();
 }
 
 SDValue E2KTargetLowering::
 LowerOperation(SDValue Op, SelectionDAG &DAG) const {
 
-  bool hasHardQuad = false;
-  bool isV9        = Subtarget->is64Bit();
 
   switch (Op.getOpcode()) {
   default: llvm_unreachable("Should not custom lower this!");
@@ -2895,18 +1241,14 @@ LowerOperation(SDValue Op, SelectionDAG &DAG) const {
   case ISD::GlobalAddress:      return LowerGlobalAddress(Op, DAG);
   case ISD::BlockAddress:       return LowerBlockAddress(Op, DAG);
   case ISD::ConstantPool:       return LowerConstantPool(Op, DAG);
-  case ISD::FP_TO_SINT:         return LowerFP_TO_SINT(Op, DAG, *this,
-                                                       hasHardQuad);
-  case ISD::SINT_TO_FP:         return LowerSINT_TO_FP(Op, DAG, *this,
-                                                       hasHardQuad);
-  case ISD::FP_TO_UINT:         return LowerFP_TO_UINT(Op, DAG, *this,
-                                                       hasHardQuad);
-  case ISD::UINT_TO_FP:         return LowerUINT_TO_FP(Op, DAG, *this,
-                                                       hasHardQuad);
+  case ISD::FP_TO_SINT:         return LowerFP_TO_SINT(Op, DAG, *this);
+  case ISD::SINT_TO_FP:         return LowerSINT_TO_FP(Op, DAG, *this);
+  case ISD::FP_TO_UINT:         return LowerFP_TO_UINT(Op, DAG, *this);
+  case ISD::UINT_TO_FP:         return LowerUINT_TO_FP(Op, DAG, *this);
   case ISD::BR_CC:
-    return LowerBR_CC(Op, DAG, *this, hasHardQuad, isV9);
+    return LowerBR_CC(Op, DAG, *this);
   case ISD::SELECT_CC:
-    return LowerSELECT_CC(Op, DAG, *this, hasHardQuad, isV9);
+    return LowerSELECT_CC(Op, DAG, *this);
   case ISD::VASTART:            return LowerVASTART(Op, DAG, *this);
   case ISD::VAARG:              return LowerVAARG(Op, DAG);
   case ISD::DYNAMIC_STACKALLOC: return LowerDYNAMIC_STACKALLOC(Op, DAG,
@@ -2925,7 +1267,7 @@ LowerOperation(SDValue Op, SelectionDAG &DAG) const {
   case ISD::FSQRT:              return LowerF128Op(Op, DAG,
                                        getLibcallName(RTLIB::SQRT_F128),1);
   case ISD::FABS:
-  case ISD::FNEG:               return LowerFNEGorFABS(Op, DAG, isV9);
+  case ISD::FNEG:               return LowerFNEGorFABS(Op, DAG);
   case ISD::FP_EXTEND:          return LowerF128_FPEXTEND(Op, DAG, *this);
   case ISD::FP_ROUND:           return LowerF128_FPROUND(Op, DAG, *this);
   case ISD::ADDC:
@@ -2980,62 +1322,6 @@ E2KTargetLowering::EmitInstrWithCustomInserter(MachineInstr &MI,
   switch (MI.getOpcode()) {
   default: llvm_unreachable("Unknown SELECT_CC!");
   }
-}
-
-MachineBasicBlock *
-E2KTargetLowering::expandSelectCC(MachineInstr &MI, MachineBasicBlock *BB,
-                                    unsigned BROpcode) const {
-  const TargetInstrInfo &TII = *Subtarget->getInstrInfo();
-  DebugLoc dl = MI.getDebugLoc();
-  unsigned CC = (E2KCC::CondCodes)MI.getOperand(3).getImm();
-
-  // To "insert" a SELECT_CC instruction, we actually have to insert the
-  // triangle control-flow pattern. The incoming instruction knows the
-  // destination vreg to set, the condition code register to branch on, the
-  // true/false values to select between, and the condition code for the branch.
-  //
-  // We produce the following control flow:
-  //     ThisMBB
-  //     |  \
-  //     |  IfFalseMBB
-  //     | /
-  //    SinkMBB
-  const BasicBlock *LLVM_BB = BB->getBasicBlock();
-  MachineFunction::iterator It = ++BB->getIterator();
-
-  MachineBasicBlock *ThisMBB = BB;
-  MachineFunction *F = BB->getParent();
-  MachineBasicBlock *IfFalseMBB = F->CreateMachineBasicBlock(LLVM_BB);
-  MachineBasicBlock *SinkMBB = F->CreateMachineBasicBlock(LLVM_BB);
-  F->insert(It, IfFalseMBB);
-  F->insert(It, SinkMBB);
-
-  // Transfer the remainder of ThisMBB and its successor edges to SinkMBB.
-  SinkMBB->splice(SinkMBB->begin(), ThisMBB,
-                  std::next(MachineBasicBlock::iterator(MI)), ThisMBB->end());
-  SinkMBB->transferSuccessorsAndUpdatePHIs(ThisMBB);
-
-  // Set the new successors for ThisMBB.
-  ThisMBB->addSuccessor(IfFalseMBB);
-  ThisMBB->addSuccessor(SinkMBB);
-
-  BuildMI(ThisMBB, dl, TII.get(BROpcode))
-    .addMBB(SinkMBB)
-    .addImm(CC);
-
-  // IfFalseMBB just falls through to SinkMBB.
-  IfFalseMBB->addSuccessor(SinkMBB);
-
-  // %Result = phi [ %TrueValue, ThisMBB ], [ %FalseValue, IfFalseMBB ]
-  BuildMI(*SinkMBB, SinkMBB->begin(), dl, TII.get(E2K::PHI),
-          MI.getOperand(0).getReg())
-      .addReg(MI.getOperand(1).getReg())
-      .addMBB(ThisMBB)
-      .addReg(MI.getOperand(2).getReg())
-      .addMBB(IfFalseMBB);
-
-  MI.eraseFromParent(); // The pseudo instruction is gone now.
-  return SinkMBB;
 }
 
 //===----------------------------------------------------------------------===//

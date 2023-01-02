@@ -24,13 +24,17 @@ namespace llvm {
   class AsmPrinter;
   class MCInst;
   class MachineInstr;
+  class PassRegistry;
 
   FunctionPass *createE2KISelDag(E2KTargetMachine &TM);
   FunctionPass *createE2KDelaySlotFillerPass();
+  FunctionPass *createE2KExpandPseudoPass();
 
   void LowerE2KMachineInstrToMCInst(const MachineInstr *MI,
                                       MCInst &OutMI,
                                       AsmPrinter &AP);
+
+  void initializeE2KExpandPseudoPass(PassRegistry &);
 } // end namespace llvm;
 
 namespace llvm {

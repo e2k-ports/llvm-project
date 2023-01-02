@@ -55,11 +55,6 @@ unsigned E2KInstrInfo::isStoreToStackSlot(const MachineInstr &MI,
   return 0;
 }
 
-static bool IsIntegerCC(unsigned CC)
-{
-  return  (CC <= E2KCC::ICC_VC);
-}
-
 static E2KCC::CondCodes GetOppositeBranchCondition(E2KCC::CondCodes CC)
 {
   llvm_unreachable("Invalid cond code");
@@ -234,7 +229,17 @@ void E2KInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
                                  const DebugLoc &DL, MCRegister DestReg,
                                  MCRegister SrcReg, bool KillSrc) const {
 
-  llvm_unreachable("Impossible reg-to-reg copy");
+  if (E2K::RegSRRegClass.contains(DestReg, SrcReg)) {
+
+    BuildMI(MBB, I, DL, get(E2K::ADDSc0), DestReg).addImm(0).addReg(SrcReg).addReg(SrcReg, getKillRegState(KillSrc));
+
+  } else if (E2K::RegDRRegClass.contains(DestReg, SrcReg)) {
+
+    BuildMI(MBB, I, DL, get(E2K::ADDDc0), DestReg).addImm(0).addReg(SrcReg).addReg(SrcReg, getKillRegState(KillSrc));
+
+  } else {
+    llvm_unreachable("Impossible reg-to-reg copy");
+  }
 }
 
 void E2KInstrInfo::
@@ -264,8 +269,6 @@ Register E2KInstrInfo::getGlobalBaseReg(MachineFunction *MF) const {
     return GlobalBaseReg;
 
   // Insert the set of GlobalBaseReg into the first MBB of the function
-  MachineBasicBlock &FirstMBB = MF->front();
-  MachineBasicBlock::iterator MBBI = FirstMBB.begin();
   MachineRegisterInfo &RegInfo = MF->getRegInfo();
 
   const TargetRegisterClass *PtrRC =

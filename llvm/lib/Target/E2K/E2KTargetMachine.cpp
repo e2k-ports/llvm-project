@@ -159,6 +159,7 @@ public:
   void addIRPasses() override;
   bool addInstSelector() override;
   void addPreEmitPass() override;
+  void addPreSched2() override;
 };
 } // namespace
 
@@ -179,6 +180,10 @@ bool E2KPassConfig::addInstSelector() {
 
 void E2KPassConfig::addPreEmitPass(){
   addPass(createE2KDelaySlotFillerPass());
+}
+
+void E2KPassConfig::addPreSched2() {
+  addPass(createE2KExpandPseudoPass());
 }
 
 void E2K32TargetMachine::anchor() { }

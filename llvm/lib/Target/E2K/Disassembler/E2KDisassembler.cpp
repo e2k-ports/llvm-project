@@ -761,11 +761,3 @@ DecodeStatus E2KDisassembler::getInstruction(MCInst &Instr, uint64_t &Size,
 
 typedef DecodeStatus (*DecodeFunc)(MCInst &MI, unsigned insn, uint64_t Address,
                                    const MCDisassembler *Decoder);
-
-static bool tryAddingSymbolicOperand(int64_t Value, bool isBranch,
-                                     uint64_t Address, uint64_t Offset,
-                                     uint64_t Width, MCInst &MI,
-                                     const MCDisassembler *Decoder) {
-  return Decoder->tryAddingSymbolicOperand(MI, Value, Address, isBranch, Offset,
-                                           Width, /*InstSize=*/4);
-}

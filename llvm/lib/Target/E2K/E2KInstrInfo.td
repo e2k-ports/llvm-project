@@ -27,6 +27,16 @@ def ADJCALLSTACKUP : Pseudo<(outs), (ins i32imm:$amt1, i32imm:$amt2),
                             "!ADJCALLSTACKUP $amt1",
                             []>;
 
+def SDTE2KRet : SDTypeProfile<0, -1, [SDTCisVT<0, i32>]>;
+
+def E2Kretflag : SDNode<"E2KISD::RET_FLAG", SDTE2KRet,
+                        [SDNPHasChain, SDNPOptInGlue, SDNPVariadic]>;
+def E2Kretflag2 : SDNode<"E2KISD::RET_FLAG", SDTNone,
+                        [SDNPHasChain, SDNPOptInGlue, SDNPVariadic]>;
+
+def RETN  : Pseudo<(outs), (ins i32imm:$adj, variable_ops), "!RET_FLAG $adj", [(E2Kretflag timm:$adj)]>;
+def RET  : Pseudo<(outs), (ins), "!RET_FLAG", [(E2Kretflag2)]>;
+
 //===----------------------------------------------------------------------===//
 // NOP
 //===----------------------------------------------------------------------===//
@@ -72,8 +82,8 @@ def ALC : SSInst<(outs), (ins u8imm:$alcf, u8imm:$alct), "alc alcf=$alcf alct=$a
 //===----------------------------------------------------------------------===//
 
 // logical AND
-defm ANDS : ALSInst<0x00, "ands", format.alopf1, SS_S>;
-defm ANDD : ALSInst<0x01, "andd", format.alopf1, DD_D>;
+defm ANDS : ALSInst<0x00, "ands", format.alopf1, SS_S, c.all, [(set i32:$dst, (and i32:$src1, i32:$src2))]>;
+defm ANDD : ALSInst<0x01, "andd", format.alopf1, DD_D, c.all, [(set i64:$dst, (and i64:$src1, i64:$src2))]>;
 
 // logical AND, inverted operand 2
 defm ANDNS : ALSInst<0x02, "andns", format.alopf1, SS_S>;
@@ -105,8 +115,8 @@ defm MERGES : ALSInst<0x0E, "merges", format.alopf1, SS_S>;
 defm MERGED : ALSInst<0x0F, "merged", format.alopf1, DD_D>;
 
 // arithmetic ADD
-defm ADDS : ALSInst<0x10, "adds", format.alopf1, SS_S>;
-defm ADDD : ALSInst<0x11, "addd", format.alopf1, DD_D>;
+defm ADDS : ALSInst<0x10, "adds", format.alopf1, SS_S, c.all, [(set i32:$dst, (and i32:$src1, i32:$src2))]>;
+defm ADDD : ALSInst<0x11, "addd", format.alopf1, DD_D, c.all, [(set i64:$dst, (and i64:$src1, i64:$src2))]>;
 
 // arithmetic SUB
 defm SUBS : ALSInst<0x12, "subs", format.alopf1, SS_S>;
@@ -1586,7 +1596,7 @@ defm OR_ANDS : ALESInst<0x04, 0x08, "or_ands", format.alopf21, SSS_S, c.c14>;
 defm OR_ANDD : ALESInst<0x05, 0x08, "or_andd", format.alopf21, DDD_D, c.c14>;
 
 defm ORN_ANDS : ALESInst<0x06, 0x08, "orn_ands", format.alopf21, SSS_S, c.c14>;
-defm ORN_ANDS : ALESInst<0x07, 0x08, "orn_andd", format.alopf21, DDD_D, c.c14>;
+defm ORN_ANDD : ALESInst<0x07, 0x08, "orn_andd", format.alopf21, DDD_D, c.c14>;
 
 defm XOR_ANDS : ALESInst<0x08, 0x08, "xor_ands", format.alopf21, SSS_S, c.c14>;
 defm XOR_ANDD : ALESInst<0x09, 0x08, "xor_andd", format.alopf21, DDD_D, c.c14>;
@@ -1631,7 +1641,7 @@ defm OR_ANDNS : ALESInst<0x24, 0x08, "or_andns", format.alopf21, SSS_S, c.c14>;
 defm OR_ANDND : ALESInst<0x25, 0x08, "or_andnd", format.alopf21, DDD_D, c.c14>;
 
 defm ORN_ANDNS : ALESInst<0x26, 0x08, "orn_andns", format.alopf21, SSS_S, c.c14>;
-defm ORN_ANDNS : ALESInst<0x27, 0x08, "orn_andnd", format.alopf21, DDD_D, c.c14>;
+defm ORN_ANDND : ALESInst<0x27, 0x08, "orn_andnd", format.alopf21, DDD_D, c.c14>;
 
 defm XOR_ANDNS : ALESInst<0x28, 0x08, "xor_andns", format.alopf21, SSS_S, c.c14>;
 defm XOR_ANDND : ALESInst<0x29, 0x08, "xor_andnd", format.alopf21, DDD_D, c.c14>;
@@ -1676,7 +1686,7 @@ defm OR_ORS : ALESInst<0x44, 0x08, "or_ors", format.alopf21, SSS_S, c.c14>;
 defm OR_ORD : ALESInst<0x45, 0x08, "or_ord", format.alopf21, DDD_D, c.c14>;
 
 defm ORN_ORS : ALESInst<0x46, 0x08, "orn_ors", format.alopf21, SSS_S, c.c14>;
-defm ORN_ORS : ALESInst<0x47, 0x08, "orn_ord", format.alopf21, DDD_D, c.c14>;
+defm ORN_ORD : ALESInst<0x47, 0x08, "orn_ord", format.alopf21, DDD_D, c.c14>;
 
 defm XOR_ORS : ALESInst<0x48, 0x08, "xor_ors", format.alopf21, SSS_S, c.c14>;
 defm XOR_ORD : ALESInst<0x49, 0x08, "xor_ord", format.alopf21, DDD_D, c.c14>;
@@ -1721,7 +1731,7 @@ defm OR_ORNS : ALESInst<0x64, 0x08, "or_orns", format.alopf21, SSS_S, c.c14>;
 defm OR_ORND : ALESInst<0x65, 0x08, "or_ornd", format.alopf21, DDD_D, c.c14>;
 
 defm ORN_ORNS : ALESInst<0x66, 0x08, "orn_orns", format.alopf21, SSS_S, c.c14>;
-defm ORN_ORNS : ALESInst<0x67, 0x08, "orn_ornd", format.alopf21, DDD_D, c.c14>;
+defm ORN_ORND : ALESInst<0x67, 0x08, "orn_ornd", format.alopf21, DDD_D, c.c14>;
 
 defm XOR_ORNS : ALESInst<0x68, 0x08, "xor_orns", format.alopf21, SSS_S, c.c14>;
 defm XOR_ORND : ALESInst<0x69, 0x08, "xor_ornd", format.alopf21, DDD_D, c.c14>;
@@ -1770,7 +1780,7 @@ defm OR_XORS : ALESInst<0x04, 0x09, "or_xors", format.alopf21, SSS_S, c.c14>;
 defm OR_XORD : ALESInst<0x05, 0x09, "or_xord", format.alopf21, DDD_D, c.c14>;
 
 defm ORN_XORS : ALESInst<0x06, 0x09, "orn_xors", format.alopf21, SSS_S, c.c14>;
-defm ORN_XORS : ALESInst<0x07, 0x09, "orn_xord", format.alopf21, DDD_D, c.c14>;
+defm ORN_XORD : ALESInst<0x07, 0x09, "orn_xord", format.alopf21, DDD_D, c.c14>;
 
 defm XOR_XORS : ALESInst<0x08, 0x09, "xor_xors", format.alopf21, SSS_S, c.c14>;
 defm XOR_XORD : ALESInst<0x09, 0x09, "xor_xord", format.alopf21, DDD_D, c.c14>;
@@ -1815,7 +1825,7 @@ defm OR_XORNS : ALESInst<0x24, 0x09, "or_xorns", format.alopf21, SSS_S, c.c14>;
 defm OR_XORND : ALESInst<0x25, 0x09, "or_xornd", format.alopf21, DDD_D, c.c14>;
 
 defm ORN_XORNS : ALESInst<0x26, 0x09, "orn_xorns", format.alopf21, SSS_S, c.c14>;
-defm ORN_XORNS : ALESInst<0x27, 0x09, "orn_xornd", format.alopf21, DDD_D, c.c14>;
+defm ORN_XORND : ALESInst<0x27, 0x09, "orn_xornd", format.alopf21, DDD_D, c.c14>;
 
 defm XOR_XORNS : ALESInst<0x28, 0x09, "xor_xorns", format.alopf21, SSS_S, c.c14>;
 defm XOR_XORND : ALESInst<0x29, 0x09, "xor_xornd", format.alopf21, DDD_D, c.c14>;
@@ -1860,7 +1870,7 @@ defm OR_RSUBS : ALESInst<0x44, 0x09, "or_rsubs", format.alopf21, SSS_S, c.c14>;
 defm OR_RSUBD : ALESInst<0x45, 0x09, "or_rsubd", format.alopf21, DDD_D, c.c14>;
 
 defm ORN_RSUBS : ALESInst<0x46, 0x09, "orn_rsubs", format.alopf21, SSS_S, c.c14>;
-defm ORN_RSUBS : ALESInst<0x47, 0x09, "orn_rsubd", format.alopf21, DDD_D, c.c14>;
+defm ORN_RSUBD : ALESInst<0x47, 0x09, "orn_rsubd", format.alopf21, DDD_D, c.c14>;
 
 defm XOR_RSUBS : ALESInst<0x48, 0x09, "xor_rsubs", format.alopf21, SSS_S, c.c14>;
 defm XOR_RSUBD : ALESInst<0x49, 0x09, "xor_rsubd", format.alopf21, DDD_D, c.c14>;
@@ -1909,7 +1919,7 @@ defm OR_ADDS : ALESInst<0x04, 0x0a, "or_adds", format.alopf21, SSS_S, c.c14>;
 defm OR_ADDD : ALESInst<0x05, 0x0a, "or_addd", format.alopf21, DDD_D, c.c14>;
 
 defm ORN_ADDS : ALESInst<0x06, 0x0a, "orn_adds", format.alopf21, SSS_S, c.c14>;
-defm ORN_ADDS : ALESInst<0x07, 0x0a, "orn_addd", format.alopf21, DDD_D, c.c14>;
+defm ORN_ADDD : ALESInst<0x07, 0x0a, "orn_addd", format.alopf21, DDD_D, c.c14>;
 
 defm XOR_ADDS : ALESInst<0x08, 0x0a, "xor_adds", format.alopf21, SSS_S, c.c14>;
 defm XOR_ADDD : ALESInst<0x09, 0x0a, "xor_addd", format.alopf21, DDD_D, c.c14>;
@@ -1954,7 +1964,7 @@ defm OR_SUBS : ALESInst<0x24, 0x0a, "or_subs", format.alopf21, SSS_S, c.c14>;
 defm OR_SUBD : ALESInst<0x25, 0x0a, "or_subd", format.alopf21, DDD_D, c.c14>;
 
 defm ORN_SUBS : ALESInst<0x26, 0x0a, "orn_subs", format.alopf21, SSS_S, c.c14>;
-defm ORN_SUBS : ALESInst<0x27, 0x0a, "orn_subd", format.alopf21, DDD_D, c.c14>;
+defm ORN_SUBD : ALESInst<0x27, 0x0a, "orn_subd", format.alopf21, DDD_D, c.c14>;
 
 defm XOR_SUBS : ALESInst<0x28, 0x0a, "xor_subs", format.alopf21, SSS_S, c.c14>;
 defm XOR_SUBD : ALESInst<0x29, 0x0a, "xor_subd", format.alopf21, DDD_D, c.c14>;

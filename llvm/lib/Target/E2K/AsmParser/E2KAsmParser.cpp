@@ -833,7 +833,6 @@ E2KAsmParser::parseE2KAsmOperand(std::unique_ptr<E2KOperand> &Op,
     MCRegister RegNo;
     unsigned RegKind;
     if (matchRegisterName(Parser.getTok(), RegNo, RegKind)) {
-      StringRef name = Parser.getTok().getString();
       Parser.Lex(); // Eat the identifier token.
       E = SMLoc::getFromPointer(Parser.getTok().getLoc().getPointer() - 1);
       switch (RegNo) {
@@ -900,7 +899,6 @@ E2KAsmParser::parseBranchModifiers(OperandVector &Operands) {
 
 bool E2KAsmParser::matchRegisterName(const AsmToken &Tok, MCRegister &RegNo,
                                      unsigned &RegKind) {
-  int64_t intVal = 0;
   RegNo = 0;
   RegKind = E2KOperand::rk_None;
   if (Tok.is(AsmToken::Identifier)) {

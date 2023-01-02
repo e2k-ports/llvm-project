@@ -88,7 +88,7 @@ static MCRegisterInfo *createE2KMCRegisterInfo(const Triple &TT) {
 static MCSubtargetInfo *
 createE2KMCSubtargetInfo(const Triple &TT, StringRef CPU, StringRef FS) {
   if (CPU.empty())
-    CPU = "generic";
+    CPU = "elbrus";
   return createE2KMCSubtargetInfoImpl(TT, CPU, /*TuneCPU*/ CPU, FS);
 }
 
