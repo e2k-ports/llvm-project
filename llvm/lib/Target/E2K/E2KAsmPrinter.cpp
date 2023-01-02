@@ -67,19 +67,6 @@ namespace {
   };
 } // end of anonymous namespace
 
-static MCOperand createE2KMCOperand(E2KMCExpr::VariantKind Kind,
-                                      MCSymbol *Sym, MCContext &OutContext) {
-  const MCSymbolRefExpr *MCSym = MCSymbolRefExpr::create(Sym,
-                                                         OutContext);
-  const E2KMCExpr *expr = E2KMCExpr::create(Kind, MCSym, OutContext);
-  return MCOperand::createExpr(expr);
-
-}
-static MCOperand createPCXCallOP(MCSymbol *Label,
-                                 MCContext &OutContext) {
-  return createE2KMCOperand(E2KMCExpr::VK_E2K_WDISP30, Label, OutContext);
-}
-
 void E2KAsmPrinter::emitInstruction(const MachineInstr *MI) {
   E2K_MC::verifyInstructionPredicates(MI->getOpcode(),
                                         getSubtargetInfo().getFeatureBits());

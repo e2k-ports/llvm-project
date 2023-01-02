@@ -105,16 +105,6 @@ bool E2KDAGToDAGISel::SelectADDRri(SDValue Addr,
         return true;
       }
     }
-    if (Addr.getOperand(0).getOpcode() == SPISD::Lo) {
-      Base = Addr.getOperand(1);
-      Offset = Addr.getOperand(0).getOperand(0);
-      return true;
-    }
-    if (Addr.getOperand(1).getOpcode() == SPISD::Lo) {
-      Base = Addr.getOperand(0);
-      Offset = Addr.getOperand(1).getOperand(0);
-      return true;
-    }
   }
   Base = Addr;
   Offset = CurDAG->getTargetConstant(0, SDLoc(Addr), MVT::i32);
@@ -132,9 +122,6 @@ bool E2KDAGToDAGISel::SelectADDRrr(SDValue Addr, SDValue &R1, SDValue &R2) {
     if (ConstantSDNode *CN = dyn_cast<ConstantSDNode>(Addr.getOperand(1)))
       if (isInt<13>(CN->getSExtValue()))
         return false;  // Let the reg+imm pattern catch this!
-    if (Addr.getOperand(0).getOpcode() == SPISD::Lo ||
-        Addr.getOperand(1).getOpcode() == SPISD::Lo)
-      return false;  // Let the reg+imm pattern catch this!
     R1 = Addr.getOperand(0);
     R2 = Addr.getOperand(1);
     return true;
@@ -176,9 +163,6 @@ void E2KDAGToDAGISel::Select(SDNode *N) {
       return;
     break;
   }
-  case SPISD::GLOBAL_BASE_REG:
-    ReplaceNode(N, getGlobalBaseReg());
-    return;
 
   case ISD::SDIV:
   case ISD::UDIV: {

@@ -48,7 +48,6 @@ E2KRegisterInfo::getCallPreservedMask(const MachineFunction &MF,
 
 BitVector E2KRegisterInfo::getReservedRegs(const MachineFunction &MF) const {
   BitVector Reserved(getNumRegs());
-  const E2KSubtarget &Subtarget = MF.getSubtarget<E2KSubtarget>();
 
   return Reserved;
 }
@@ -84,7 +83,6 @@ E2KRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
   DebugLoc dl = MI.getDebugLoc();
   int FrameIndex = MI.getOperand(FIOperandNum).getIndex();
   MachineFunction &MF = *MI.getParent()->getParent();
-  const E2KSubtarget &Subtarget = MF.getSubtarget<E2KSubtarget>();
   const E2KFrameLowering *TFI = getFrameLowering(MF);
 
   Register FrameReg;

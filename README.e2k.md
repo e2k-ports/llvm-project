@@ -59,7 +59,7 @@ recommended options for CMake build:
 for E2K, to avoid "relocation truncated to fit" error:
 
 - **-DCMAKE_C_FLAGS="--dwarf2-64bit"**
-- **-DfCMAKE_CXX_FLAGS="--dwarf2-64bit"**
+- **-DCMAKE_CXX_FLAGS="--dwarf2-64bit"**
 
 compiling for EK2 via project
 -----------------------------
@@ -80,4 +80,4 @@ microprocessor commands:
 - [**e2k-stuff**](https://github.com/OpenE2K/binutils-gdb/tree/binutils-mcst/opcodes/e2k-stuff) - opcode tables from the bintuils port
 - [**alops.inc**](https://github.com/OpenE2K/qemu-e2k/blob/e2k/target/e2k/alops.inc) - opcode tables from the QEMU-E2K port
 - **ldis** - MCST disassembler
-- **objdump** - disassembler, port to E2K
+- **objdump** - disassembler, port to E2K (part of LCC suite, implemented in binutils-gdb port)
