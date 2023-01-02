@@ -27,6 +27,7 @@ add_llvm_target(E2KCodeGen
   E2KTargetMachine.cpp
   E2KMCInstLower.cpp
   E2KTargetObjectFile.cpp
+  E2KExpandPseudo.cpp
 
   LINK_COMPONENTS
   AsmPrinter
