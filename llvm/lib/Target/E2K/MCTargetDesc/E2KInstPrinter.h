@@ -54,8 +54,17 @@ public:
   template <unsigned N>
   void printUImmOperand(const MCInst *MI, int OpNum, raw_ostream &O);
 
+  template <unsigned N>
+  void printSImmOperand(const MCInst *MI, int OpNum, raw_ostream &O);
+
   void printU8Imm(const MCInst *MI, int opNum, const MCSubtargetInfo &STI,
                   raw_ostream &O);
+  void printS32Imm(const MCInst *MI, int opNum, const MCSubtargetInfo &STI,
+                  raw_ostream &O);
+  void printCTCOND(const MCInst *MI, int opNum, const MCSubtargetInfo &STI,
+                  raw_ostream &O);
+  void printMAS(const MCInst *MI, int opNum, const MCSubtargetInfo &STI,
+                   raw_ostream &O);
 };
 } // end namespace llvm
 

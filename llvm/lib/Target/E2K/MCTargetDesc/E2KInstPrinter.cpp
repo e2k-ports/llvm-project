@@ -57,6 +57,16 @@ void E2KInstPrinter::printInst(const MCInst *MI, uint64_t Address,
   if (!printAliasInstr(MI, Address, STI, O) &&
       !printE2KAliasInstr(MI, STI, O))
     printInstruction(MI, Address, STI, O);
+
+  if ((MI->getFlags() & 0x80000000) == 0x80000000) {
+    unsigned ops = MI->getNumOperands();
+    assert(ops > 0);
+    auto pred = MI->getOperand(ops - 1);
+
+    O << " ? ";
+    printRegName(O, pred.getReg());
+  }
+
   printAnnotation(O, Annot);
 }
 
@@ -80,8 +90,31 @@ void E2KInstPrinter::printOperand(const MCInst *MI, int opNum,
 
   if (MO.isImm()) {
     switch (MI->getOpcode()) {
-      default:
-        O << (int)MO.getImm();
+      default: {
+      uint64_t value = MO.getImm();
+      uint64_t flags = MI->getFlags();
+      flags &= ~0x80000000;
+
+      unsigned prefix = flags & 0b111;
+      unsigned opnum = flags >> 3;
+
+      if (flags && opnum == opNum) {
+
+        switch (prefix) {
+        case E2K::F16SLO:
+        case E2K::F16SHI:
+          O << "_f16s ";
+          break;
+        case E2K::F32S:
+          O << "_f32s ";
+          break;
+        case E2K::F64:
+          O << "_f64 ";
+          break;
+        }
+      }
+      O << format("0x%llx", value);
+    }
         return;
     }
   }
@@ -90,89 +123,69 @@ void E2KInstPrinter::printOperand(const MCInst *MI, int opNum,
   MO.getExpr()->print(O, &MAI);
 }
 
-void E2KInstPrinter::printMemOperand(const MCInst *MI, int opNum,
-                                       const MCSubtargetInfo &STI,
-                                       raw_ostream &O, const char *Modifier) {
-  // If this is an ADD operand, emit it like normal operands.
-  if (Modifier && !strcmp(Modifier, "arith")) {
-    printOperand(MI, opNum, STI, O);
-    O << ", ";
-    printOperand(MI, opNum + 1, STI, O);
-    return;
-  }
-
-  const MCOperand &Op1 = MI->getOperand(opNum);
-  const MCOperand &Op2 = MI->getOperand(opNum + 1);
-
-  bool PrintedFirstOperand = false;
-  if (Op1.isReg() && Op1.getReg() != E2K::G0) {
-    printOperand(MI, opNum, STI, O);
-    PrintedFirstOperand = true;
-  }
-
-  // Skip the second operand iff it adds nothing (literal 0 or %g0) and we've
-  // already printed the first one
-  const bool SkipSecondOperand =
-      PrintedFirstOperand && ((Op2.isReg() && Op2.getReg() == E2K::G0) ||
-                              (Op2.isImm() && Op2.getImm() == 0));
-
-  if (!SkipSecondOperand) {
-    if (PrintedFirstOperand)
-      O << '+';
-    printOperand(MI, opNum + 1, STI, O);
-  }
-}
-
-void E2KInstPrinter::printCCOperand(const MCInst *MI, int opNum,
-                                      const MCSubtargetInfo &STI,
-                                      raw_ostream &O) {
-  int CC = (int)MI->getOperand(opNum).getImm();
-  switch (MI->getOpcode()) {
-  default: break;
-  }
-  O << E2KCondCodeToString((E2KCC::CondCodes)CC);
-}
-
-bool E2KInstPrinter::printGetPCX(const MCInst *MI, unsigned opNum,
-                                   const MCSubtargetInfo &STI,
-                                   raw_ostream &O) {
-  llvm_unreachable("FIXME: Implement E2KInstPrinter::printGetPCX.");
-  return true;
-}
-
-void E2KInstPrinter::printMembarTag(const MCInst *MI, int opNum,
-                                      const MCSubtargetInfo &STI,
-                                      raw_ostream &O) {
-  static const char *const TagNames[] = {
-      "#LoadLoad",  "#StoreLoad", "#LoadStore", "#StoreStore",
-      "#Lookaside", "#MemIssue",  "#Sync"};
-
-  unsigned Imm = MI->getOperand(opNum).getImm();
-
-  if (Imm > 127) {
-    O << Imm;
-    return;
-  }
-
-  bool First = true;
-  for (unsigned i = 0; i < sizeof(TagNames) / sizeof(char *); i++) {
-    if (Imm & (1 << i)) {
-      O << (First ? "" : " | ") << TagNames[i];
-      First = false;
-    }
-  }
-}
-
 template <unsigned N>
 void E2KInstPrinter::printUImmOperand(const MCInst *MI, int OpNum,
                                           raw_ostream &O) {
   int64_t Value = MI->getOperand(OpNum).getImm();
   assert(isUInt<N>(Value) && "Invalid uimm argument");
-  O << markup("<imm:") << Value << markup(">");
+  bool print_hex = true;
+  uint32_t opcode = MI->getOpcode();
+  if (opcode == E2K::IPD || opcode == E2K::NOP)
+    print_hex = false;
+
+  O << markup("<imm:");
+  if (print_hex)
+    O << format("0x%x", Value);
+  else
+    O << Value;
+  O << markup(">");
+}
+
+template <unsigned N>
+void E2KInstPrinter::printSImmOperand(const MCInst *MI, int OpNum,
+                                          raw_ostream &O) {
+  int64_t Value = MI->getOperand(OpNum).getImm();
+  assert(isInt<N>(Value) && "Invalid simm argument");
+  bool print_hex = true;
+  uint32_t opcode = MI->getOpcode();
+  if (opcode == E2K::IPD || opcode == E2K::NOP)
+    print_hex = false;
+
+  O << markup("<imm:");
+  if (print_hex)
+    O << format("0x%x", Value);
+  else
+    O << Value;
+  O << markup(">");
 }
 
 void E2KInstPrinter::printU8Imm(const MCInst *MI, int opNum,
                                 const MCSubtargetInfo &STI,
                                 raw_ostream &O) {
   printUImmOperand<8>(MI, opNum, O);
+}
+
+void E2KInstPrinter::printS32Imm(const MCInst *MI, int opNum,
+                                const MCSubtargetInfo &STI,
+                                raw_ostream &O) {
+  printSImmOperand<32>(MI, opNum, O);
+}
+
+void E2KInstPrinter::printCTCOND(const MCInst *MI, int opNum,
+                                const MCSubtargetInfo &STI,
+                                raw_ostream &O) {
+  uint32_t CondType = MI->getOperand(opNum).getImm();
+  uint32_t RegNo = MI->getOperand(opNum + 1).getReg();
+
+  O << E2KCondCodeToString(static_cast<E2KCC::CondCodes>(CondType), "%" + StringRef(getRegisterName(RegNo)).lower());
+}
+
+void E2KInstPrinter::printMAS(const MCInst *MI, int opNum,
+                                 const MCSubtargetInfo &STI,
+                                 raw_ostream &O) {
+  uint32_t mas = MI->getOperand(opNum).getImm();
+
+  if (mas) {
+    O << ", mas = " << format("0x%x", mas);
+  }
 }

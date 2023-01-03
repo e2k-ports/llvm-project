@@ -38,113 +38,43 @@ namespace llvm {
 } // end namespace llvm;
 
 namespace llvm {
-  // Enums corresponding to E2K condition codes, both icc's and fcc's.  These
-  // values must be kept in sync with the ones in the .td file.
-  namespace E2KCC {
-    enum CondCodes {
-      ICC_A   =  8   ,  // Always
-      ICC_N   =  0   ,  // Never
-      ICC_NE  =  9   ,  // Not Equal
-      ICC_E   =  1   ,  // Equal
-      ICC_G   = 10   ,  // Greater
-      ICC_LE  =  2   ,  // Less or Equal
-      ICC_GE  = 11   ,  // Greater or Equal
-      ICC_L   =  3   ,  // Less
-      ICC_GU  = 12   ,  // Greater Unsigned
-      ICC_LEU =  4   ,  // Less or Equal Unsigned
-      ICC_CC  = 13   ,  // Carry Clear/Great or Equal Unsigned
-      ICC_CS  =  5   ,  // Carry Set/Less Unsigned
-      ICC_POS = 14   ,  // Positive
-      ICC_NEG =  6   ,  // Negative
-      ICC_VC  = 15   ,  // Overflow Clear
-      ICC_VS  =  7   ,  // Overflow Set
 
-      FCC_A   =  8+16,  // Always
-      FCC_N   =  0+16,  // Never
-      FCC_U   =  7+16,  // Unordered
-      FCC_G   =  6+16,  // Greater
-      FCC_UG  =  5+16,  // Unordered or Greater
-      FCC_L   =  4+16,  // Less
-      FCC_UL  =  3+16,  // Unordered or Less
-      FCC_LG  =  2+16,  // Less or Greater
-      FCC_NE  =  1+16,  // Not Equal
-      FCC_E   =  9+16,  // Equal
-      FCC_UE  = 10+16,  // Unordered or Equal
-      FCC_GE  = 11+16,  // Greater or Equal
-      FCC_UGE = 12+16,  // Unordered or Greater or Equal
-      FCC_LE  = 13+16,  // Less or Equal
-      FCC_ULE = 14+16,  // Unordered or Less or Equal
-      FCC_O   = 15+16,  // Ordered
-
-      CPCC_A   =  8+32,  // Always
-      CPCC_N   =  0+32,  // Never
-      CPCC_3   =  7+32,
-      CPCC_2   =  6+32,
-      CPCC_23  =  5+32,
-      CPCC_1   =  4+32,
-      CPCC_13  =  3+32,
-      CPCC_12  =  2+32,
-      CPCC_123 =  1+32,
-      CPCC_0   =  9+32,
-      CPCC_03  = 10+32,
-      CPCC_02  = 11+32,
-      CPCC_023 = 12+32,
-      CPCC_01  = 13+32,
-      CPCC_013 = 14+32,
-      CPCC_012 = 15+32
+  namespace E2K {
+      enum InstFlags {
+      F64 = 1,
+      F32S = 2,
+      F16SHI = 3,
+      F16SLO = 4,
     };
   }
 
-  inline static const char *E2KCondCodeToString(E2KCC::CondCodes CC) {
+  namespace E2KCC {
+    enum CondCodes {
+      CC_NEVER = 0,
+      CC_ALWAYS = 1,
+      CC_PRED = 2,
+      CC_NOT_PRED = 3,
+      CC_LOOP_END = 4,
+      CC_NOT_LOOP_END = 5,
+      CC_PRED_OR_LOOP_END = 6,
+      CC_NOT_PRED_AND_NOT_LOOP_END = 7,
+      CC_NOT_PRED_OR_LOOP_END = 14,
+      CC_PRED_AND_NOT_LOOP_END = 15,
+    };
+  }
+
+  inline static std::string E2KCondCodeToString(E2KCC::CondCodes CC, const std::string & Reg) {
     switch (CC) {
-    case E2KCC::ICC_A:   return "a";
-    case E2KCC::ICC_N:   return "n";
-    case E2KCC::ICC_NE:  return "ne";
-    case E2KCC::ICC_E:   return "e";
-    case E2KCC::ICC_G:   return "g";
-    case E2KCC::ICC_LE:  return "le";
-    case E2KCC::ICC_GE:  return "ge";
-    case E2KCC::ICC_L:   return "l";
-    case E2KCC::ICC_GU:  return "gu";
-    case E2KCC::ICC_LEU: return "leu";
-    case E2KCC::ICC_CC:  return "cc";
-    case E2KCC::ICC_CS:  return "cs";
-    case E2KCC::ICC_POS: return "pos";
-    case E2KCC::ICC_NEG: return "neg";
-    case E2KCC::ICC_VC:  return "vc";
-    case E2KCC::ICC_VS:  return "vs";
-    case E2KCC::FCC_A:   return "a";
-    case E2KCC::FCC_N:   return "n";
-    case E2KCC::FCC_U:   return "u";
-    case E2KCC::FCC_G:   return "g";
-    case E2KCC::FCC_UG:  return "ug";
-    case E2KCC::FCC_L:   return "l";
-    case E2KCC::FCC_UL:  return "ul";
-    case E2KCC::FCC_LG:  return "lg";
-    case E2KCC::FCC_NE:  return "ne";
-    case E2KCC::FCC_E:   return "e";
-    case E2KCC::FCC_UE:  return "ue";
-    case E2KCC::FCC_GE:  return "ge";
-    case E2KCC::FCC_UGE: return "uge";
-    case E2KCC::FCC_LE:  return "le";
-    case E2KCC::FCC_ULE: return "ule";
-    case E2KCC::FCC_O:   return "o";
-    case E2KCC::CPCC_A:   return "a";
-    case E2KCC::CPCC_N:   return "n";
-    case E2KCC::CPCC_3:   return "3";
-    case E2KCC::CPCC_2:   return "2";
-    case E2KCC::CPCC_23:  return "23";
-    case E2KCC::CPCC_1:   return "1";
-    case E2KCC::CPCC_13:  return "13";
-    case E2KCC::CPCC_12:  return "12";
-    case E2KCC::CPCC_123: return "123";
-    case E2KCC::CPCC_0:   return "0";
-    case E2KCC::CPCC_03:  return "03";
-    case E2KCC::CPCC_02:  return "02";
-    case E2KCC::CPCC_023: return "023";
-    case E2KCC::CPCC_01:  return "01";
-    case E2KCC::CPCC_013: return "013";
-    case E2KCC::CPCC_012: return "012";
+    case E2KCC::CC_ALWAYS: return "";
+    case E2KCC::CC_NEVER: return "";
+    case E2KCC::CC_PRED: return " ? " + Reg;
+    case E2KCC::CC_NOT_PRED: return " ? ~" + Reg;
+    case E2KCC::CC_LOOP_END: return " ? #LOOP_END";
+    case E2KCC::CC_NOT_LOOP_END: return " ? #NOT_LOOP_END";
+    case E2KCC::CC_PRED_OR_LOOP_END: return " ? " + Reg + " || #LOOP_END";
+    case E2KCC::CC_NOT_PRED_AND_NOT_LOOP_END: return " ? ~" + Reg + " && #NOT_LOOP_END";
+    case E2KCC::CC_NOT_PRED_OR_LOOP_END: return " ? ~" + Reg + " || #LOOP_END";
+    case E2KCC::CC_PRED_AND_NOT_LOOP_END: return " ? " + Reg + " && #NOT_LOOP_END";
     }
     llvm_unreachable("Invalid cond code");
   }
