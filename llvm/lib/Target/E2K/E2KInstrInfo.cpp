@@ -216,14 +216,6 @@ unsigned E2KInstrInfo::removeBranch(MachineBasicBlock &MBB,
   return Count;
 }
 
-bool E2KInstrInfo::reverseBranchCondition(
-    SmallVectorImpl<MachineOperand> &Cond) const {
-  assert(Cond.size() <= 2);
-  E2KCC::CondCodes CC = static_cast<E2KCC::CondCodes>(Cond[1].getImm());
-  Cond[1].setImm(GetOppositeBranchCondition(CC));
-  return false;
-}
-
 void E2KInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
                                  MachineBasicBlock::iterator I,
                                  const DebugLoc &DL, MCRegister DestReg,

@@ -38,7 +38,7 @@ enum E2KBitness {
 class E2KSubtarget : public E2KGenSubtargetInfo {
 
   enum E2KArchEnum {
-    E2Kv1,
+    E2Kv1 = 1,
     E2Kv2,
     E2Kv3,
     E2Kv4,

@@ -638,6 +638,14 @@ ELFObjectFileBase::getPltAddresses() const {
     case Triple::aarch64_be:
       JumpSlotReloc = ELF::R_AARCH64_JUMP_SLOT;
       break;
+    case Triple::e2k32:
+      JumpSlotReloc = ELF::R_E2K_32_JMP_SLOT;
+      break;
+    case Triple::e2k64:
+    case Triple::e2k128:
+    case Triple::e2k128_64:
+      JumpSlotReloc = ELF::R_E2K_64_JMP_SLOT;
+      break ;
     default:
       return {};
   }

@@ -215,8 +215,8 @@ def USBR: E2KReg<0, "USBR">;
 def TST: E2KReg<0, "TST">;
 def TC: E2KReg<0, "TC">;
 def TCD: E2KReg<0, "TCD">;
-def EMPTY_LO: E2KReg<0, "EMPTY_LO">;
-def EMPTY_HI: E2KReg<0, "EMPTY_HI">;
+def EMPTY_LO: E2KReg<0, "EMPTY.LO">;
+def EMPTY_HI: E2KReg<0, "EMPTY.HI">;
 
 def CORE_MODE: E2KReg<0, "CORE_MODE">;
 def CWD: E2KReg<0, "CWD">;

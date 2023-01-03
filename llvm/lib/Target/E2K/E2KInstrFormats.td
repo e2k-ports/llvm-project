@@ -27,7 +27,7 @@ def format {
   // ALS with EXT, src1 is occupied by EXT
   string alopf2 =  " $src2, $dst";
   // simple ALS, used by st* operations
-  string alopf3 =  " $src1, $src2, src3";
+  string alopf3 =  " $src1, $src2, $src3";
 
   // used by ALS/ALES with CMP extension, comparison operations
   string alopf7 =  " $src1, $src2, $dst";
@@ -390,10 +390,36 @@ def ImmUnsignedi8AsmOperand : AsmOperandClass {
   let RenderMethod = "addImmOperands";
 }
 
+def ImmSignedi32AsmOperand : AsmOperandClass {
+  let Name = "ImmSignedi32";
+  let RenderMethod = "addImmOperands";
+}
+
 def u8imm : Operand<i8> {
   let PrintMethod = "printU8Imm";
   let ParserMatchClass = ImmUnsignedi8AsmOperand;
   let OperandType = "OPERAND_IMMEDIATE";
+}
+
+def s32imm : Operand<i8> {
+  let PrintMethod = "printS32Imm";
+  let ParserMatchClass = ImmSignedi32AsmOperand;
+  let OperandType = "OPERAND_IMMEDIATE";
+}
+
+def CTCOND : Operand<OtherVT> {
+  let PrintMethod = "printCTCOND";
+  let MIOperandInfo = (ops u8imm:$cond, PRED:$reg);
+}
+
+def MAS : Operand<OtherVT> {
+  let PrintMethod = "printMAS";
+  let MIOperandInfo = (ops u8imm:$cond);
+}
+
+def COND : Operand<OtherVT> {
+  let PrintMethod = "printCOND";
+  let MIOperandInfo = (ops u8imm:$cond);
 }
 
 // Pseudo instructions.
@@ -429,16 +455,17 @@ class SSInst<dag outs, dag ins, string asmstr, list<dag> pattern = []>: Instruct
 }
 
 // regular ALS command
-class ALSInstOneChannel<bits<7> opcode, dag outs, dag ins, string asmstr,
+class ALSInstOneChannel<bits<7> opcode, bits<1> speculative, dag dag_out, dag dag_in, string mnemonic, string params,
               int channel,
               list<dag> pattern = []>: Instruction {
 
   let Namespace = "E2K";
   let Size = 4;
-  field bits<32> Inst;
-  dag OutOperandList = outs;
-  dag InOperandList = ins;
-  let AsmString = asmstr;
+  field bits<56> Inst;
+  let Inst{31} = speculative;
+  dag OutOperandList = dag_out;
+  dag InOperandList = dag_in;
+  let AsmString = mnemonic # "," # channel # !if(speculative, ",sm", "") # params;
   let Pattern = pattern;
   bits<7> OpCode = opcode;
   bits<8> src1;
@@ -452,37 +479,59 @@ class ALSInstOneChannel<bits<7> opcode, dag outs, dag ins, string asmstr,
   let DecoderNamespace = "E2K_ALS" # channel;
 }
 
-class ALSInstSRC3OneChannel<bits<7> opcode, dag outs, dag ins, string asmstr,
-              int channel,
-              list<dag> pattern = []>: ALSInstOneChannel<opcode, outs, ins, asmstr, channel, pattern> {
-
-  bits<8> src3;
-  let Inst{7-0} = src3;
-}
-
 multiclass ALSInst<bits<7> opcode, string mnemonic, string params, E2KOperands operands,
                                 list<int> channels = c.all,
                                 list<dag> pattern = []> {
   foreach channel = channels in {
-    def c#channel : ALSInstOneChannel<opcode, operands.Outs, operands.Ins, !strconcat(mnemonic, "," # channel, params), channel, pattern>;
+    def c#channel : ALSInstOneChannel<opcode, 0, operands.Outs, operands.Ins, mnemonic, params, channel, pattern>;
+    def c#channel#sm : ALSInstOneChannel<opcode, 1, operands.Outs, operands.Ins, mnemonic, params, channel, pattern>;
   }
+}
+
+class ALSInstMASOneChannel<bits<7> opcode, bits<1> speculative, dag dag_out, dag dag_in, string mnemonic, string params,
+              int channel,
+              list<dag> pattern = []>: ALSInstOneChannel<opcode, speculative, dag_out, !con(dag_in, (ins MAS:$mas)), mnemonic, params # "$mas", channel, pattern> {
+
+  bits<7> mas;
+  let Inst{54-48} = mas;
+}
+
+multiclass ALSInstMAS<bits<7> opcode, string mnemonic, string params, E2KOperands operands,
+                                list<int> channels = c.all,
+                                list<dag> pattern = []> {
+  foreach channel = channels in {
+    def c#channel : ALSInstMASOneChannel<opcode, 0, operands.Outs, operands.Ins,
+    mnemonic, params, channel, pattern>;
+    def c#channel#sm : ALSInstMASOneChannel<opcode, 1, operands.Outs, operands.Ins,
+    mnemonic, params, channel, pattern>;
+  }
+}
+
+class ALSInstSRC3OneChannel<bits<7> opcode, bits<1> speculative, dag dag_out, dag dag_in, string mnemonic, string params,
+              int channel,
+              list<dag> pattern = []>: ALSInstOneChannel<opcode, speculative, dag_out, dag_in, mnemonic, params, channel, pattern> {
+
+  bits<8> src3;
+  let Inst{7-0} = src3;
 }
 
 multiclass ALSInstSRC3<bits<7> opcode, string mnemonic, string params, E2KOperands operands,
                                 list<int> channels = c.all,
                                 list<dag> pattern = []> {
   foreach channel = channels in {
-    def : ALSInstSRC3OneChannel<opcode, operands.Outs, operands.Ins,
-    !strconcat(mnemonic, "," # channel, params), channel, pattern>;
+    def c#channel : ALSInstSRC3OneChannel<opcode, 0, operands.Outs, operands.Ins,
+    mnemonic, params, channel, pattern>;
+    def c#channel#sm : ALSInstSRC3OneChannel<opcode, 1, operands.Outs, operands.Ins,
+    mnemonic, params, channel, pattern>;
   }
 }
 
 
 // ALS with CMP opcode extension
-class ALSCMPInstOneChannel<bits<7> opcode, bits<3> cc, dag outs, dag ins, string asmstr,
+class ALSCMPInstOneChannel<bits<7> opcode, bits<1> speculative, bits<3> cc, dag dag_out, dag dag_in, string mnemonic, string params,
               int channel,
-              list<dag> pattern = []>: ALSInstOneChannel<opcode, outs, ins,
-              asmstr, channel, pattern> {
+              list<dag> pattern = []>: ALSInstOneChannel<opcode, speculative, dag_out, dag_in,
+              mnemonic, params, channel, pattern> {
 
   bits<3> CC = cc;
   let Inst{7-5} = CC;
@@ -493,15 +542,17 @@ multiclass ALSCMPInst<bits<7> opcode, bits<3> cc, string mnemonic, string params
                                 list<int> channels = c.c0134,
                                 list<dag> pattern = []> {
   foreach channel = channels in {
-    def c#channel : ALSCMPInstOneChannel<opcode, cc, operands.Outs, operands.Ins,
-    !strconcat(mnemonic, "," # channel, params), channel, pattern>;
+    def c#channel : ALSCMPInstOneChannel<opcode, 0, cc, operands.Outs, operands.Ins,
+    mnemonic, params, channel, pattern>;
+    def c#channel#sm : ALSCMPInstOneChannel<opcode, 1, cc, operands.Outs, operands.Ins,
+    mnemonic, params, channel, pattern>;
   }
 }
 
 // ALS with opcode extension
-class ALSEXTInstOneChannel<bits<7> opcode, bits<8> ext, dag outs, dag ins, string asmstr,
+class ALSEXTInstOneChannel<bits<7> opcode, bits<1> speculative, bits<8> ext, dag dag_out, dag dag_in, string mnemonic, string params,
               int channel,
-              list<dag> pattern = []>: ALSInstOneChannel<opcode, outs, ins, asmstr, channel, pattern> {
+              list<dag> pattern = []>: ALSInstOneChannel<opcode, speculative, dag_out, dag_in, mnemonic, params, channel, pattern> {
 
   bits<8> Ext = ext;
   let Inst{23-16} = Ext;
@@ -511,22 +562,25 @@ multiclass ALSEXTInst<bits<7> opcode, bits<8> ext, string mnemonic, string param
                                 list<int> channels = c.all,
                                 list<dag> pattern = []> {
   foreach channel = channels in {
-    def c#channel : ALSEXTInstOneChannel<opcode, ext, operands.Outs, operands.Ins,
-    !strconcat(mnemonic, "," # channel, params), channel, pattern>;
+    def c#channel : ALSEXTInstOneChannel<opcode, 0, ext, operands.Outs, operands.Ins,
+    mnemonic, params, channel, pattern>;
+    def c#channel#sm : ALSEXTInstOneChannel<opcode, 1, ext, operands.Outs, operands.Ins,
+    mnemonic, params, channel, pattern>;
   }
 }
 
 // ALES command
-class ALESInstOneChannel<bits<7> opcode, bits<8> opcode2, dag outs, dag ins, string asmstr,
+class ALESInstOneChannel<bits<7> opcode, bits<8> opcode2, bits<1> speculative, dag outs, dag ins, string mnemonic, string params,
               int channel,
               list<dag> pattern = []>: Instruction {
 
   let Namespace = "E2K";
   let Size = 6;
-  field bits<48> Inst;
+  field bits<56> Inst;
+  let Inst{31} = speculative;
   dag OutOperandList = outs;
   dag InOperandList = ins;
-  let AsmString = asmstr;
+  let AsmString = mnemonic # "," # channel # !if(speculative, ",sm", "") # params;
   let Pattern = pattern;
   int Channel = channel;
   bits<7> OpCode = opcode;
@@ -548,15 +602,17 @@ multiclass ALESInst<bits<7> opcode, bits<8> opcode2, string mnemonic, string par
                                 list<int> channels = c.all,
                                 list<dag> pattern = []> {
   foreach channel = channels in {
-    def c#channel : ALESInstOneChannel<opcode, opcode2, operands.Outs, operands.Ins,
-    !strconcat(mnemonic, "," # channel, params), channel, pattern>;
+    def c#channel : ALESInstOneChannel<opcode, opcode2, 0, operands.Outs, operands.Ins,
+    mnemonic, params, channel, pattern>;
+    def c#channel#sm : ALESInstOneChannel<opcode, opcode2, 1, operands.Outs, operands.Ins,
+    mnemonic, params, channel, pattern>;
   }
 }
 
 // ALES with opcode extension 2
-class ALESEXT2InstOneChannel<bits<7> opcode, bits<8> opcode2, bits<8> ext2, dag outs, dag ins, string asmstr,
+class ALESEXT2InstOneChannel<bits<7> opcode, bits<8> opcode2, bits<8> ext2, bits<1> speculative, dag dag_out, dag dag_in, string mnemonic, string params,
               int channel,
-              list<dag> pattern = []>: ALESInstOneChannel<opcode, opcode2, outs, ins, asmstr, channel, pattern> {
+              list<dag> pattern = []>: ALESInstOneChannel<opcode, opcode2, speculative, dag_out, dag_in, mnemonic, params, channel, pattern> {
 
   bits<8> Ext2 = ext2;
   let Inst{39-32} = Ext2;
@@ -566,15 +622,17 @@ multiclass ALESEXT2Inst<bits<7> opcode, bits<8> opcode2, bits<8> ext2, string mn
                                 list<int> channels = c.all,
                                 list<dag> pattern = []> {
   foreach channel = channels in {
-    def c#channel : ALESEXT2InstOneChannel<opcode, opcode2, ext2, operands.Outs, operands.Ins,
-    !strconcat(mnemonic, "," # channel, params), channel, pattern>;
+    def c#channel : ALESEXT2InstOneChannel<opcode, opcode2, ext2, 0, operands.Outs, operands.Ins,
+    mnemonic, params, channel, pattern>;
+    def c#channel#sm : ALESEXT2InstOneChannel<opcode, opcode2, ext2, 1, operands.Outs, operands.Ins,
+    mnemonic, params, channel, pattern>;
   }
 }
 
 // ALES with both EXT1 and EXT2, used by getsp
-class ALESEXT1EXT2InstOneChannel<bits<7> opcode, bits<8> ext1, bits<8> opcode2, bits<8> ext2, dag outs, dag ins, string asmstr,
+class ALESEXT1EXT2InstOneChannel<bits<7> opcode, bits<8> ext1, bits<8> opcode2, bits<8> ext2, bits<1> speculative, dag dag_out, dag dag_in, string mnemonic, string params,
               int channel,
-              list<dag> pattern = []>: ALESInstOneChannel<opcode, opcode2, outs, ins, asmstr, channel, pattern> {
+              list<dag> pattern = []>: ALESInstOneChannel<opcode, opcode2, speculative, dag_out, dag_in, mnemonic, params, channel, pattern> {
 
   bits<8> Ext2 = ext2;
   let Inst{39-32} = Ext2;
@@ -586,14 +644,16 @@ multiclass ALESEXT1EXT2Inst<bits<7> opcode, bits<8> ext1, bits<8> opcode2, bits<
                                 list<int> channels = c.all,
                                 list<dag> pattern = []> {
   foreach channel = channels in {
-    def c#channel : ALESEXT1EXT2InstOneChannel<opcode, ext1, opcode2, ext2, operands.Outs, operands.Ins,
-    !strconcat(mnemonic, "," # channel, params), channel, pattern>;
+    def c#channel : ALESEXT1EXT2InstOneChannel<opcode, ext1, opcode2, ext2, 0, operands.Outs, operands.Ins,
+    mnemonic, params, channel, pattern>;
+    def c#channel#sm : ALESEXT1EXT2InstOneChannel<opcode, ext1, opcode2, ext2, 1, operands.Outs, operands.Ins,
+    mnemonic, params, channel, pattern>;
   }
 }
 
-class ALESEXT2SRC3InstOneChannel<bits<7> opcode, bits<8> opcode2, bits<8> ext2, dag outs, dag ins, string asmstr,
+class ALESEXT2SRC3InstOneChannel<bits<7> opcode, bits<8> opcode2, bits<8> ext2, bits<1> speculative, dag dag_out, dag dag_in, string mnemonic, string params,
               int channel,
-              list<dag> pattern = []>: ALESEXT2InstOneChannel<opcode, opcode2, ext2, outs, ins, asmstr, channel, pattern> {
+              list<dag> pattern = []>: ALESEXT2InstOneChannel<opcode, opcode2, ext2, speculative, dag_out, dag_in, mnemonic, params, channel, pattern> {
 
   bits<8> Ext2 = src3;
   let Inst{7-0} = src3;
@@ -603,8 +663,10 @@ multiclass ALESEXT2SRC3Inst<bits<7> opcode, bits<8> opcode2, bits<8> ext2, strin
                                 list<int> channels = c.all,
                                 list<dag> pattern = []> {
   foreach channel = channels in {
-    def c#channel : ALESEXT2SRC3InstOneChannel<opcode, opcode2, ext2, operands.Outs, operands.Ins,
-    !strconcat(mnemonic, "," # channel, params), channel, pattern>;
+    def c#channel : ALESEXT2SRC3InstOneChannel<opcode, opcode2, ext2, 0, operands.Outs, operands.Ins,
+    mnemonic, params, channel, pattern>;
+    def c#channel#sm : ALESEXT2SRC3InstOneChannel<opcode, opcode2, ext2, 1, operands.Outs, operands.Ins,
+    mnemonic, params, channel, pattern>;
   }
 }
 

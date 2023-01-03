@@ -42,10 +42,10 @@ def RET  : Pseudo<(outs), (ins), "!RET_FLAG", [(E2Kretflag2)]>;
 //===----------------------------------------------------------------------===//
 
 // no operation, encoded in HS itself
-def NOOP : NOPInst<(outs), (ins u8imm:$count), "nop $count">;
+def NOP : NOPInst<(outs), (ins u8imm:$count), "nop $count">;
 
 //===----------------------------------------------------------------------===//
-// SS
+// SS opcodes
 //===----------------------------------------------------------------------===//
 
 // instruction prefetch depth
@@ -76,6 +76,9 @@ def ABP : SSInst<(outs), (ins u8imm:$abpf, u8imm:$abpt), "abp abpf=$abpf abpt=$a
 
 // adjust loop counters
 def ALC : SSInst<(outs), (ins u8imm:$alcf, u8imm:$alct), "alc alcf=$alcf alct=$alct">;
+
+// control transfer
+def CT : SSInst<(outs), (ins CTPR:$ctpr, CTCOND:$ctcond), "ct $ctpr$ctcond">;
 
 //===----------------------------------------------------------------------===//
 // ALS opcodes
@@ -216,7 +219,7 @@ defm STW : ALSInstSRC3<0x26, "stw", format.alopf3, DDS, c.c25>;
 defm BITREVS : ALSEXTInst<0x26, 0xC0, "bitrevs", format.alopf2, S_S, c.c0134>;
 
 // store double-word
-defm STD : ALSInstSRC3<0x27, "std", format.alopf3, DDS, c.c25>;
+defm STD : ALSInstSRC3<0x27, "std", format.alopf3, DDD, c.c25>;
 
 defm BITREVD : ALSEXTInst<0x27, 0xC0, "bitrevd", format.alopf2, D_D, c.c0134>;
 
@@ -534,20 +537,20 @@ defm VFSI : ALSInst<0x63, "vfsi", format.alopf1, SD_D, c.c14>;
 defm FXDIVTDX : ALSInst<0x63, "fxdivtdx", format.alopf1, DD_D, c.c5>;
 
 // load unsigned byte
-defm LDB : ALSInst<0x64, "ldb", format.alopf1, DD_D, c.c0235>;
+defm LDB : ALSInstMAS<0x64, "ldb", format.alopf1, DD_D, c.c0235>;
 
 // load unsigned half-word
-defm LDH : ALSInst<0x65, "ldh", format.alopf1, DD_D, c.c0235>;
+defm LDH : ALSInstMAS<0x65, "ldh", format.alopf1, DD_D, c.c0235>;
 
 // count number of leading zeroes
 defm LZCNTS : ALSEXTInst<0x64, 0xC0, "lzcnts", format.alopf2, S_S, c.c14>;
 defm LZCNTD : ALSEXTInst<0x65, 0xC0, "lzcntd", format.alopf2, D_D, c.c14>;
 
 // load unsigned word
-defm LDW : ALSInst<0x66, "ldw", format.alopf1, DD_D, c.c0235>;
+defm LDW : ALSInstMAS<0x66, "ldw", format.alopf1, DD_D, c.c0235>;
 
 // load unsigned double-word
-defm LDD : ALSInst<0x67, "ldd", format.alopf1, DD_D, c.c0235>;
+defm LDD : ALSInstMAS<0x67, "ldd", format.alopf1, DD_D, c.c0235>;
 
 // count of bits set to one
 defm POPCNTS : ALSEXTInst<0x66, 0xC0, "popcnts", format.alopf2, S_S, c.c14>;
@@ -2170,7 +2173,7 @@ foreach Index = 0-127 in {
 //===----------------------------------------------------------------------===//
 
 // non-procedure immediate flow control
-def IBRANCH : CS0Inst<0x00, (outs), (ins), "ibranch">;
+def IBRANCH : CS0Inst<0x00, (outs), (ins s32imm:$lbl), "ibranch $lbl">;
 
 // prefetch code
 def PREF : CS0Inst<0x01, (outs), (ins), "pref">;
@@ -2181,9 +2184,9 @@ def PUTTSD : CS0Inst<0x02, (outs), (ins), "puttsd">;
 def DONE : CS0Inst<0x03, (outs), (ins), "done">;
 
 // prepare literal flow control (BRANCH/CALL type)
-def DISP : CS0Inst<0x04, (outs), (ins), "disp">;
-def DISP2 : CS0Inst<0x08, (outs), (ins), "disp">;
-def DISP3 : CS0Inst<0x0c, (outs), (ins), "disp">;
+def DISP : CS0Inst<0x04, (outs), (ins CTPR:$ctpr, s32imm:$lbl), "disp $ctpr, $lbl">;
+def DISP2 : CS0Inst<0x08, (outs), (ins CTPR:$ctpr, s32imm:$lbl), "disp $ctpr, $lbl">;
+def DISP3 : CS0Inst<0x0c, (outs), (ins CTPR:$ctpr, s32imm:$lbl), "disp $ctpr, $lbl">;
 
 def NOTHING : CS0Inst<0x05, (outs), (ins), "?">;
 
@@ -2201,14 +2204,14 @@ def LDISP : CS0Inst<0x09, (outs), (ins), "ldisp">;
 def NOTHING2 : CS0Inst<0x0d, (outs), (ins), "?">;
 
 // prepare return from the procedure
-def RETURN : CS0Inst<0x0f, (outs), (ins), "return">;
+def RETURN : CS0Inst<0x0f, (outs), (ins CTPR:$ctpr), "return $ctpr">;
 
 //===----------------------------------------------------------------------===//
 // CS1 opcodes
 //===----------------------------------------------------------------------===//
 
 // set size of procedure stack window
-def SETWD : CS1Inst<0x00, (outs), (ins), "setwd">;
+def SETWD : CS1Inst<0x00, (outs), (ins u8imm:$wsz, u8imm:$nfx, u8imm:$dbl), "setwd wsz = $wsz, nfx = $nfx, dbl = $dbl ">;
 
 // verify size of procedure register area
 def VFRPSZ : CS1Inst<0x01, (outs), (ins), "vfrpsz">;
@@ -2221,17 +2224,18 @@ def SETFST : CS1InstF1<0x02, 0x01, (outs), (ins), "setfst">;
 def WAIT : CS1Inst<0x03, (outs), (ins), "wait">;
 
 // set rotation base for number registers
-def SETBN : CS1InstF2<0x04, 0x01, 0x00, (outs), (ins), "setbn">;
+def SETBN : CS1InstF2<0x04, 0x01, 0x00, (outs), (ins u8imm:$rbc, u8imm:$rsz, u8imm:$rcur), "setbn rbs = $rbc, rsz = $rsz, rcur = $rcur">;
 
 // set rotation base for predicate registers
-def SETBP : CS1InstF2<0x04, 0x00, 0x01, (outs), (ins), "setbp">;
+def SETBP : CS1InstF2<0x04, 0x00, 0x01, (outs), (ins u8imm:$psz), "setbp psz = $psz">;
 
-def CALL : CS1Inst<0x05, (outs), (ins), "call">;
+let isCodeGenOnly = 1 in {
+  def CALL : CS1Inst<0x05, (outs), (ins CTPR:$ctpr, u8imm:$wbs, CTCOND:$ctcond), "call $ctpr, wbs = $wbs$ctcond">;
+}
 
 // memory address specifier, it's not decoded as an instruction itself
-def MAS : CS1Inst<0x06, (outs), (ins), "mas">;
+def : CS1Inst<0x06, (outs), (ins), "mas">;
 
-// this are not fully mutually exclusive, so maybe move to C++ code
 def FLUSHR : FLUSHInst<0x07, 1, 0, 0, 0, (outs), (ins), "flushr">;
 def FLUSHC : FLUSHInst<0x07, 0, 1, 0, 0, (outs), (ins), "flushc">;
 def FILLR : FLUSHInst<0x07, 0, 0, 1, 0, (outs), (ins), "fillr">;
